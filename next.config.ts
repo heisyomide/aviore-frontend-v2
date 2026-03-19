@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
+        protocol: 'https',
+        hostname: 'picsum.photos', // 🚀 Added for mock data images
+        pathname: '/**',
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
         port: '5000', // Ensure this matches your BACKEND port

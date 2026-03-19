@@ -19,7 +19,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-import { Navbar } from '@/src/components/Header';
+import { Navbar } from '../../components/navbar/Navbar';
 import {Breadcrumb} from '@/src/components/Breadcrumb';
 
 export default function VendorLayout({ children }: { children: ReactNode }) {

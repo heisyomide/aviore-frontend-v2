@@ -1,7 +1,7 @@
 'use client';
 
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { ProductCard } from '../../components/shop/ProductCard';
+import { ProductCard } from '../../components/product/ProductCard';
 import { Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';

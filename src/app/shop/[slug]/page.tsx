@@ -5,7 +5,7 @@ import React, { useEffect, useState, use } from 'react'; // Added 'use'
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/src/lib/axios';
 import { Zap, Loader2 } from 'lucide-react';
-import {ProductCard} from '@/src/components/shop/ProductCard';
+import {ProductCard} from '@/src/components/product/ProductCard';
 
 interface Props {
   params: Promise<{ slug: string }>; // Typed as a Promise

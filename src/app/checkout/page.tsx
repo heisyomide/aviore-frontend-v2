@@ -5,15 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
 import { 
   ShieldCheck, CreditCard, ChevronRight, Loader2, 
-  MapPin, Tag, Sparkles, Zap, Package, Building2, Clock
+  MapPin, Tag, Sparkles, Zap, Package, Building2, Clock, Lock
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Breadcrumb } from '../../components/Breadcrumb';
-import { Footer } from '../../components/Footer';
-import { Navbar } from '@/src/components/Header';
+import { Navbar } from '../../components/navbar/Navbar';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -32,7 +31,7 @@ export default function CheckoutPage() {
   const checkoutItems = items.filter(i => i.selected && !i.isOutOfStock);
   const total = subtotal - discount;
 
-  // AUTH_GUARD: Ensure session is active and manifest is not empty
+  // 🛡️ SECURITY: Verify session and order content
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
@@ -42,66 +41,52 @@ export default function CheckoutPage() {
     }
   }, [checkoutItems.length, router]);
 
-  /* ---------------- AUTOMATIC_CAMPAIGN_SYNC ---------------- */
-useEffect(() => {
-  // 1. ABRT_CONTROLLER: Prevents memory leaks and race conditions if checkoutItems change rapidly
-  const controller = new AbortController();
+  /* ---------------- AUTOMATIC DISCOUNT SYNC ---------------- */
+  useEffect(() => {
+    const controller = new AbortController();
 
-  const syncAutomaticDiscounts = async () => {
-    // Guard: Only sync if manifest contains items
-    if (!checkoutItems?.length) return;
+    const syncAutomaticDiscounts = async () => {
+      if (!checkoutItems?.length) return;
 
-    try {
-      const res = await api.post('/orders/calculate-valuation', 
-        {
-          // 2. TYPE_ENFORCEMENT: Ensure values are strict numbers for Prisma compatibility
-          items: checkoutItems.map(i => ({
-            productId: i.id, 
-            price: Number(i.price),
-            quantity: Number(i.quantity)
-          }))
-        },
-        { 
-          signal: controller.signal,
-          // 3. AUTH_INJECTION: Ensure headers are explicit if not global
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      try {
+        const res = await api.post('/orders/calculate-valuation', 
+          {
+            items: checkoutItems.map(i => ({
+              productId: i.id, 
+              price: Number(i.price),
+              quantity: Number(i.quantity)
+            }))
+          },
+          { 
+            signal: controller.signal,
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }
+        );
+
+        if (res.data?.summary) {
+          const { summary } = res.data;
+          setCouponData(summary);
+          setDiscount(summary.totalDiscount);
         }
-      );
-
-      // 4. DATA_HANDSHAKE: Verify the structure before updating UI state
-      if (res.data?.summary) {
-        const { summary } = res.data;
-        setCouponData(summary);
-        setDiscount(summary.totalDiscount);
+      } catch (err: any) {
+        if (err.name === 'CanceledError') return;
+        console.error("DISCOUNT_SYNC_FAILURE:", err);
       }
-    } catch (err: any) {
-      // Ignore errors caused by component unmounting
-      if (err.name === 'CanceledError') return;
-      
-      console.error("VALUATION_SYNC_FAILURE:", {
-        status: err.response?.status,
-        payload: err.response?.data || err.message
-      });
-    }
-  };
+    };
 
-  syncAutomaticDiscounts();
+    syncAutomaticDiscounts();
+    return () => controller.abort();
+  }, [checkoutItems]);
 
-  // CLEANUP_PHASE
-  return () => controller.abort();
-}, [checkoutItems]);
-
-  /* ---------------- ADDRESS_PROTOCOL ---------------- */
-
+  /* ---------------- ADDRESS HANDLING ---------------- */
   const fetchPrimaryAddress = useCallback(async () => {
     try {
       setFetchingAddress(true);
       const res = await api.get('/user/addresses');
-      // Logic: Prioritize default node or fallback to initial entry
       const primary = res.data.find((a: any) => a.isDefault) || res.data[0];
       setAddress(primary);
     } catch {
-      toast.error("SYNC_ERROR", { description: "Address registry unreachable." });
+      toast.error("Error", { description: "Shipping address record unreachable." });
     } finally {
       setFetchingAddress(false);
     }
@@ -109,65 +94,60 @@ useEffect(() => {
 
   useEffect(() => { fetchPrimaryAddress(); }, [fetchPrimaryAddress]);
 
-  /* ---------------- VALUATION_ENGINE (COUPON) ---------------- */
-
+  /* ---------------- PROMO CODE ENGINE ---------------- */
   const applyCoupon = async () => {
     if (!couponCode) return;
     setApplyingCoupon(true);
     try {
-      // POST request to match the backend Valuation Registry
       const res = await api.post('/vendor/marketing/validate', {
         code: couponCode.toUpperCase().trim(),
         orderValue: subtotal 
       });
 
-      const { discountType, discountValue, couponId } = res.data;
+      const { discountType, discountValue } = res.data;
       
-      // Calculate actual discount amount from rate or fixed value
       const calculatedDiscount = discountType === 'PERCENTAGE' 
         ? (subtotal * (Number(discountValue) / 100)) 
         : Number(discountValue);
 
       setDiscount(calculatedDiscount);
       setCouponData(res.data);
-      toast.success("REWARD_AUTHORIZED", { description: "Valuation adjusted." });
+      toast.success("Promo applied successfully");
     } catch (err: any) {
       setDiscount(0);
       setCouponData(null);
-      toast.error("INVALID_PROTOCOL", { 
-        description: err.response?.data?.message || "Coupon code rejected by registry." 
+      toast.error("Invalid Code", { 
+        description: err.response?.data?.message || "Promo code not recognized." 
       });
     } finally {
       setApplyingCoupon(false);
     }
   };
 
-  /* ---------------- TRANSACTION_INITIALIZATION ---------------- */
-
+  /* ---------------- ORDER PLACEMENT ---------------- */
   const handlePlaceOrder = async () => {
-    if (!address) return toast.error("SHIPPING_MISSING");
+    if (!address) return toast.error("Please add a shipping address");
 
     setIsProcessing(true);
     try {
       const payload = {
-  items: checkoutItems.map(i => ({
-    productId: i.id,
-    quantity: i.quantity,
-    price: i.price
-  })),
-  addressId: address.id,
-  paymentMethod: selectedPayment,
-  // Pass the campaign data so backend records WHY the price is lower
-  appliedCampaigns: couponData?.appliedCampaigns || [], 
-  totalAmount: total
-};
+        items: checkoutItems.map(i => ({
+          productId: i.id,
+          quantity: i.quantity,
+          price: i.price
+        })),
+        addressId: address.id,
+        paymentMethod: selectedPayment,
+        appliedCampaigns: couponData?.appliedCampaigns || [], 
+        totalAmount: total
+      };
       const res = await api.post('/orders/create', payload);
-      toast.success("TRANSACTION_AUTHORIZED");
+      toast.success("Order authorized");
       
       clearCart();
       router.push(`/dashboard/orders/${res.data.id}`);
     } catch (err: any) {
-      toast.error("TRANSACTION_FAILED", { description: err.response?.data?.message });
+      toast.error("Order Failed", { description: err.response?.data?.message });
     } finally {
       setIsProcessing(false);
     }
@@ -175,7 +155,7 @@ useEffect(() => {
 
   return (
     <div className="bg-[#FDFCFB] min-h-screen pb-20">
-      <Navbar />
+     
 
       <div className="max-w-7xl mx-auto px-4 pt-6 italic font-black uppercase tracking-tighter">
         <Breadcrumb />
@@ -183,10 +163,10 @@ useEffect(() => {
 
       <main className="max-w-7xl mx-auto px-4 py-8 grid lg:grid-cols-12 gap-10">
         
-        {/* LEFT: REGISTRY INPUTS */}
+        {/* LEFT: ORDER DETAILS */}
         <div className="lg:col-span-8 space-y-8">
           
-          {/* SHIPPING NODE */}
+          {/* SHIPPING SECTION */}
           <section className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
             <h3 className="text-base text-[#A4143D] font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
               <MapPin size={18} className="text-[#A4143D]" /> Shipping Address
@@ -204,54 +184,61 @@ useEffect(() => {
               </div>
             ) : (
               <Link href="/dashboard/addresses" className="block p-10 border-2 border-dashed border-gray-100 rounded-[1.5rem] text-center hover:border-[#A4143D] transition-all group">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-[#A4143D]">Link new shipping node</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-[#A4143D]">Add a new shipping address</p>
               </Link>
             )}
           </section>
 
-          {/* ARTIFACT MANIFEST */}
+          {/* ITEM LIST */}
           <section className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
             <h3 className="text-base text-[#A4143D] font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
-              <Package size={18} className="text-[#A4143D]" /> Artifact Manifest ({checkoutItems.length})
+              <Package size={18} className="text-[#A4143D]" /> Order Summary ({checkoutItems.length})
             </h3>
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
               {checkoutItems.map(item => (
                 <div key={item.id} className="aspect-square bg-gray-50 rounded-[1.5rem] overflow-hidden border border-gray-50 group shadow-sm">
-                  <Image src={item.image} alt={item.name} width={150} height={150} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
+                  {/* 🚀 FIXED: Added fallback for alt property to resolve console error */}
+                  <Image 
+                    src={item.image} 
+                    alt={item.name || 'Product item'} 
+                    width={150} 
+                    height={150} 
+                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" 
+                  />
                 </div>
               ))}
             </div>
           </section>
 
-          {/* PAYMENT PROTOCOL */}
+          {/* PAYMENT OPTIONS */}
           <section className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
             <h3 className="text-base text-[#A4143D] font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
                <Zap size={18} className="text-[#A4143D]" /> Payment Method
             </h3>
             <div className="grid md:grid-cols-2 text-[#A4143D] gap-4">
-              <PaymentOption id="card" label="Flutterwave" icon={<CreditCard size={18}/>} selected={selectedPayment==='card'} onSelect={setSelectedPayment} />
+              <PaymentOption id="card" label="Card / Flutterwave" icon={<CreditCard size={18}/>} selected={selectedPayment==='card'} onSelect={setSelectedPayment} />
               <PaymentOption id="bank" label="Bank Transfer" icon={<Building2 size={18}/>} selected={selectedPayment==='bank'} onSelect={setSelectedPayment} />
             </div>
           </section>
         </div>
 
-        {/* RIGHT: VALUATION ASIDE */}
+        {/* RIGHT: PRICE SUMMARY */}
         <aside className="lg:col-span-4">
           <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-2xl sticky top-10 space-y-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[#A4143D]">
                 <Sparkles size={14} className="animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Valuation_Protocol</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Checkout Summary</span>
               </div>
             </div>
 
-            {/* REWARD ENTRY */}
+            {/* PROMO INPUT */}
             <div className="space-y-3">
-              <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Growth_Reward_Code</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Apply Promo Code</label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="CODE_2024"
+                  placeholder="ENTER CODE"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 flex-1 text-xs font-black uppercase placeholder:text-gray-300 outline-none focus:border-[#A4143D]"
@@ -266,50 +253,51 @@ useEffect(() => {
               </div>
             </div>
 
-{/* PRICE TABLE */}
-<div className="space-y-4 pt-6 border-t border-gray-50">
-  <PriceRow label="Artifact Subtotal" value={subtotal} />
+            {/* PRICING TABLE */}
+            <div className="space-y-4 pt-6 border-t border-gray-50">
+              <PriceRow label="Items Subtotal" value={subtotal} />
 
-  {/* 1. MANUAL COUPON FALLBACK: If a manual code was used and no automatic campaigns are present */}
-  {discount > 0 && !couponData?.appliedCampaigns && (
-    <PriceRow label="Registry Reward" value={-discount} color="text-[#A4143D]" />
-  )}
+              {discount > 0 && !couponData?.appliedCampaigns && (
+                <PriceRow label="Promo Savings" value={-discount} color="text-[#A4143D]" />
+              )}
 
-  {/* 2. AUTOMATIC CAMPAIGNS: Loop through specific campaign deductions (e.g., Summer Sales) */}
-  {couponData?.appliedCampaigns?.map((camp: any, idx: number) => (
-    <div key={idx} className="flex justify-between items-center text-[#A4143D]">
-      <span className="text-[10px] font-black uppercase flex items-center gap-2 tracking-widest">
-        <Zap size={10} fill="currentColor" className="animate-pulse" /> {camp.title}
-      </span>
-      <span className="text-[11px] font-black italic">- ₦{camp.amount.toLocaleString()}</span>
-    </div>
-  ))}
+              {couponData?.appliedCampaigns?.map((camp: any, idx: number) => (
+                <div key={idx} className="flex justify-between items-center text-[#A4143D]">
+                  <span className="text-[10px] font-black uppercase flex items-center gap-2 tracking-widest">
+                    <Zap size={10} fill="currentColor" className="animate-pulse" /> {camp.title}
+                  </span>
+                  <span className="text-[11px] font-black italic">- ₦{camp.amount.toLocaleString()}</span>
+                </div>
+              ))}
 
-  <PriceRow label="Logistics" value="COMPLIMENTARY" />
-  
-  <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-    <span className="text-sm font-black uppercase italic tracking-tighter text-gray-400">Net Valuation</span>
-    <span className="text-3xl font-black italic tracking-tighter text-gray-900 leading-none">
-      ₦{total.toLocaleString()}
-    </span>
-  </div>
-</div>
+              <PriceRow label="Shipping" value="COMPLIMENTARY" />
+              
+              <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+                <span className="text-sm font-black uppercase italic tracking-tighter text-gray-400">Grand Total</span>
+                <span className="text-3xl font-black italic tracking-tighter text-gray-900 leading-none">
+                  ₦{total.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
             <button
               onClick={handlePlaceOrder}
               disabled={isProcessing}
               className="w-full h-16 bg-[#A4143D] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 hover:shadow-2xl hover:shadow-[#A4143D]/30 transition-all active:scale-95 disabled:opacity-30"
             >
-              {isProcessing ? <Loader2 className="animate-spin" size={20}/> : <>Authorize Transaction <ChevronRight size={18}/></>}
+              {isProcessing ? <Loader2 className="animate-spin" size={20}/> : <>Complete Order <ChevronRight size={18}/></>}
             </button>
 
-            <div className="flex items-center justify-center gap-2 pt-4">
-              <ShieldCheck size={14} className="text-gray-300" />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300">Encrypted_Sequence</span>
+            <div className="flex flex-col items-center gap-2 pt-4">
+              <div className="flex items-center gap-2 text-gray-300">
+                <Lock size={14} />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
+              </div>
+              <p className="text-[8px] text-gray-400 text-center px-4 leading-relaxed">Your data is fully encrypted and protected by standard security protocols.</p>
             </div>
           </div>
         </aside>
       </main>
-     
     </div>
   );
 }

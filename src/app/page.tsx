@@ -1,119 +1,238 @@
-import { Navbar } from '../components/Header';
-import { SidebarMenu } from '../components/SidebarMenu';
-import { HeroSection } from '../components/HeroBanner';
-import { PromoBanners } from '../components/PromoBanners';
-import { TopDealsSection } from '../components/TopSaverDeals';
-import { ProductRow } from '../components/ProductRow';
-import { PopularVendorsSection } from '../components/PopularVendors';
-import { FeaturedBrandsSection } from '../components/FeaturedBrand';
-import HomeCartWidget from '../components/CartStatusBar';
-import { Footer } from '../components/Footer';
-import HomeRegistry from '../components/storefront/HomeRegistry';
-import { DynamicCampaignSection, type Campaign } from '../components/CampaignSection';
+'use client';
 
-async function getActiveCampaigns(): Promise<Campaign[]> {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL;
-  try {
-    const res = await fetch(`${apiBase}/storefront/campaigns/active`, { next: { revalidate: 30 } });
-    return res.ok ? res.json() : [];
-  } catch { return []; }
-}
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Hero } from '../components/home/Hero';
+import { FlashDeals } from '../components/home/FlashDeals';
+import { CategoryCircle } from '../components/home/CategoryCircle';
+import { CategoryExplorer } from '../components/home/CategoryExplorer'; 
+import { Section } from '../components/layout/Section';
+import { ProductGrid } from '../components/product/ProductGrid';
+import { SkeletonGrid } from '../components/product/SkeletonGrid';
+import { TrustBar } from '../components/home/TrustBar';
+import { CATEGORY_TREE } from '../data/categories';
+import { TopDealsSection } from '../components/home/TopSaverDeals';
+import { MultiBannerGrid } from '../components/home/MultiBannerGrid';
+import { PopularVendorsSection } from '../components/home/PopularVendors';
+import { api } from '@/src/lib/axios';
+import { ChevronRight, Sparkles, Zap, Loader2, PackageSearch } from 'lucide-react';
+import { Container } from '../components/layout/Container';
 
-async function getRegistryData(): Promise<any> {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL;
-  try {
-    const res = await fetch(`${apiBase}/storefront/registry`, { next: { revalidate: 60 } });
-    return res.ok ? res.json() : null;
-  } catch { return null; }
-}
+export default function HomePage() {
+  const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(12);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const [registry, setRegistry] = useState<{
+    departments: any[];
+    feed: any[];
+    vendors: any[];
+    topSaver: any[];
+  }>({
+    departments: [],
+    feed: [],
+    vendors: [],
+    topSaver: []
+  });
 
-export default async function HomePage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
-  const [registry, campaigns] = await Promise.all([getRegistryData(), getActiveCampaigns()]);
-  const { category: activeCat } = await searchParams;
+  useEffect(() => {
+    const syncAvioreRegistry = async () => {
+      try {
+        setLoading(true);
+        const [depRes, homeRes, dealsRes] = await Promise.all([
+          api.get('/storefront/registry'), 
+          api.get('/storefront/homepage'),
+          api.get('/storefront/top-deals')
+        ]);
+        
+        setRegistry({
+          departments: depRes.data?.sections || [],
+          feed: homeRes.data?.sections?.flatMap((s: any) => s.data) || [],
+          vendors: homeRes.data?.vendors || [],
+          topSaver: dealsRes.data || []
+        });
+      } catch (err) {
+        console.error("AVI_REGISTRY_SYNC_FAILURE", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    syncAvioreRegistry();
+  }, []);
 
-  const trending = registry?.sections?.find((s: any) => s.id === 'trending')?.data || [];
-  const electronics = registry?.sections?.find((s: any) => s.id === 'electronics')?.data || [];
-  const furniture = registry?.sections?.find((s: any) => s.id === 'furniture')?.data || [];
-  const vendors = registry?.vendors || [];
+  /**
+   * 🛡️ SMART INVENTORY SLICING
+   * Logic: If total items > 10, we skip the first 6 (shown in Flash Deals) to avoid duplication.
+   * If total items are low, we show everything to prevent an empty Discovery Feed.
+   */
+  const flashDealsInventory = useMemo(() => registry.feed.slice(0, 6), [registry.feed]);
+  
+  const paginatedDiscovery = useMemo(() => {
+    const skipCount = registry.feed.length > 10 ? 6 : 0;
+    return registry.feed.slice(skipCount, skipCount + visibleCount);
+  }, [registry.feed, visibleCount]);
+
+  const hasMoreItems = (paginatedDiscovery.length + (registry.feed.length > 10 ? 6 : 0)) < registry.feed.length;
+
+  const handleRegistrySync = useCallback(() => {
+    if (isSyncing || !hasMoreItems) return;
+    setIsSyncing(true);
+    setTimeout(() => {
+      setVisibleCount(prev => prev + 12);
+      setIsSyncing(false);
+    }, 850);
+  }, [isSyncing, hasMoreItems]);
+
+  if (loading) return <HomeSkeleton />;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      <Navbar />
+    <main className="bg-white min-h-screen pb-24 selection:bg-[#A4143D] selection:text-white">
+      <Hero />
 
-      {/* 🏛️ ULTRA-WIDE ENGINE: Increased to 1800px to prevent "Jam-Packing" */}
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-12 gap-8">
-        
-        {/* 1. SIDEBAR: Kept slim to leave room for products */}
-        <aside className="hidden xl:block col-span-2">
-          <div className="sticky top-8 space-y-6">
-            <SidebarMenu activeCategory={activeCat} />
-            <div className="bg-[#A4143D] rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group border border-white/10">
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Aviore_Pro</span>
-               <h4 className="text-2xl font-black italic mt-3 leading-none uppercase">Registry <br/> Prime</h4>
-               <div className="absolute -right-6 -bottom-6 text-8xl font-black italic opacity-10 group-hover:scale-110 transition-transform">VIP</div>
-            </div>
-          </div>
-        </aside>
+{/* 1. QUICK-ACCESS REGISTRY NAV */}
+<Section className="bg-white border-b border-gray-50 py-8">
+  <Container>
+    <div className="no-scrollbar flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2">
+      {/* Dynamic Marketplace Categories */}
+      {CATEGORY_TREE.map((cat) => (
+        <CategoryCircle 
+          key={cat.id}
+          name={cat.name}
+          /** * 🚀 FIX 1: Property 'image' does not exist. 
+           * We pull from cat.items[0].img based on your data structure 
+           */
+          image={cat.items?.[0]?.img || `https://picsum.photos/200/200?random=${cat.id}`}
+          /** * 🚀 FIX 2: Property 'slug' does not exist. 
+           * We use cat.id (or cat.name.toLowerCase()) as the fallback slug 
+           */
+          slug={cat.id} 
+        />
+      ))}
 
-        {/* 🚀 2. MAIN ENGINE: Flexible Column Spanning */}
-        <main className="col-span-12 xl:col-span-10 2xl:col-span-8 space-y-12">
-          
-          {/* TOP HERO GRID */}
-          <div className="grid grid-cols-12 gap-8">
-            <div className="col-span-12 lg:col-span-8">
-              <HeroSection />
-            </div>
-            <div className="hidden lg:grid col-span-4 grid-rows-2 gap-8">
-              <div className="bg-orange-600 rounded-[3rem] p-10 text-white flex flex-col justify-between shadow-2xl">
-                <span className="text-[10px] font-black tracking-widest uppercase">Flash_Inventory</span>
-                <h4 className="text-4xl font-black italic leading-none uppercase">60% <br/> Drop</h4>
-              </div>
-              <div className="bg-zinc-950 rounded-[3rem] p-10 text-white flex flex-col justify-between shadow-2xl border border-white/5">
-                <span className="text-[10px] font-black tracking-widest uppercase">New_Artifacts</span>
-                <h4 className="text-4xl font-black italic leading-none uppercase">Tech <br/> Vault</h4>
-              </div>
-            </div>
-          </div>
-
-          {/* CAMPAIGNS & REGISTRY */}
-          {campaigns.map((camp) => <DynamicCampaignSection key={camp.id} campaign={camp} />)}
-          
-          <div className="bg-white rounded-[3.5rem] p-4 shadow-sm border border-zinc-100">
-             <HomeRegistry />
-          </div>
-
-          <TopDealsSection initialDeals={trending} />
-          
-          <PromoBanners />
-
-          {/* DYNAMIC ROWS: Refactored spacing */}
-          <div className="space-y-12">
-            <ProductRow title="Electronics & Technology" products={electronics} color="#E67E22" />
-            <ProductRow title="Furniture & Living" products={furniture} color="#27AE60" />
-          </div>
-
-          <PopularVendorsSection initialVendors={vendors} />
-          
-          <div className="bg-white rounded-[3.5rem] p-16 border border-zinc-100 shadow-sm">
-             <FeaturedBrandsSection />
-          </div>
-        </main>
-
-        {/* 3. RIGHT SIDEBAR */}
-        <aside className="hidden 2xl:block col-span-2">
-          <div className="sticky top-8 space-y-8">
-            <HomeCartWidget />
-            <div className="bg-zinc-950 border border-white/5 rounded-[3rem] p-10 shadow-2xl text-white relative overflow-hidden">
-              <h5 className="text-[10px] font-black uppercase text-zinc-500 tracking-widest mb-6">Concierge</h5>
-              <p className="text-base font-bold leading-tight uppercase italic">Registry <br/> Support_Live</p>
-              <button className="mt-8 w-full py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
-                Contact_Expert
-              </button>
-            </div>
-          </div>
-        </aside>
+      {/* Static "Specialty" Collections */}
+      <div className="flex gap-6 border-l border-gray-100 pl-6 md:gap-10 md:pl-10">
+        <CategoryCircle 
+          name="Best Sellers" 
+          image="https://picsum.photos/200/200?random=best" 
+          slug="best-sellers" 
+        />
+        <CategoryCircle 
+          name="Flash Deals" 
+          image="https://picsum.photos/200/200?random=flash" 
+          slug="flash-deals" 
+        />
+        <CategoryCircle 
+          name="New Arrivals" 
+          image="https://picsum.photos/200/200?random=new" 
+          slug="new-arrivals" 
+        />
       </div>
-      <Footer />
+    </div>
+  </Container>
+</Section>
+
+      {/* 2. DYNAMIC DEPARTMENTS */}
+      <div className="flex flex-col">
+        {registry.departments.map((section: any) => (
+          section.data?.length > 0 && (
+            <CategoryExplorer 
+              key={section.id}
+              categoryName={section.title} 
+              categorySlug={section.slug}
+              products={section.data}
+            />
+          )
+        ))}
+      </div>
+
+      {/* 3. URGENCY ZONE */}
+      <div className="mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
+        {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
+        {registry.topSaver.length > 0 && (
+          <div className="mt-12">
+            <TopDealsSection initialDeals={registry.topSaver} />
+          </div>
+        )}
+      </div>
+
+      {/* 4. VISUAL BREAKS */}
+      <div className="py-12">
+        <MultiBannerGrid />
+        <PopularVendorsSection initialVendors={registry.vendors} />
+      </div>
+
+      {/* 🚀 5. DISCOVERY ENGINE - Fixed 'id' error by moving it to a wrapper div */}
+      <div id="discovery-feed">
+        <Container className="mt-32">
+          <header className="mb-16 flex flex-col justify-between gap-6 border-b border-gray-100 pb-10 md:flex-row md:items-end">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-[#A4143D]">
+                <Sparkles size={16} className="animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-[0.5em]">Inventory_Pulse</span>
+              </div>
+              <h2 className="text-4xl font-black italic uppercase leading-none tracking-tighter text-gray-900 md:text-6xl">
+                Explore your interests
+              </h2>
+            </div>
+          </header>
+
+          {paginatedDiscovery.length > 0 ? (
+            <>
+              <ProductGrid products={paginatedDiscovery} />
+              
+              {hasMoreItems && (
+                <div className="mt-24 flex flex-col items-center gap-8 text-center">
+                  <button 
+                    onClick={handleRegistrySync}
+                    disabled={isSyncing}
+                    className="group relative overflow-hidden rounded-full border-2 border-black bg-white px-20 py-6 shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    <span className="relative z-10 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] transition-colors group-hover:text-white">
+                      {isSyncing ? <>Syncing <Loader2 size={16} className="animate-spin" /></> : "Load More Artifacts"}
+                    </span>
+                    {!isSyncing && (
+                      <div className="absolute inset-0 translate-y-full bg-black transition-transform duration-300 group-hover:translate-y-0" />
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <DiscoveryEmptyState />
+          )}
+        </Container>
+      </div>
+
+      <div className="mt-32">
+        <TrustBar />
+      </div>
+    </main>
+  );
+}
+
+// 🦴 SKELETON BLUEPRINT - Fixed canonical classes
+function HomeSkeleton() {
+  return (
+    <Container className="space-y-16 py-20">
+      <div className="flex gap-8 overflow-hidden">
+        {[1,2,3,4,5,6].map(i => <div key={i} className="h-25 min-w-25 animate-pulse rounded-full bg-gray-50" />)}
+      </div>
+      <div className="h-125 animate-pulse rounded-[3rem] bg-gray-50" />
+      <div className="space-y-4">
+        <div className="h-8 w-64 animate-pulse rounded-md bg-gray-50" />
+        <SkeletonGrid count={10} />
+      </div>
+    </Container>
+  );
+}
+
+function DiscoveryEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-[4rem] border-2 border-dashed border-gray-100 py-32 text-center space-y-6">
+      <PackageSearch size={64} className="text-gray-100" strokeWidth={1} />
+      <div className="space-y-2">
+        <p className="text-[13px] font-black uppercase tracking-[0.4em] text-gray-300">Registry_Refresh_Required</p>
+        <p className="text-xs uppercase tracking-widest text-gray-400">Awaiting new marketplace listings from partners</p>
+      </div>
     </div>
   );
 }

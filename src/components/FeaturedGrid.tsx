@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from 'lucide-react';
-import { ProductCard } from './shop/ProductCard';
+import { ProductCard } from './product/ProductCard';
 
 interface FeaturedProductsProps {
   products: any[];

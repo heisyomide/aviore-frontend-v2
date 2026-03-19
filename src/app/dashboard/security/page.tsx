@@ -1,12 +1,12 @@
 'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { 
   ShieldCheck, ChevronRight, Loader2, X, 
-  AlertTriangle, Lock, Smartphone, CheckCircle, Monitor
+  AlertTriangle, Lock, Smartphone, CheckCircle, Monitor, Fingerprint, Activity, ShieldAlert 
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 
-// --- Types ---
 interface ProfileState {
   email: string;
   phone: string;
@@ -26,12 +26,10 @@ export default function SecurityPage() {
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState<'password' | 'delete' | 'phone' | 'activity' | null>(null);
 
-  // Form & Data States
   const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '' });
   const [tempPhone, setTempPhone] = useState('');
   const [sessions, setSessions] = useState<Session[]>([]);
 
-  // --- Data Fetching ---
   const fetchSecurityData = useCallback(async () => {
     try {
       setLoading(true);
@@ -57,7 +55,6 @@ export default function SecurityPage() {
     fetchSecurityData();
   }, [fetchSecurityData]);
 
-  // --- Handlers ---
   const fetchSessions = async () => {
     try {
       const res = await api.get('/user/sessions');
@@ -118,40 +115,46 @@ export default function SecurityPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Loader2 className="animate-spin text-orange-500" size={40} />
-        <p className="text-gray-500 font-medium">Securing your session...</p>
+      <div className="flex flex-col items-center justify-center py-40 gap-4">
+        <Loader2 className="animate-spin text-[#A4143D]" size={40} />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic">Securing account details...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-8 p-4">
-      <header>
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Security Settings</h1>
-        <p className="text-gray-500 mt-1">Manage your account protection and sign-in methods.</p>
+    <div className="space-y-12 pb-20">
+      {/* 1. HEADER SECTION */}
+      <header className="flex flex-col gap-2 border-b border-zinc-100 pb-8">
+        <div className="flex items-center gap-2 text-[#A4143D]">
+          <Fingerprint size={16} />
+          <span className="text-[10px] font-black uppercase tracking-[0.4em]">Account_Protection</span>
+        </div>
+        <h1 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
+          Security <span className="text-zinc-200">Settings</span>
+        </h1>
       </header>
 
-      {/* Security Status Card */}
-      <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl flex gap-4 items-start shadow-sm">
-        <div className="bg-emerald-500 p-2 rounded-lg text-white">
-          <ShieldCheck size={20} />
+      {/* 2. SECURITY STATUS HUD */}
+      <div className="bg-zinc-50 border border-zinc-100 p-8 rounded-[2.5rem] flex flex-col md:flex-row gap-6 items-center group">
+        <div className="bg-white p-5 rounded-3xl shadow-sm text-emerald-500 group-hover:scale-110 transition-transform duration-500">
+          <ShieldCheck size={32} />
         </div>
-        <div>
-          <h3 className="font-bold text-emerald-900">Your account is well-protected</h3>
-          <p className="text-emerald-700 text-sm leading-relaxed mt-0.5">
-            Aviorè uses industry-standard encryption to keep your data safe.
+        <div className="text-center md:text-left space-y-1">
+          <h3 className="text-xl font-black uppercase italic tracking-tighter text-zinc-900">Protected_Account</h3>
+          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-relaxed">
+            Your account is currently secured with Industry_Standard_Encryption.
           </p>
         </div>
       </div>
 
-      {/* Main Security List */}
-      <section className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+      {/* 3. MAIN SECURITY LIST */}
+      <section className="bg-white rounded-[2.5rem] border border-zinc-50 shadow-sm overflow-hidden divide-y divide-zinc-50">
         <SecurityRow 
           label="Mobile Phone" 
-          value={profile.phone || "No phone linked"} 
+          value={profile.phone || "No phone provided"} 
           action={
-            <button onClick={() => setActiveModal('phone')} className="text-orange-600 font-bold text-sm hover:underline">
+            <button onClick={() => setActiveModal('phone')} className="text-[10px] font-black uppercase tracking-widest text-[#A4143D] hover:underline">
               {profile.phone ? 'Change' : 'Add'}
             </button>
           } 
@@ -160,144 +163,151 @@ export default function SecurityPage() {
         <SecurityRow 
           label="Email Address" 
           value={profile.email} 
-          action={<div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] uppercase tracking-wider"><CheckCircle size={14}/> Verified</div>} 
+          action={<div className="flex items-center gap-2 text-emerald-600 text-[9px] font-black uppercase tracking-widest font-mono"><CheckCircle size={14}/> Verified</div>} 
         />
 
         <SecurityRow 
           label="Password" 
           value="••••••••••••" 
-          subtext="Strong Quality"
+          subtext="Protection_Level: High"
           action={
-            <button onClick={() => setActiveModal('password')} className="bg-gray-100 px-5 py-2 rounded-full text-sm font-bold hover:bg-gray-200 transition">
-              Edit
+            <button onClick={() => setActiveModal('password')} className="bg-zinc-50 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all">
+              Update
             </button>
           } 
         />
 
-        <div className="p-6 flex justify-between items-center bg-gray-50/30">
-          <div>
-            <h4 className="font-bold text-gray-900">Two-Factor Authentication (2FA)</h4>
-            <p className="text-sm text-gray-500">Secure your account with an extra verification step.</p>
+        <div className="p-8 flex justify-between items-center bg-zinc-50/30">
+          <div className="space-y-1">
+            <h4 className="text-xs font-black uppercase tracking-tight text-zinc-900">Two-Factor Authentication (2FA)</h4>
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Added Account Verification</p>
           </div>
           <ToggleButton enabled={profile.is2faEnabled} onClick={toggle2FA} />
         </div>
       </section>
 
-      {/* Connected Accounts */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 px-2">Connected Accounts</h2>
-        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm divide-y divide-gray-50">
-          <SecurityRow label="Google" value="ayomide***@gmail.com" action={<span className="text-emerald-500 font-bold text-xs">Linked</span>} />
-          <SecurityRow label="Facebook" action={<button className="bg-orange-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-md hover:bg-orange-600 transition">Link</button>} />
+      {/* 4. CONNECTED ACCOUNTS */}
+      <section className="space-y-6">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 px-2">Social_Connections</h2>
+        <div className="bg-white rounded-[2.5rem] border border-zinc-50 shadow-sm overflow-hidden divide-y divide-zinc-50">
+          <SecurityRow label="Google Account" value="ayomide***@gmail.com" action={<span className="text-emerald-500 font-black text-[10px] uppercase tracking-widest">Linked</span>} />
+          <SecurityRow label="Facebook Account" action={
+            <button className="group relative overflow-hidden bg-black px-8 py-3 rounded-xl transition-all active:scale-95 shadow-xl shadow-zinc-200">
+              <span className="relative z-10 text-[9px] font-black uppercase tracking-widest text-white">Link Account</span>
+              <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+            </button>
+          } />
         </div>
       </section>
 
-      {/* Danger Zone */}
-      <footer className="pt-6 border-t border-gray-100 space-y-4">
+      {/* 5. DANGER ZONE */}
+      <footer className="pt-8 border-t border-zinc-100 grid md:grid-cols-2 gap-4">
         <button 
           onClick={fetchSessions}
-          className="flex items-center justify-between w-full p-5 hover:bg-gray-50 rounded-2xl transition group border border-transparent hover:border-gray-200"
+          className="flex items-center justify-between p-6 bg-white border border-zinc-100 rounded-2xl hover:border-[#A4143D]/20 transition-all group"
         >
-          <span className="font-bold text-gray-700">Account login activity</span>
-          <ChevronRight size={20} className="text-gray-400 group-hover:text-gray-900" />
+          <div className="flex items-center gap-4">
+            <Activity size={18} className="text-zinc-300 group-hover:text-[#A4143D]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900">Login Activity Logs</span>
+          </div>
+          <ChevronRight size={16} className="text-zinc-300 group-hover:text-zinc-900" />
         </button>
-        <button onClick={() => setActiveModal('delete')} className="w-full text-left px-5 py-2 text-red-500 text-xs font-bold uppercase tracking-widest hover:underline">
-          Permanently Delete Account
+
+        <button onClick={() => setActiveModal('delete')} className="flex items-center justify-between p-6 bg-white border border-zinc-100 rounded-2xl hover:bg-red-50 transition-all group">
+           <div className="flex items-center gap-4">
+            <ShieldAlert size={18} className="text-zinc-300 group-hover:text-red-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Close Account Permanently</span>
+          </div>
         </button>
       </footer>
 
       {/* --- MODALS --- */}
-
-      {/* Activity Modal */}
-      {activeModal === 'activity' && (
-        <Modal title="Sign-in Activity" onClose={() => setActiveModal(null)}>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-            <p className="text-xs text-gray-500 mb-2">Recent devices that accessed your account.</p>
-            {sessions.length === 0 ? (
-              <p className="text-center py-10 text-gray-400 text-sm italic">No recent activity found.</p>
-            ) : (
-              sessions.map((session) => (
-                <div key={session.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div className="bg-white p-2.5 rounded-xl shadow-sm border border-gray-100">
-                    {session.device.toLowerCase().includes('windows') || session.device.toLowerCase().includes('mac') 
-                      ? <Monitor size={20} className="text-gray-400" /> 
-                      : <Smartphone size={20} className="text-gray-400" />
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{session.device}</p>
-                    <p className="text-[10px] text-gray-500 font-medium">
-                      {session.ipAddress} • {new Date(session.lastUsed).toLocaleDateString()}
-                    </p>
-                  </div>
-                  {session.isCurrent && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-bold uppercase tracking-tighter">
-                      Active
-                    </span>
-                  )}
-                </div>
-              ))
+      {activeModal && (
+        <Modal title={activeModal.toUpperCase()} onClose={() => setActiveModal(null)}>
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            {activeModal === 'activity' && (
+              <div className="space-y-4">
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 italic">// Recent devices used to access your profile.</p>
+                {sessions.length === 0 ? (
+                  <p className="text-center py-10 text-zinc-400 text-[10px] font-black uppercase tracking-widest">No history found.</p>
+                ) : (
+                  sessions.map((session) => (
+                    <div key={session.id} className="flex items-center gap-4 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                      <div className="bg-white p-3 rounded-xl shadow-sm border border-zinc-100 text-zinc-400">
+                        {session.device.toLowerCase().includes('windows') || session.device.toLowerCase().includes('mac') 
+                          ? <Monitor size={18} /> 
+                          : <Smartphone size={18} />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-black uppercase tracking-tight text-zinc-900 truncate font-mono">{session.device}</p>
+                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest font-mono">
+                          {session.ipAddress} • {new Date(session.lastUsed).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {session.isCurrent && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             )}
-          </div>
-        </Modal>
-      )}
 
-      {/* Phone Modal */}
-      {activeModal === 'phone' && (
-        <Modal title="Phone Number" onClose={() => setActiveModal(null)}>
-          <form onSubmit={handleUpdatePhone} className="space-y-4">
-            <div className="relative">
-              <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input 
-                type="tel" value={tempPhone} required
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-orange-500 outline-none font-medium"
-                onChange={e => setTempPhone(e.target.value)}
-              />
-            </div>
-            <button className="w-full bg-orange-600 text-white py-4 rounded-2xl font-bold hover:bg-orange-700 transition shadow-lg shadow-orange-100">
-              Update Number
-            </button>
-          </form>
-        </Modal>
-      )}
+            {activeModal === 'phone' && (
+              <form onSubmit={handleUpdatePhone} className="space-y-6">
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black uppercase tracking-widest text-zinc-400 ml-1">Phone Number</label>
+                  <input 
+                    type="tel" value={tempPhone} required
+                    className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:bg-white focus:border-[#A4143D]/20 text-xs font-black font-mono uppercase"
+                    onChange={e => setTempPhone(e.target.value)}
+                  />
+                </div>
+                <button type="submit" className="w-full group relative overflow-hidden bg-black py-4 rounded-xl active:scale-95 transition-all">
+                  <span className="relative z-10 text-[10px] font-black uppercase tracking-widest text-white">Save Changes</span>
+                  <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                </button>
+              </form>
+            )}
 
-      {/* Password Modal */}
-      {activeModal === 'password' && (
-        <Modal title="Update Password" onClose={() => setActiveModal(null)}>
-          <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <input 
-              type="password" placeholder="Current Password" required
-              className="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500"
-              onChange={e => setPasswords({ ...passwords, oldPassword: e.target.value })}
-            />
-            <input 
-              type="password" placeholder="New Password" required
-              className="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500"
-              onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
-            />
-            <button className="w-full bg-orange-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-100">
-              Save New Password
-            </button>
-          </form>
-        </Modal>
-      )}
+            {activeModal === 'password' && (
+              <form onSubmit={handleUpdatePassword} className="space-y-5">
+                <div className="space-y-4">
+                  <input 
+                    type="password" placeholder="CURRENT PASSWORD" required
+                    className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:bg-white focus:border-[#A4143D]/20 text-xs font-black font-mono"
+                    onChange={e => setPasswords({ ...passwords, oldPassword: e.target.value })}
+                  />
+                  <input 
+                    type="password" placeholder="NEW PASSWORD" required
+                    className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:bg-white focus:border-[#A4143D]/20 text-xs font-black font-mono"
+                    onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
+                  />
+                </div>
+                <button type="submit" className="w-full group relative overflow-hidden bg-black py-4 rounded-xl active:scale-95 transition-all">
+                  <span className="relative z-10 text-[10px] font-black uppercase tracking-widest text-white">Update Password</span>
+                  <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                </button>
+              </form>
+            )}
 
-      {/* Delete Modal */}
-      {activeModal === 'delete' && (
-        <Modal title="Delete Account" onClose={() => setActiveModal(null)}>
-          <div className="text-center space-y-5">
-            <div className="bg-red-50 text-red-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto border-4 border-red-100">
-              <AlertTriangle size={36} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-bold text-gray-900 text-lg">Are you absolutely sure?</h3>
-              <p className="text-gray-500 text-sm px-2">
-                This action is irreversible. All your orders, addresses, and digital history on <strong>Aviorè</strong> will be wiped.
-              </p>
-            </div>
-            <button onClick={handleDeleteAccount} className="w-full bg-red-600 text-white py-4 rounded-2xl font-bold hover:bg-red-700 transition shadow-xl shadow-red-100">
-              Delete Everything
-            </button>
+            {activeModal === 'delete' && (
+              <div className="text-center space-y-6">
+                <div className="bg-red-50 text-red-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto border-4 border-red-100">
+                  <AlertTriangle size={36} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black uppercase italic tracking-tighter text-zinc-900">Confirm Deletion</h3>
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-2 leading-relaxed">
+                    This action is irreversible. All your orders, addresses, and history on Aviore will be wiped.
+                  </p>
+                </div>
+                <button onClick={handleDeleteAccount} className="w-full bg-red-600 text-white py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition active:scale-95 shadow-xl shadow-red-100">
+                  Delete Permanently
+                </button>
+              </div>
+            )}
           </div>
         </Modal>
       )}
@@ -305,15 +315,15 @@ export default function SecurityPage() {
   );
 }
 
-// --- Sub-components ---
+// --- Internal HUD Components ---
 
 function SecurityRow({ label, value, subtext, action }: { label: string, value?: string, subtext?: string, action?: React.ReactNode }) {
   return (
-    <div className="p-6 flex justify-between items-center group transition">
-      <div className="space-y-0.5 min-w-0 flex-1">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
-        {value && <p className="text-gray-900 font-bold truncate pr-4">{value}</p>}
-        {subtext && <p className="text-[10px] text-emerald-600 font-bold uppercase">{subtext}</p>}
+    <div className="p-8 flex justify-between items-center group transition hover:bg-zinc-50/50">
+      <div className="space-y-1 min-w-0 flex-1">
+        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">{label}</p>
+        {value && <p className="text-zinc-900 font-black italic uppercase tracking-tighter truncate pr-4 font-mono">{value}</p>}
+        {subtext && <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest">{subtext}</p>}
       </div>
       <div className="shrink-0">{action}</div>
     </div>
@@ -322,22 +332,25 @@ function SecurityRow({ label, value, subtext, action }: { label: string, value?:
 
 function ToggleButton({ enabled, onClick }: { enabled: boolean, onClick: () => void }) {
   return (
-    <button 
-      onClick={onClick}
-      className={`w-14 h-7 rounded-full transition-all relative ${enabled ? 'bg-orange-500' : 'bg-gray-200'}`}
-    >
-      <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${enabled ? 'left-8' : 'left-1'}`} />
+    <button onClick={onClick} className={`w-12 h-6 rounded-full relative transition-all ${enabled ? 'bg-[#A4143D]' : 'bg-zinc-200'}`}>
+      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${enabled ? 'left-7' : 'left-1'}`} />
     </button>
   );
 }
 
 function Modal({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative shadow-2xl animate-in fade-in zoom-in duration-300">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-gray-900 transition-colors">
+    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-zinc-900/60 p-4 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="relative m-auto w-full max-w-md overflow-hidden rounded-[2.5rem] bg-white p-10 shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh] border border-zinc-100">
+        <div className="flex justify-between items-center mb-8 border-b border-zinc-50 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[#A4143D]">
+              <Lock size={14} />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Security_Settings</span>
+            </div>
+            <h2 className="text-xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">{title}</h2>
+          </div>
+          <button onClick={onClose} className="p-2 text-zinc-300 hover:text-black transition-colors">
             <X size={20} />
           </button>
         </div>

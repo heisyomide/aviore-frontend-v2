@@ -1,279 +1,251 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { Star, Minus, Plus, Heart, ShoppingBag, ShieldCheck, Truck, BadgeCheck, LayoutGrid } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { 
+  Star, Minus, Plus, Heart, ShoppingBag, 
+  ShieldCheck, Truck, BadgeCheck, LayoutGrid, 
+  Zap, Share2, Loader2, ChevronRight, Store, Users, Timer, MessageSquare
+} from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
 import { useCartStore } from '@/src/store/useCartStore';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
-import { ProductCard } from '@/src/components/shop/ProductCard';
+import { ProductCard } from '@/src/components/product/ProductCard';
+import { Container } from '@/src/components/layout/Container';
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
+  const router = useRouter();
+  
   const [product, setProduct] = useState<any>(null);
+  const [vendorData, setVendorData] = useState<any>(null); // 🚀 Source of Truth for Store stats
   const [recommended, setRecommended] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
 
-  // Global Stores
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlistStore();
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-  useEffect(() => {
-    const fetchProductData = async () => {
-      try {
-        const { data } = await api.get(`/products/${id}`);
-        setProduct(data);
+  const fetchAllData = async () => {
+    try {
+      // 1. Fetch Product (Includes real reviews and user names now)
+      const { data: productData } = await api.get(`/products/${id}`);
+      setProduct(productData);
+
+      // 2. 🚀 Fetch Real Vendor Storefront (Followers/Items)
+      if (productData.vendorId) {
+        const { data: storefront } = await api.get(`/storefront/vendors/${productData.vendorId}`);
+        setVendorData(storefront);
         
-        // Fetch recommendations based on category
-        const recResponse = await api.get('/products', { 
-          params: { category: data.category?.slug, limit: 4 } 
-        });
-        // Filter out current product from recommendations
-        setRecommended(recResponse.data.data.filter((p: any) => p.id !== id));
-      } catch (err) {
-        toast.error("ARTIFACT_NOT_FOUND");
-      } finally {
-        setLoading(false);
+        // Check following status from the fetched storefront data if possible
+        // Or check against user's followed list
+        try {
+          const { data: followed } = await api.get('/vendors/followed');
+          setIsFollowing(followed.some((v: any) => v.id === productData.vendorId));
+        } catch (e) { /* Guest user */ }
       }
-    };
-    fetchProductData();
-  }, [id]);
 
-  if (loading) return <ProductSkeleton />;
-  if (!product) return <div className="py-20 text-center font-bold">Registry Entry Missing</div>;
-
-  const images = product.images?.length > 0 ? product.images : [{ imageUrl: '/placeholder.jpg' }];
-  const isLiked = wishlistItems.some((item) => item.id === product.id);
-
-  const handleWishlist = () => {
-    if (isLiked) {
-      removeFromWishlist(product.id);
-      toast.info("REMOVED_FROM_WISHLIST");
-    } else {
-      addToWishlist(product);
-      toast.success("ADDED_TO_WISHLIST");
+      // 3. Fetch Recommendations
+      const recResponse = await api.get('/products', { params: { category: productData.category?.slug, limit: 10 } });
+      setRecommended(recResponse.data.data.filter((p: any) => p.id !== id));
+    } catch (err) {
+      toast.error("Failed to sync marketplace data");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchAllData();
+  }, [id]);
+
+  const resolvedImages = useMemo(() => {
+    if (!product?.images || product.images.length === 0) return ["/placeholder.jpg"];
+    return product.images.map((img: any) => {
+      const path = img.imageUrl || img.image || img;
+      return path.startsWith('http') ? path : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+    });
+  }, [product, apiBase]);
+
+  const isLiked = wishlistItems.some((item) => item.id === product?.id);
+
+  const handleFollowToggle = async () => {
+    if (!product?.vendorId) return;
+    try {
+      if (isFollowing) {
+        await api.delete(`/vendors/${product.vendorId}/unfollow`);
+        setIsFollowing(false);
+        toast.info("Unfollowed store");
+      } else {
+        await api.post(`/vendors/${product.vendorId}/follow`);
+        setIsFollowing(true);
+        toast.success("Following store");
+      }
+      fetchAllData(); // 🚀 Re-fetch counts
+    } catch (err: any) {
+      toast.error("Login to follow vendors");
+    }
+  };
+
+  const handleBuyNow = () => {
+    addItem({ ...product, quantity: qty, image: resolvedImages[0] });
+    router.push('/checkout');
+  };
+
+  if (loading) return <ProductSkeleton />;
+  if (!product) return <div className="py-40 text-center font-bold">Product not found.</div>;
+
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-12 bg-[#FDFCFB]">
-      
-      {/* 1. NAVIGATION & IDENTITY */}
-      <nav className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-10">
-        <span>Home</span>
-        {product.category?.parent?.name && (
-           <><span>/</span><span>{product.category.parent.name}</span></>
-        )}
-        <span>/</span>
-        <span className="text-gray-900">{product.category?.name}</span>
-      </nav>
+    <div className="min-h-screen bg-white pb-24 md:pb-12">
+      <div className="bg-black text-white py-2.5 text-[11px] font-black uppercase tracking-widest">
+        <Container className="flex justify-between items-center whitespace-nowrap overflow-x-auto no-scrollbar gap-8">
+          <div className="flex items-center gap-2"><Truck size={14} className="text-emerald-400"/> Free shipping on all orders</div>
+          <div className="flex items-center gap-2"><Zap size={14} className="text-amber-400"/> Best price adjustment guarantee</div>
+          <div className="flex items-center gap-2"><ShieldCheck size={14} className="text-blue-400"/> Secure payments</div>
+        </Container>
+      </div>
 
-      <div className="grid lg:grid-cols-12 gap-16">
-        
-        {/* LEFT: VISUAL REPOSITORY */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="relative aspect-square bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm">
-            <Image
-              src={images[activeImg].imageUrl}
-              alt={product.title}
-              fill
-              className="object-cover transition-all duration-700"
-              priority
-            />
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {images.map((img: any, idx: number) => (
-              <button 
-                key={idx}
-                onClick={() => setActiveImg(idx)}
-                className={`relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all ${
-                  activeImg === idx ? "border-[#A4143D]" : "border-transparent opacity-60"
-                }`}
-              >
-                <Image src={img.imageUrl} alt="thumbnail" fill className="object-cover" />
-              </button>
-            ))}
-          </div>
-        </div>
+      <Container className="py-4 md:py-8">
+        <nav className="flex items-center gap-2 text-[10px] text-zinc-400 mb-6 font-black uppercase tracking-tighter">
+          <span>Home</span> <ChevronRight size={10}/> <span>{product.category?.name}</span>
+        </nav>
 
-        {/* RIGHT: SPECIFICATIONS */}
-        <div className="lg:col-span-5 space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-               <span className="px-3 py-1 bg-[#FBE9E3] text-[#A4143D] text-[9px] font-black uppercase rounded-full tracking-widest">
-                 {product.category?.name}
-               </span>
-               <div className="flex items-center gap-1 text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
-                 <Star size={12} fill="currentColor" />
-                 <span className="text-[10px] font-bold text-amber-700">{product.rating || 4.9}</span>
+        <div className="grid lg:grid-cols-12 gap-10 items-start">
+          
+          {/* 🖼️ VISUALS */}
+          <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-24">
+            <div className="relative aspect-[4/5] bg-gray-50 rounded-3xl overflow-hidden border border-gray-100 group">
+              <Image src={resolvedImages[activeImg]} alt={product.title} fill className="object-cover" priority />
+              <button className="absolute top-4 right-4 p-3 bg-white shadow-xl rounded-full hover:text-[#A4143D] transition-all"><Share2 size={18}/></button>
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
+              {resolvedImages.map((img: string, idx: number) => (
+                <button key={idx} onClick={() => setActiveImg(idx)} className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 shrink-0 ${activeImg === idx ? "border-[#A4143D]" : "border-transparent opacity-50"}`}>
+                  <Image src={img} alt="thumb" fill className="object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 🛒 CONTENT & ACTIONS */}
+          <div className="lg:col-span-6 space-y-6">
+            
+            {/* 🚀 FIXED VENDOR HUB: Storefront Service Implementation */}
+            <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 flex flex-wrap items-center justify-between gap-4">
+               <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-white border border-zinc-200 flex items-center justify-center relative overflow-hidden">
+                    <Store size={24} className="text-zinc-200" />
+                    {vendorData?.logo && <Image src={vendorData.logo} fill alt="logo" className="object-cover" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                       <h3 className="font-black text-gray-900 uppercase italic leading-none">{vendorData?.storeName || product.vendor?.storeName}</h3>
+                       {(vendorData?.isVerified || product.vendor?.isVerified) && <BadgeCheck size={18} className="text-blue-500 fill-blue-50" />}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">
+                      <span className="flex items-center gap-1"><Users size={12}/> {vendorData?._count?.followers || 0} Followers</span>
+                      <span className="flex items-center gap-1"><ShoppingBag size={12}/> {vendorData?._count?.products || 0} Items Listed</span>
+                      <span className="flex items-center gap-1 text-gray-900"><Star size={12} fill="currentColor"/> 4.8</span>
+                    </div>
+                  </div>
+               </div>
+               <div className="flex gap-2 w-full md:w-auto">
+                 <button 
+                   onClick={handleFollowToggle} 
+                   className={`flex-1 md:flex-none px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${isFollowing ? 'bg-zinc-200 text-zinc-900' : 'bg-zinc-900 text-white shadow-lg shadow-zinc-900/10'}`}
+                 >
+                   {isFollowing ? 'Unfollow' : '+ Follow'}
+                 </button>
+                 <button onClick={() => router.push(`/vendors/${product.vendorId}`)} className="flex-1 md:flex-none px-6 py-2.5 border-2 border-zinc-900 rounded-full text-[10px] font-black uppercase tracking-widest">Shop All</button>
                </div>
             </div>
-            
-            <h1 className="text-4xl font-black text-gray-900 leading-tight tracking-tighter uppercase italic">
-              {product.title}
-            </h1>
 
-            <div className="flex items-baseline gap-4">
-               <p className="text-4xl font-black text-[#A4143D] tracking-tighter italic">
-                 ₦{Number(product.price).toLocaleString()}
-               </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded italic uppercase">#1 Best Seller</div>
+                <span className="text-emerald-600 text-[10px] font-black flex items-center gap-1 uppercase tracking-tighter"><BadgeCheck size={14}/> Verified purchase protection</span>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black text-gray-900 leading-none tracking-tighter uppercase italic">{product.title}</h1>
+              <div className="flex items-end gap-3 border-b border-gray-100 pb-6 pt-2">
+                <span className="text-5xl font-black text-[#A4143D] tracking-tighter italic leading-none">₦{Number(product.price).toLocaleString()}</span>
+                {product.discount > 0 && <div className="ml-auto bg-emerald-50 text-emerald-600 text-[11px] font-black px-3 py-1 rounded-xl border border-emerald-100 uppercase">-{product.discount}% Off</div>}
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-xl space-y-8">
+              <div className="flex justify-between items-center bg-orange-50 border border-orange-100 p-4 rounded-2xl">
+                 <span className="text-xs font-black text-orange-600 uppercase italic">
+                    {product.stock > 0 ? `Stock Available: ${product.stock} pieces left` : "Out of Stock"}
+                 </span>
+                 <Timer size={18} className="text-orange-600 animate-pulse" />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex items-center bg-zinc-50 rounded-2xl border border-zinc-200 p-1">
+                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 flex items-center justify-center hover:text-[#A4143D] transition-colors"><Minus size={18}/></button>
+                  <span className="w-14 text-center font-black text-xl italic text-zinc-900">{qty}</span>
+                  <button onClick={() => setQty(qty + 1)} className="w-12 h-12 flex items-center justify-center hover:text-[#A4143D] transition-all"><Plus size={18}/></button>
+                </div>
+                <button onClick={() => { addItem({...product, quantity: qty, image: resolvedImages[0]}); toast.success("Added to Cart"); }} className="flex-1 h-16 bg-[#A4143D] text-white rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-3 active:scale-95 transition-all">
+                  <ShoppingBag size={20}/> Add to Cart
+                </button>
+              </div>
+
+              <button onClick={handleBuyNow} className="w-full h-16 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all">
+                <Zap size={20} fill="currentColor"/> Buy Now
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* VENDOR IDENTITY WITH VERIFICATION */}
-          <div className="p-6 bg-white border border-gray-100 rounded-3xl space-y-3 shadow-sm">
-             <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Curated by Vendor</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-lg font-black text-gray-900">{product.vendor?.storeName || 'Aviorè Global'}</p>
-                    {product.vendor?.isVerified && (
-                      <BadgeCheck size={18} className="text-blue-500 fill-blue-50" />
-                    )}
+        {/* 🚀 DYNAMIC REVIEWS SECTION (Using User First/Last Name) */}
+        <section className="mt-16 bg-white p-8 md:p-12 rounded-[3rem] border border-gray-100">
+           <h2 className="text-3xl font-black text-gray-900 uppercase italic mb-8 border-b border-gray-100 pb-8 tracking-tighter">Customer Reviews</h2>
+           <div className="space-y-12">
+              {product.reviews && product.reviews.length > 0 ? (
+                product.reviews.map((rev: any) => (
+                  <div key={rev.id} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center font-black uppercase text-[10px]">
+                        {rev.user?.firstName?.[0] || 'U'}
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-black uppercase italic text-zinc-900 leading-none">
+                          {rev.user?.firstName} {rev.user?.lastName}
+                        </p>
+                        <div className="flex text-amber-400 gap-0.5 mt-1.5"><Star size={12} fill="currentColor" /> {rev.rating}</div>
+                      </div>
+                      <div className="ml-auto text-[10px] font-bold text-zinc-300 uppercase tracking-widest">Verified Purchase</div>
+                    </div>
+                    <p className="text-gray-600 font-medium leading-relaxed italic border-l-4 border-zinc-50 pl-6 ml-5">{rev.comment}</p>
                   </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center gap-4 py-12 opacity-20 text-center">
+                   <MessageSquare size={48} />
+                   <p className="text-[10px] font-black uppercase tracking-[0.4em]">No reviews logged for this product.</p>
                 </div>
-                <div className="text-right">
-                   <p className="text-[10px] font-black text-green-600 uppercase italic tracking-widest">Verified Partner</p>
-                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{product.sold || '200+'} SOLD</p>
-                </div>
-             </div>
-          </div>
+              )}
+           </div>
+        </section>
 
-          {/* ACTIONS HUB */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center border border-gray-100 bg-white rounded-2xl px-2 py-2">
-                <button onClick={() => setQty(Math.max(1, qty - 1))} className="p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                  <Minus size={18} />
-                </button>
-                <span className="w-12 text-center font-black text-lg">{qty}</span>
-                <button onClick={() => setQty(qty + 1)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                  <Plus size={18} />
-                </button>
-              </div>
-              <button 
-                className="flex-1 h-16 bg-[#A4143D] text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:shadow-xl hover:shadow-[#A4143D]/20 transition-all active:scale-95"
-                onClick={() => {
-                  addItem({ 
-                    id: product.id, 
-                    name: product.title, 
-                    price: Number(product.price), 
-                    image: images[0].imageUrl, 
-                    quantity: qty,
-                    stock: product.stock,
-                    vendorId: product.vendorId 
-                  });
-                  toast.success("REGISTRY_UPDATED", { description: "Item added to your secure cart." });
-                }}
-              >
-                <ShoppingBag size={20} />
-                Add to Cart
-              </button>
-              <button 
-                onClick={handleWishlist}
-                className={`h-16 w-16 border rounded-2xl flex items-center justify-center transition-all ${
-                  isLiked ? "bg-red-50 border-red-100 text-red-500" : "bg-white border-gray-100 text-gray-300 hover:text-red-500"
-                }`}
-              >
-                <Heart size={24} fill={isLiked ? "currentColor" : "none"} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-               <BenefitItem icon={<Truck size={16}/>} label="Global Delivery" sub="Arrives in 5-7 days" />
-               <BenefitItem icon={<ShieldCheck size={16}/>} label="Secure Registry" sub="100% End-to-End Encryption" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. SPECIFICATIONS & RECOMMENDATIONS */}
-      <div className="mt-24 space-y-24">
-        <div className="grid lg:grid-cols-12 gap-16 border-t border-gray-100 pt-16">
-          <div className="lg:col-span-8 space-y-8">
-             <h2 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter">Inventory Specifications</h2>
-             <div className="prose prose-sm text-gray-600 leading-relaxed max-w-none">
-                {product.description || "No detailed description provided for this node."}
-             </div>
-          </div>
-          <div className="lg:col-span-4">
-             <div className="bg-gray-50 rounded-3xl p-8 space-y-6 border border-gray-100">
-                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Node Properties</h3>
-                <div className="space-y-4">
-                   <PropertyItem label="Condition" value="Certified New" />
-                   <PropertyItem label="Availability" value={product.stock > 0 ? "Active Inventory" : "Out of Stock"} />
-                   <PropertyItem label="Category Path" value={product.category?.name} />
-                </div>
-             </div>
-          </div>
-        </div>
-
-        {/* 3. DYNAMIC RECOMMENDATIONS ENGINE */}
-        <section className="space-y-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-100 pb-8">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-[#A4143D]">
-                <LayoutGrid size={14} />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Related Registry Entries</span>
-              </div>
-              <h2 className="text-4xl font-black text-gray-900 uppercase italic tracking-tighter leading-none">
-                Recommended
-              </h2>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {recommended.length > 0 ? (
-              recommended.map((item) => (
-                <ProductCard key={item.id} product={item} />
-              ))
-            ) : (
-              [...Array(4)].map((_, i) => (
-                <div key={i} className="aspect-[4/6] bg-gray-50 rounded-[2rem] animate-pulse border border-gray-100" />
-              ))
-            )}
+        {/* EXPLORE Grid */}
+        <section className="mt-20">
+          <h2 className="text-4xl font-black uppercase italic text-zinc-900 mb-10 tracking-tighter">Explore your interests</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {recommended.map((item) => <ProductCard key={item.id} product={item} />)}
           </div>
         </section>
-      </div>
-    </div>
-  )
-}
-
-function BenefitItem({ icon, label, sub }: any) {
-  return (
-    <div className="flex gap-4 p-4 rounded-2xl bg-white border border-gray-50 shadow-sm">
-      <div className="text-[#A4143D]">{icon}</div>
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-900">{label}</p>
-        <p className="text-[9px] font-bold text-gray-400 italic">{sub}</p>
-      </div>
-    </div>
-  )
-}
-
-function PropertyItem({ label, value }: any) {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
-      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
-      <span className="text-[10px] font-black text-gray-900 uppercase">{value}</span>
+      </Container>
     </div>
   )
 }
 
 function ProductSkeleton() {
-  return <div className="max-w-[1400px] mx-auto px-6 py-20 animate-pulse bg-[#FDFCFB]">
-    <div className="h-6 w-48 bg-gray-200 rounded-full mb-10" />
-    <div className="grid lg:grid-cols-12 gap-16">
-      <div className="lg:col-span-7 aspect-square bg-gray-100 rounded-[2.5rem]" />
-      <div className="lg:col-span-5 space-y-8">
-        <div className="h-12 w-full bg-gray-200 rounded-2xl" />
-        <div className="h-24 w-full bg-gray-200 rounded-3xl" />
-        <div className="h-16 w-full bg-gray-200 rounded-2xl" />
-      </div>
-    </div>
-  </div>
+  return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="animate-spin text-[#A4143D]" size={40} /></div>
 }

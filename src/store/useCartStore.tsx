@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export interface CartItem {
   id: string;
-  name: string;
+  name: string; // Map to title if necessary in your components
   price: number;
   image: string;
   vendorId: string;
@@ -17,6 +17,12 @@ interface CartState {
   items: CartItem[];
   totalItems: number;
   subtotal: number;
+  
+  // 🚀 NEW: Feedback States for Rule 12
+  lastAddedItem: CartItem | null;
+  showToast: boolean;
+  setShowToast: (open: boolean) => void;
+
   addItem: (item: Omit<CartItem, 'selected' | 'isOutOfStock'>) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -32,6 +38,12 @@ export const useCartStore = create<CartState>()(
       items: [],
       totalItems: 0,
       subtotal: 0,
+      
+      // 🚀 Initial Feedback State
+      lastAddedItem: null,
+      showToast: false,
+
+      setShowToast: (open) => set({ showToast: open }),
 
       calculateTotals: () => {
         const { items } = get();
@@ -43,31 +55,40 @@ export const useCartStore = create<CartState>()(
 
       addItem: (item) => {
         const { items } = get();
-        // Ensure price is a clean number
+        
+        // Clean price logic for consistency
         const cleanPrice = typeof item.price === 'string' 
           ? parseFloat(String(item.price).replace(/,/g, '')) 
           : item.price;
 
         const existing = items.find((i) => i.id === item.id);
+        let updatedItem: CartItem;
 
         if (existing) {
+          updatedItem = { 
+            ...existing, 
+            quantity: Math.min(existing.quantity + item.quantity, existing.stock) 
+          };
           set({
-            items: items.map((i) =>
-              i.id === item.id
-                ? { ...i, quantity: Math.min(i.quantity + item.quantity, i.stock) }
-                : i
-            ),
+            items: items.map((i) => i.id === item.id ? updatedItem : i),
           });
         } else {
-          set({ 
-            items: [...items, { 
-              ...item, 
-              price: cleanPrice, 
-              selected: true, 
-              isOutOfStock: item.stock <= 0 
-            }] 
-          });
+          updatedItem = { 
+            ...item, 
+            price: cleanPrice, 
+            selected: true, 
+            isOutOfStock: item.stock <= 0 
+          };
+          set({ items: [...items, updatedItem] });
         }
+
+        // 🚀 TRIGGER FEEDBACK (Rule 12)
+        // We set the toast to true and store the specific item that was just interacted with
+        set({ 
+          lastAddedItem: updatedItem, 
+          showToast: true 
+        });
+
         get().calculateTotals();
       },
 
@@ -104,8 +125,21 @@ export const useCartStore = create<CartState>()(
         get().calculateTotals();
       },
 
-      clearCart: () => set({ items: [], totalItems: 0, subtotal: 0 }),
+      clearCart: () => set({ 
+        items: [], 
+        totalItems: 0, 
+        subtotal: 0, 
+        lastAddedItem: null, 
+        showToast: false 
+      }),
     }),
-    { name: 'aviorè-cart-v4' }
+    { 
+      name: 'aviorè-cart-v4',
+      // We exclude showToast from persistence so the popup doesn't 
+      // appear randomly when the user reloads the page.
+      partialize: (state) => Object.fromEntries(
+        Object.entries(state).filter(([key]) => !['showToast', 'lastAddedItem'].includes(key))
+      ) as CartState,
+    }
   )
 );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ProductCard } from './shop/ProductCard';
+import { ProductCard } from './product/ProductCard';
 
 // Standardized categories for the filter bar
 const CATEGORIES = ['All', 'Home & Kitchen', 'Beauty & Health', 'Sports & Outdoors', 'Electronics', 'Men\'s Clothing'];

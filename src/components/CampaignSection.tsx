@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ProductCard } from './shop/ProductCard';
+import { ProductCard } from './product/ProductCard';
 import { ArrowRight, Sparkles, Clock, ShieldCheck, Loader2 } from 'lucide-react';
 
 

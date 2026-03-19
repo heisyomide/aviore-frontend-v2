@@ -1,118 +1,128 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { ProductGrid } from './shop/ProductGrid';
-import { ArrowRight, Timer, Zap, TrendingUp } from 'lucide-react';
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowUpRight, BarChart3, Tag } from "lucide-react";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category?: string;
+  stock?: number;
+}
 
 interface ProductRowProps {
   title: string;
-  products: any[];
+  products: Product[];
   color: string;
   bannerTitle?: string;
-  bannerDiscount?: string;
 }
 
-export function ProductRow({ 
-  title, 
-  products, 
-  color, 
-  bannerTitle = "BIG DEALS", 
-  bannerDiscount = "70% OFF" 
-}: ProductRowProps) {
-  const [timeLeft, setTimeLeft] = useState(8 * 3600);
-
-  useEffect(() => {
-    const interval = setInterval(() => setTimeLeft(prev => (prev > 0 ? prev - 1 : 0)), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const time = useMemo(() => {
-    const h = Math.floor(timeLeft / 3600).toString().padStart(2, '0');
-    const m = Math.floor((timeLeft % 3600) / 60).toString().padStart(2, '0');
-    const s = (timeLeft % 60).toString().padStart(2, '0');
-    return { h, m, s };
-  }, [timeLeft]);
-
+export function ProductRow({ title, products, color, bannerTitle }: ProductRowProps) {
   return (
-    <section className="group w-full overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 bg-white shadow-sm transition-all duration-500 hover:shadow-md">
-      
-      {/* 1. HEADER HUD - Thinner on Mobile */}
-      <div className="flex items-center justify-between border-b border-zinc-50 bg-zinc-50/30 px-5 py-4 md:px-8 md:py-5">
-        <div className="flex items-center gap-2 md:gap-3">
-          <div style={{ backgroundColor: color }} className="h-5 w-1 md:h-6 md:w-1.5 rounded-full shadow-sm" />
-          <h2 className="text-sm md:text-xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">
+    <div className="w-full space-y-8">
+      {/* 🛠️ ROW INSTRUMENTATION HEADER */}
+      <div className="flex items-end justify-between border-b border-zinc-100 pb-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2" style={{ color }}>
+            <Tag size={12} />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Batch_Sequence</span>
+          </div>
+          <h2 className="text-3xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
             {title}
           </h2>
         </div>
-        <button className="flex items-center gap-1 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#A4143D]">
-          SEE_ALL 
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      <div className="flex flex-col lg:flex-row">
         
-        {/* 2. DYNAMIC SIDE BANNER - Compact on Mobile, Sidebar on Desktop */}
-        <div className="relative flex w-full shrink-0 flex-row lg:flex-col justify-between items-center lg:items-start overflow-hidden border-b lg:border-b-0 lg:border-r border-zinc-100 bg-zinc-950 p-5 lg:p-8 lg:w-72">
-          <div className="relative z-10 space-y-2 lg:space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-red-600/20 bg-red-600/10 px-2 py-1 lg:px-3 lg:py-1.5 text-red-500">
-              <Zap size={10} fill="currentColor" className="animate-pulse" />
-              <span className="text-[8px] lg:text-[9px] font-black uppercase tracking-widest">{bannerTitle}</span>
-            </div>
-
-            <div className="hidden lg:block space-y-2">
-              <h3 className="text-4xl font-black uppercase italic leading-[0.85] tracking-tighter text-white">
-                SAVE UP TO <br /> <span className="text-red-600">{bannerDiscount}</span>
-              </h3>
-            </div>
-
-            {/* Timer - Horizontal on all screens */}
-            <div className="flex gap-1.5 lg:gap-2">
-              <TimerBox val={time.h} label="H" />
-              <TimerBox val={time.m} label="M" />
-              <TimerBox val={time.s} label="S" />
-            </div>
-          </div>
-          
-          {/* Action Button - Hidden on Mobile Banner to save space */}
-          <div className="hidden lg:block relative z-10 mt-10 w-full space-y-5">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-              <div className="mb-3 flex justify-between text-[9px] font-black uppercase text-zinc-400">
-                <span className="flex items-center gap-1"><TrendingUp size={10}/> LIVE</span>
-                <span className="text-red-500">88% SOLD</span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                <div className="h-full bg-red-600 transition-all duration-1000" style={{ width: '88%' }} />
-              </div>
-            </div>
-            <button className="w-full rounded-2xl bg-white py-4 text-[10px] font-black uppercase tracking-widest text-zinc-950">
-              GET_THE_DROP
-            </button>
-          </div>
-        </div>
-
-        {/* 🚀 3. FLUID PRODUCT GRID - 2 Columns on Mobile */}
-        <div className="flex-1 overflow-hidden bg-white p-2 md:p-10">
-          <ProductGrid 
-            title={title} 
-            products={products.slice(0, 4)} 
-            /* grid-cols-2: Fixes the 'rubbish' squash by forcing 2 items per row on phones.
-               gap-2: Keeps it tight like Jumia/Temu.
-            */
-            className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-2 md:gap-10" 
-          />
-        </div>
-
+        <Link 
+          href="/shop" 
+          className="group flex items-center gap-2 text-zinc-400 hover:text-zinc-900 transition-colors"
+        >
+          <span className="text-[10px] font-black uppercase tracking-widest">Full_Registry</span>
+          <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        </Link>
       </div>
-    </section>
-  );
-}
 
-function TimerBox({ val, label }: { val: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center rounded-lg border border-white/10 bg-white/5 px-2 py-1 lg:px-3 lg:py-2">
-      <span className="font-mono text-sm lg:text-xl font-black leading-none text-white tabular-nums">{val}</span>
-      <span className="text-[6px] lg:text-[7px] font-bold uppercase text-zinc-600">{label}</span>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* 🚀 SIDE BARREL: Promo HUD */}
+        <div 
+          className="w-full lg:w-64 h-48 lg:h-auto rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden group shrink-0 shadow-2xl shadow-zinc-200/50"
+          style={{ backgroundColor: color }}
+        >
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none font-mono text-[100px] font-black leading-none break-all whitespace-normal select-none italic">
+            AVIORE_REGISTRY_SYSTEM_AUTH_001
+          </div>
+
+          <div className="relative z-10">
+            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/60">Registry_Promo</span>
+            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-tight mt-2">
+              {bannerTitle || "Exclusive"}
+            </h3>
+          </div>
+
+          <div className="relative z-10">
+             <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 inline-block">
+                <span className="text-[10px] font-black text-white uppercase tracking-widest italic">Live_Access</span>
+             </div>
+          </div>
+        </div>
+
+        {/* 📦 PRODUCT NODES: Horizontal Scroll/Grid */}
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          {products.slice(0, 4).map((product) => (
+            <Link 
+              key={product.id}
+              href={`/product/${product.id}`}
+              className="group bg-white border border-zinc-100 p-5 rounded-[2rem] transition-all duration-500 hover:shadow-2xl hover:shadow-zinc-200/60 hover:border-[#A4143D]/20"
+            >
+              {/* Image Terminal */}
+              <div className="aspect-square relative rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-50 grayscale group-hover:grayscale-0 transition-all duration-700">
+                <Image 
+                  src={product.image || "/placeholder.jpg"} 
+                  alt={product.name} 
+                  fill 
+                  className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                />
+                
+                {/* Monospaced Stock Metric */}
+                <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg border border-zinc-100 shadow-sm">
+                   <div className="flex items-center gap-1 text-zinc-400">
+                      <BarChart3 size={10} />
+                      <span className="text-[8px] font-black uppercase tracking-tighter font-mono">
+                        Vault_ID: {product.id.slice(0, 4)}
+                      </span>
+                   </div>
+                </div>
+              </div>
+
+              {/* Data Content */}
+              <div className="mt-6 space-y-2">
+                <div className="flex justify-between items-start gap-2">
+                  <h4 className="text-[13px] font-black uppercase italic tracking-tighter text-zinc-900 leading-tight group-hover:text-[#A4143D] transition-colors line-clamp-1">
+                    {product.name}
+                  </h4>
+                </div>
+
+                <div className="flex items-center gap-4">
+                   <p className="text-xl font-black italic tracking-tighter text-zinc-900 font-mono">
+                     ₦{product.price.toLocaleString()}
+                   </p>
+                   <div className="h-px bg-zinc-100 flex-1" />
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                   <span className="text-[8px] font-black text-zinc-300 uppercase tracking-[0.2em] font-mono">Registry_Auth_True</span>
+                   <div className="w-6 h-6 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-300 group-hover:bg-[#A4143D] group-hover:text-white transition-all duration-500">
+                      <ArrowUpRight size={12} />
+                   </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
