@@ -27,15 +27,12 @@ export function Footer() {
           
           {/* BRAND BLOCK (4 Columns) */}
           <div className="lg:col-span-4 space-y-8">
-            <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-               <Image 
-                src="/aviore marketplace.png" 
-                alt="Logo" 
-                width={110} 
-                height={40} 
-                className="brightness-0 invert opacity-90"
-              />
-            </Link>
+<Link href="/" className="group flex items-center">
+  <span className="text-2xl md:text-[28px] font-bold tracking-tight text-white transition-colors duration-300 group-hover:text-black">
+    Avior<span className="text-[#A4143D]">è</span>
+  </span>
+</Link>
+
             <p className="text-xs leading-relaxed max-w-sm text-zinc-500 font-bold uppercase tracking-tight">
               Aviore is a curated global registry for premium artifacts and daily essentials. 
               Bridging luxury sourcing with marketplace convenience.

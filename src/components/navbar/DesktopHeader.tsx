@@ -57,9 +57,11 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
         
         {/* LEFT: BRAND & NAV */}
         <div className="flex items-center gap-8 shrink-0">
-          <Link href="/" className="hover:opacity-80 transition-opacity">
-            <Image src="/aviore marketplace.png" alt="logo" width={110} height={40} className="object-contain" priority />
-          </Link>
+<Link href="/" className="group flex items-center">
+  <span className="text-2xl md:text-[28px] font-bold tracking-tight text-zinc-900 transition-colors duration-300 group-hover:text-black">
+    Avior<span className="text-[#A4143D]">è</span>
+  </span>
+</Link>
 
           <nav className="flex items-center gap-6 text-[13px] font-bold text-[#222]">
             <Link href="/best-sellers" className="flex items-center gap-1.5 hover:text-[#A4143D] transition-colors"><ThumbsUp size={16}/> Best-Sellers</Link>

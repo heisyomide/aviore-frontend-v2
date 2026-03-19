@@ -91,38 +91,46 @@ export default function HomePage() {
 {/* 1. QUICK-ACCESS REGISTRY NAV */}
 <Section className="bg-white border-b border-gray-50 py-8">
   <Container>
-    <div className="no-scrollbar flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2">
-      {/* Dynamic Marketplace Categories */}
-      {CATEGORY_TREE.map((cat) => (
-        <CategoryCircle 
-          key={cat.id}
-          name={cat.name}
-          /** * 🚀 FIX 1: Property 'image' does not exist. 
-           * We pull from cat.items[0].img based on your data structure 
-           */
-          image={cat.items?.[0]?.img || `https://picsum.photos/200/200?random=${cat.id}`}
-          /** * 🚀 FIX 2: Property 'slug' does not exist. 
-           * We use cat.id (or cat.name.toLowerCase()) as the fallback slug 
-           */
-          slug={cat.id} 
-        />
-      ))}
+<div className="no-scrollbar flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2">
+  {/* Dynamic Marketplace Categories */}
+  {CATEGORY_TREE.map((cat) => {
+    // 🛡️ Ensure we have a clean, lowercase slug for local file matching
+    const categorySlug = cat.id?.toLowerCase() || cat.name?.toLowerCase() || "default";
+
+    return (
+      <CategoryCircle 
+        key={cat.id}
+        name={cat.name}
+        /** * 🖼️ IMAGE PROTOCOL: 
+         * We pass the dynamic URL as a backup, but the CategoryCircle 
+         * component is now coded to check the local folder /[slug].jpg first.
+         */
+        image={cat.items?.[0]?.img}
+        
+        /** * 🏷️ SLUG PROTOCOL: 
+         * Crucial for local asset lookup. Matches 'industrial.jpg', etc.
+         */
+        slug={categorySlug} 
+      />
+    );
+  })}
+
 
       {/* Static "Specialty" Collections */}
       <div className="flex gap-6 border-l border-gray-100 pl-6 md:gap-10 md:pl-10">
         <CategoryCircle 
           name="Best Sellers" 
-          image="https://picsum.photos/200/200?random=best" 
+          image="/registry/categories/bestsellers.jpg" 
           slug="best-sellers" 
         />
         <CategoryCircle 
           name="Flash Deals" 
-          image="https://picsum.photos/200/200?random=flash" 
+          image="/registry/categories/flash.jpg" 
           slug="flash-deals" 
         />
         <CategoryCircle 
           name="New Arrivals" 
-          image="https://picsum.photos/200/200?random=new" 
+          image="/registry/categories/newarrival.jpg" 
           slug="new-arrivals" 
         />
       </div>

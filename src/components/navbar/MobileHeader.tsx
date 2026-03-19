@@ -16,10 +16,11 @@ export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
     <div className="md:hidden flex flex-col w-full bg-white">
       {/* Primary Row */}
       <div className="flex items-center justify-between px-4 py-3 gap-3 border-b border-gray-50">
-        <Link href="/">
-          <Image src="/aviore marketplace.png" alt="logo" width={90} height={32} className="object-contain" />
-        </Link>
-        
+<Link href="/" className="group flex items-center">
+  <span className="text-2xl md:text-[28px] font-bold tracking-tight text-zinc-900 transition-colors duration-300 group-hover:text-black">
+    Avior<span className="text-[#A4143D]">è</span>
+  </span>
+</Link>
         <div className="flex-1 bg-gray-100 h-9 rounded-full flex items-center px-4 gap-2">
           <Search size={14} className="text-gray-400"/>
           <input 
