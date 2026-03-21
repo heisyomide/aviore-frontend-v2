@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Container } from "../layout/Container";
-import { ShoppingCart, Zap, Star, ArrowUpRight, ArrowRight } from "lucide-react";
+import { Zap, Star, ArrowUpRight, ArrowRight } from "lucide-react";
 
 const slides = [
   {
@@ -29,8 +29,6 @@ const slides = [
 
 export function Hero() {
   const [current, setCurrent] = useState(0);
-
-  // 🛡️ DEFENSIVE_DATA: Prevents 'undefined' crashes during rapid state changes
   const activeSlide = slides[current] || slides[0];
 
   useEffect(() => {
@@ -43,10 +41,13 @@ export function Hero() {
   return (
     <section className="bg-[#f8f8f8] py-4 md:py-10 overflow-hidden select-none">
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:h-[520px]">
+        {/* MOBILE: flex + overflow-x-auto for horizontal sliding
+            DESKTOP: grid + lg:overflow-visible to keep your original layout
+        */}
+        <div className="flex lg:grid lg:grid-cols-12 gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory scrollbar-hide pb-6 lg:pb-0 lg:h-[520px]">
 
           {/* 🔥 MAIN KINETIC STAGE */}
-          <div className="lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 group">
+          <div className="min-w-[90vw] lg:min-w-0 lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 group snap-center h-[480px] lg:h-full">
             <AnimatePresence mode="wait">
               <motion.div 
                 key={current} 
@@ -55,7 +56,6 @@ export function Hero() {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 flex"
               >
-                
                 {/* LEFT: INFORMATION HUB */}
                 <div className="w-full md:w-1/2 p-10 md:p-16 flex flex-col justify-center z-20">
                   <motion.div
@@ -96,7 +96,7 @@ export function Hero() {
                   </motion.button>
                 </div>
 
-                {/* RIGHT: FLOATING PRODUCT ENGINE */}
+                {/* RIGHT: FLOATING PRODUCT ENGINE (Only visible on MD+) */}
                 <div className="hidden md:block w-1/2 relative h-full bg-gradient-to-br from-transparent to-gray-50/50">
                   <motion.div
                     initial={{ scale: 0.7, opacity: 0, rotate: 15, x: 100 }}
@@ -114,7 +114,6 @@ export function Hero() {
                     </div>
                   </motion.div>
                   
-                  {/* KINETIC DECORATION */}
                   <motion.div 
                     animate={{ 
                       scale: [1, 1.2, 1],
@@ -126,13 +125,12 @@ export function Hero() {
                   />
                 </div>
 
-                {/* DYNAMIC BACKGROUND MORPH */}
                 <div className={`absolute inset-0 opacity-5 ${activeSlide.color} transition-colors duration-1000`} />
               </motion.div>
             </AnimatePresence>
 
-            {/* PROGRESS TRACKER (Marketplace Style) */}
-            <div className="absolute bottom-8 left-16 flex gap-4 z-30">
+            {/* PROGRESS TRACKER */}
+            <div className="absolute bottom-8 left-10 md:left-16 flex gap-4 z-30">
               {slides.map((_, i) => (
                 <div key={i} className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
                   {i === current && (
@@ -148,12 +146,12 @@ export function Hero() {
             </div>
           </div>
 
-          {/* ⚡ THE SIDE DEALS (Kinetic Feedback) */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
+          {/* ⚡ THE SIDE DEALS (Horizontal on Mobile, Stacked on Desktop) */}
+          <div className="flex lg:grid lg:col-span-4 lg:flex-col gap-6">
             
             <motion.div 
               whileHover={{ y: -8, scale: 1.02 }}
-              className="relative flex-1 rounded-[2rem] overflow-hidden group bg-orange-500 shadow-xl border border-orange-400 p-8 flex flex-col justify-between"
+              className="min-w-[80vw] lg:min-w-0 relative flex-1 rounded-[2rem] overflow-hidden group bg-orange-500 shadow-xl border border-orange-400 p-8 flex flex-col justify-between snap-center h-[480px] lg:h-auto"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
               <div className="relative z-10">
@@ -163,14 +161,14 @@ export function Hero() {
                 <h3 className="text-white text-4xl font-[1000] tracking-tighter italic leading-none">70% OFF</h3>
                 <p className="text-white/80 text-xs font-bold mt-2">Ends in 04:59:59</p>
               </div>
-              <div className="self-end w-28 h-28 relative rotate-6 group-hover:rotate-0 transition-transform duration-500">
+              <div className="self-end w-32 h-32 lg:w-28 lg:h-28 relative rotate-6 group-hover:rotate-0 transition-transform duration-500">
                 <Image src="/registry/categories/side1.jpeg" alt="" fill className="object-cover rounded-2xl shadow-2xl" />
               </div>
             </motion.div>
 
             <motion.div 
               whileHover={{ y: -8, scale: 1.02 }}
-              className="relative flex-1 rounded-[2rem] overflow-hidden group bg-white shadow-xl border border-gray-100 p-8 flex flex-col justify-between"
+              className="min-w-[80vw] lg:min-w-0 relative flex-1 rounded-[2rem] overflow-hidden group bg-white shadow-xl border border-gray-100 p-8 flex flex-col justify-between snap-center h-[480px] lg:h-auto"
             >
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-3 text-blue-600 font-black text-[11px] uppercase tracking-widest bg-blue-50 w-fit px-3 py-1 rounded-md">
@@ -178,7 +176,7 @@ export function Hero() {
                 </div>
                 <h3 className="text-slate-900 text-4xl font-[1000] tracking-tighter italic leading-none">NEW DROPS</h3>
               </div>
-              <div className="self-end w-28 h-28 relative -rotate-6 group-hover:rotate-0 transition-transform duration-500">
+              <div className="self-end w-32 h-32 lg:w-28 lg:h-28 relative -rotate-6 group-hover:rotate-0 transition-transform duration-500">
                 <Image src="/registry/categories/arrivals.jpg" alt="" fill className="object-cover rounded-2xl shadow-2xl" />
               </div>
               <ArrowUpRight size={40} className="absolute top-6 right-6 text-gray-100" />
