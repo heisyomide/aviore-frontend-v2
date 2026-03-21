@@ -136,7 +136,7 @@ export const MEGA_MENU_DATA: MegaMainCategory[] = [
     name: 'Artifacts & Unique',
     children: [
       { name: 'Collectibles', slug: 'collectibles', items: [
-        { name: "Artifacts", img: "/cat/artifacts.jpg", hot: true, slug: 'ancient-artifacts' },
+        { name: "Artifacts", img: "/cat/artifact.jpg", hot: true, slug: 'ancient-artifacts' },
          { name: "Statues", img: "/cat/Statues.jpg", hot: true, slug: 'Statues' },
          { name: "Vintage Coins", img: "/cat/Vintage Coins.jpg", hot: true, slug: 'Vintage Coins' },
         ] }
