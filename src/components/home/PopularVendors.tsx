@@ -24,9 +24,9 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
       const fetchVendors = async () => {
         try {
           // 🚀 Ensure your .env.local has NEXT_PUBLIC_API_URL=http://localhost:5000
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const API_URL = process.env.NEXT_PUBLIC_API_URL;
           const response = await axios.get(`${API_URL}/storefront/vendors`);
-          
+        
           setVendors(response.data.slice(0, 3));
           setError(false);
         } catch (err) {
