@@ -11,6 +11,7 @@ import Image from "next/image";
 import { Navbar } from "../../components/navbar/Navbar";
 import { Footer } from "@/src/components/Footer";
 import { Layers, Filter } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ShopFilters {
   category: string;
@@ -24,10 +25,10 @@ interface ShopFilters {
 const CIRCLE_CATEGORIES = [
   { name: 'Industrial', slug: 'industrial', img: '/categories/industrial.jpg' },
   { name: 'Beauty', slug: 'beauty', img: '/categories/beauty.jpg' },
-  { name: 'Textiles', slug: 'textiles', img: '/categories/textiles.jpg' },
-  { name: 'Electronics', slug: 'electronics', img: '/categories/electronics.jpg' },
+  { name: 'Automobile', slug: 'automobile', img: '/categories/automobile.jpg' },
+  { name: 'Electronics', slug: 'electronics', img: '/categories/electro.jpg' },
   { name: 'Home', slug: 'home', img: '/categories/home.jpg' },
-  { name: 'Telecom', slug: 'telecom', img: '/categories/telecom.jpg' },
+  { name: 'Clearance-Deals', slug: 'Clearance-Deals-Flash-Sales', img: '/categories/flashsales.jpg' },
 ];
 
 export default function ShopPage() {
@@ -93,43 +94,85 @@ function ShopContent() {
          />
       </div>
 
-      <section className="bg-white border-b border-zinc-50 overflow-hidden">
-        {/* 🚀 FIXED: Used canonical class max-w-437.5 as per linter suggestion */}
-        <div className="max-w-437.5 mx-auto px-6 py-12">
-          <div className="flex gap-12 overflow-x-auto no-scrollbar pb-4 justify-start md:justify-center">
-            {CIRCLE_CATEGORIES.map((cat) => (
+
+<section className="bg-white border-b border-zinc-100 overflow-hidden select-none">
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        
+        {/* 🚀 THE KINETIC TILE TRACK */}
+        <div className="flex gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-4 justify-start md:justify-center items-center">
+          {CIRCLE_CATEGORIES.map((cat) => {
+            const isActive = filters.category === cat.slug;
+
+            return (
               <button 
                 key={cat.slug}
                 onClick={() => setFilters(prev => ({ ...prev, category: cat.slug, page: 1 }))}
-                className="flex flex-col items-center gap-5 shrink-0 group transition-all"
+                className="relative shrink-0 group focus:outline-none"
               >
-                <div className={`relative w-24 h-24 rounded-full p-1.5 border transition-all duration-700 ${
-                  filters.category === cat.slug 
-                    ? 'border-[#A4143D] bg-[#A4143D]/5 scale-110 shadow-xl shadow-[#A4143D]/10' 
-                    : 'border-zinc-100 group-hover:border-zinc-400 group-active:scale-95'
-                }`}>
-                  <div className="w-full h-full rounded-full overflow-hidden relative">
-                    <Image 
-                        src={cat.img} 
-                        alt={cat.name} 
-                        fill 
-                        className={`object-cover transition-all duration-1000 grayscale group-hover:grayscale-0 ${
-                            filters.category === cat.slug ? 'grayscale-0 scale-110' : ''
-                        }`} 
+                {/* 🛠️ THE CATEGORY CARD */}
+                <motion.div 
+                  whileTap={{ scale: 0.95 }}
+                  className={`relative w-28 h-36 md:w-32 md:h-44 rounded-2xl overflow-hidden transition-all duration-500 border ${
+                    isActive 
+                      ? 'border-[#A4143D] ring-4 ring-[#A4143D]/5 shadow-2xl' 
+                      : 'border-zinc-100 group-hover:border-zinc-300'
+                  }`}
+                >
+                  {/* Image Layer with Zoom */}
+                  <Image 
+                    src={cat.img} 
+                    alt={cat.name} 
+                    fill 
+                    className={`object-cover transition-all duration-[1.5s] ${
+                      isActive ? 'scale-110 brightness-75' : 'brightness-90 grayscale-[20%] group-hover:grayscale-0 group-hover:scale-110'
+                    }`} 
+                  />
+
+                  {/* Dark Gradient Overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                  {/* 🏷️ THE LABEL (Inside the Tile) */}
+                  <div className="absolute inset-0 p-3 flex flex-col justify-end items-start">
+                    <span className={`text-[10px] md:text-[11px] font-[1000] uppercase tracking-tighter leading-none transition-all duration-300 ${
+                      isActive ? 'text-white italic scale-110' : 'text-zinc-200'
+                    }`}>
+                      {cat.name}
+                    </span>
+                    
+                    {/* Active Indicator Line (Inside) */}
+                    <motion.div 
+                      initial={false}
+                      animate={{ width: isActive ? '100%' : '0%' }}
+                      className="h-[2px] bg-[#A4143D] mt-1.5"
                     />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                   </div>
-                </div>
-                <span className={`text-[9px] font-black uppercase tracking-[0.3em] transition-all ${
-                  filters.category === cat.slug ? 'text-[#A4143D] italic' : 'text-zinc-400 group-hover:text-zinc-900'
-                }`}>
-                  {cat.name}
-                </span>
+
+                  {/* ⚡ ACTIVE "LIVE" GLOW */}
+                  {isActive && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute top-3 right-3"
+                    >
+                      <div className="w-2 h-2 bg-[#A4143D] rounded-full shadow-[0_0_10px_#A4143D] animate-pulse" />
+                    </motion.div>
+                  )}
+                </motion.div>
+
+                {/* Subtle outer shadow that only appears when active */}
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeGlow"
+                    className="absolute inset-0 bg-[#A4143D]/10 blur-xl -z-10 rounded-2xl"
+                  />
+                )}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      </section>
+      </div>
+    </section>
+
 
       {/* 🚀 FIXED: Used canonical class max-w-375 as per linter suggestion */}
       <main className="max-w-375 mx-auto px-6 py-16">
