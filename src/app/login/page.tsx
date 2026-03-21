@@ -51,11 +51,20 @@ function LoginFormContent() {
       const { access_token, user } = response.data;
       const role = String(user?.role || '').toLowerCase().trim();
 
+      // 1. 🍪 SET THE COOKIE (For the Middleware "Bouncer")
+      // We set 'path=/' so the cookie is visible to all pages
+      // We set 'max-age' so it lasts (e.g., 7 days = 604800 seconds)
+      document.cookie = `token=${access_token}; path=/; max-age=604800; SameSite=Lax; ${
+        window.location.protocol === 'https:' ? 'Secure' : ''
+      }`;
+
+      // 2. 💾 SET LOCALSTORAGE (For your internal app state/Zustand)
       localStorage.setItem('token', access_token);
       localStorage.setItem('role', role);
       localStorage.setItem('firstName', user?.firstName || '');
       localStorage.setItem('lastName', user?.lastName || '');
 
+      // 3. 🚀 REDIRECT LOGIC (Keep your existing role-based routing)
       if (role === 'admin') {
         router.push('/admin/products');
         return;

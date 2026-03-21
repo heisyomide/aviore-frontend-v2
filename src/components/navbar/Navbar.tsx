@@ -6,7 +6,7 @@ import { DesktopHeader } from './DesktopHeader';
 import { MobileHeader } from './MobileHeader';
 import { MobileSidebar } from './MobileSidebar';
 import { TrendingTags } from '../home/TrendingTags'; // 🚀 New: Discovery Trigger
-import { CATEGORY_TREE } from '../../data/categories';
+import { MEGA_MENU_DATA } from '../../data/categories';
 
 /**
  * 🚀 NAVBAR ORGANISM
@@ -15,7 +15,7 @@ import { CATEGORY_TREE } from '../../data/categories';
  */
 export function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(CATEGORY_TREE[0]);
+ const [activeCategory, setActiveCategory] = useState(MEGA_MENU_DATA[0]);
 
   return (
     <>

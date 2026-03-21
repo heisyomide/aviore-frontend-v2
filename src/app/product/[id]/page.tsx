@@ -20,7 +20,7 @@ export default function ProductDetailsPage() {
   const router = useRouter();
   
   const [product, setProduct] = useState<any>(null);
-  const [vendorData, setVendorData] = useState<any>(null); // 🚀 Source of Truth for Store stats
+  const [vendorData, setVendorData] = useState<any>(null);
   const [recommended, setRecommended] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
@@ -28,33 +28,41 @@ export default function ProductDetailsPage() {
   const [isFollowing, setIsFollowing] = useState(false);
 
   const addItem = useCartStore((state) => state.addItem);
-  const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlistStore();
+  const { items: wishlistItems } = useWishlistStore();
+  
+  // 🛡️ Ensure apiBase matches your deployed NestJS URL in production
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   const fetchAllData = async () => {
     try {
-      // 1. Fetch Product (Includes real reviews and user names now)
+      setLoading(true);
+      // 1. PUBLIC_ACCESS: Fetching product details (No token needed)
       const { data: productData } = await api.get(`/products/${id}`);
       setProduct(productData);
 
-      // 2. 🚀 Fetch Real Vendor Storefront (Followers/Items)
+      // 2. PUBLIC_ACCESS: Fetching vendor stats
       if (productData.vendorId) {
         const { data: storefront } = await api.get(`/storefront/vendors/${productData.vendorId}`);
         setVendorData(storefront);
         
-        // Check following status from the fetched storefront data if possible
-        // Or check against user's followed list
-        try {
-          const { data: followed } = await api.get('/vendors/followed');
-          setIsFollowing(followed.some((v: any) => v.id === productData.vendorId));
-        } catch (e) { /* Guest user */ }
+        // 🛡️ AUTH_CHECK: Only try to fetch following status if a token exists
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            const { data: followed } = await api.get('/vendors/followed');
+            setIsFollowing(followed.some((v: any) => v.id === productData.vendorId));
+          } catch (e) {
+            console.warn("Guest session detected");
+          }
+        }
       }
 
-      // 3. Fetch Recommendations
-      const recResponse = await api.get('/products', { params: { category: productData.category?.slug, limit: 10 } });
+      // 3. PUBLIC_ACCESS: Fetching recommendations
+      const recParams = { category: productData.category?.slug, limit: 10 };
+      const recResponse = await api.get('/products', { params: recParams });
       setRecommended(recResponse.data.data.filter((p: any) => p.id !== id));
     } catch (err) {
-      toast.error("Failed to sync marketplace data");
+      console.error("REGISTRY_SYNC_ERROR", err);
     } finally {
       setLoading(false);
     }
@@ -68,37 +76,62 @@ export default function ProductDetailsPage() {
     if (!product?.images || product.images.length === 0) return ["/placeholder.jpg"];
     return product.images.map((img: any) => {
       const path = img.imageUrl || img.image || img;
+      // Handle absolute vs relative paths for NestJS uploads
       return path.startsWith('http') ? path : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
     });
   }, [product, apiBase]);
 
-  const isLiked = wishlistItems.some((item) => item.id === product?.id);
-
-  const handleFollowToggle = async () => {
-    if (!product?.vendorId) return;
-    try {
-      if (isFollowing) {
-        await api.delete(`/vendors/${product.vendorId}/unfollow`);
-        setIsFollowing(false);
-        toast.info("Unfollowed store");
-      } else {
-        await api.post(`/vendors/${product.vendorId}/follow`);
-        setIsFollowing(true);
-        toast.success("Following store");
-      }
-      fetchAllData(); // 🚀 Re-fetch counts
-    } catch (err: any) {
-      toast.error("Login to follow vendors");
+  // 🚀 AUTH_INTERCEPT: Add to Cart
+  const handleAddToCart = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error("AUTH_REQUIRED: Please sign in to modify your cart.");
+      router.push('/login');
+      return;
     }
+    addItem({ ...product, quantity: qty, image: resolvedImages[0] });
+    toast.success("ITEM_INDEXED: Added to cart");
   };
 
+  // 🚀 AUTH_INTERCEPT: Buy Now
   const handleBuyNow = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     addItem({ ...product, quantity: qty, image: resolvedImages[0] });
     router.push('/checkout');
   };
 
+  // 🚀 AUTH_INTERCEPT: Follow Toggle
+  const handleFollowToggle = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error("AUTH_REQUIRED: Sign in to follow vendors.");
+      router.push('/login');
+      return;
+    }
+    if (!product?.vendorId) return;
+
+    try {
+      if (isFollowing) {
+        await api.delete(`/vendors/${product.vendorId}/unfollow`);
+        setIsFollowing(false);
+        toast.info("CONNECTION_TERMINATED: Unfollowed store");
+      } else {
+        await api.post(`/vendors/${product.vendorId}/follow`);
+        setIsFollowing(true);
+        toast.success("CONNECTION_ESTABLISHED: Following store");
+      }
+      fetchAllData(); 
+    } catch (err: any) {
+      toast.error("PROTOCOL_ERROR: Action rejected.");
+    }
+  };
+
   if (loading) return <ProductSkeleton />;
-  if (!product) return <div className="py-40 text-center font-bold">Product not found.</div>;
+  if (!product) return <div className="py-40 text-center font-black uppercase tracking-widest text-zinc-400">Registry_Entry_Not_Found</div>;
 
   return (
     <div className="min-h-screen bg-white pb-24 md:pb-12">
@@ -185,17 +218,32 @@ export default function ProductDetailsPage() {
                  <Timer size={18} className="text-orange-600 animate-pulse" />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex items-center bg-zinc-50 rounded-2xl border border-zinc-200 p-1">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 flex items-center justify-center hover:text-[#A4143D] transition-colors"><Minus size={18}/></button>
-                  <span className="w-14 text-center font-black text-xl italic text-zinc-900">{qty}</span>
-                  <button onClick={() => setQty(qty + 1)} className="w-12 h-12 flex items-center justify-center hover:text-[#A4143D] transition-all"><Plus size={18}/></button>
-                </div>
-                <button onClick={() => { addItem({...product, quantity: qty, image: resolvedImages[0]}); toast.success("Added to Cart"); }} className="flex-1 h-16 bg-[#A4143D] text-white rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-3 active:scale-95 transition-all">
-                  <ShoppingBag size={20}/> Add to Cart
-                </button>
-              </div>
+<div className="flex flex-col sm:flex-row gap-4">
+  {/* Quantity Controller */}
+  <div className="flex items-center bg-zinc-50 rounded-2xl border border-zinc-200 p-1">
+    <button 
+      onClick={() => setQty(Math.max(1, qty - 1))} 
+      className="w-12 h-12 flex items-center justify-center hover:text-[#A4143D] transition-colors"
+    >
+      <Minus size={18}/>
+    </button>
+    <span className="w-14 text-center font-black text-xl italic text-zinc-900">{qty}</span>
+    <button 
+      onClick={() => setQty(qty + 1)} 
+      className="w-12 h-12 flex items-center justify-center hover:text-[#A4143D] transition-all"
+    >
+      <Plus size={18}/>
+    </button>
+  </div>
 
+  {/* 🚀 FIXED: Pointing directly to the Auth Intercept function */}
+  <button 
+    onClick={handleAddToCart} 
+    className="flex-1 h-16 bg-[#A4143D] text-white rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-[#A4143D]/10"
+  >
+    <ShoppingBag size={20}/> Add to Cart
+  </button>
+</div>
               <button onClick={handleBuyNow} className="w-full h-16 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all">
                 <Zap size={20} fill="currentColor"/> Buy Now
               </button>

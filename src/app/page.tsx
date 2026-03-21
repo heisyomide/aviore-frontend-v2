@@ -9,7 +9,7 @@ import { Section } from '../components/layout/Section';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { SkeletonGrid } from '../components/product/SkeletonGrid';
 import { TrustBar } from '../components/home/TrustBar';
-import { CATEGORY_TREE } from '../data/categories';
+import { HOME_CATEGORIES } from '../data/categories';
 import { TopDealsSection } from '../components/home/TopSaverDeals';
 import { MultiBannerGrid } from '../components/home/MultiBannerGrid';
 import { PopularVendorsSection } from '../components/home/PopularVendors';
@@ -91,30 +91,20 @@ export default function HomePage() {
 {/* 1. QUICK-ACCESS REGISTRY NAV */}
 <Section className="bg-white border-b border-gray-50 py-8">
   <Container>
-<div className="no-scrollbar flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2">
-  {/* Dynamic Marketplace Categories */}
-  {CATEGORY_TREE.map((cat) => {
-    // 🛡️ Ensure we have a clean, lowercase slug for local file matching
-    const categorySlug = cat.id?.toLowerCase() || cat.name?.toLowerCase() || "default";
-
-    return (
-      <CategoryCircle 
-        key={cat.id}
-        name={cat.name}
-        /** * 🖼️ IMAGE PROTOCOL: 
-         * We pass the dynamic URL as a backup, but the CategoryCircle 
-         * component is now coded to check the local folder /[slug].jpg first.
-         */
-        image={cat.items?.[0]?.img}
-        
-        /** * 🏷️ SLUG PROTOCOL: 
-         * Crucial for local asset lookup. Matches 'industrial.jpg', etc.
-         */
-        slug={categorySlug} 
-      />
-    );
-  })}
-
+<div className="flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2 no-scrollbar">
+  
+{/* Dynamic Marketplace Categories */}
+{HOME_CATEGORIES.map((cat) => (
+  <CategoryCircle 
+    key={cat.id}
+    name={cat.name}
+    /** * 🚀 THE FIX: We use cat.image directly. 
+     * No more clashing with the Mega Menu product photos. 
+     */
+    image={cat.image || '/placeholder.png'}
+    slug={cat.id.toLowerCase()} 
+  />
+))}
 
       {/* Static "Specialty" Collections */}
       <div className="flex gap-6 border-l border-gray-100 pl-6 md:gap-10 md:pl-10">

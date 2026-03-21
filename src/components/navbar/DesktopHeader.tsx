@@ -9,9 +9,9 @@ import {
   Ticket, MapPin, ShieldCheck, Settings, LayoutDashboard, Zap, Clock, TrendingUp
 } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
-import { CATEGORY_TREE } from '../../data/categories';
+import { MEGA_MENU_DATA } from '../../data/categories';
 import { Container } from '../layout/Container';
-import { SearchSuggestions } from './SearchSuggestions'; // 🚀 Molecule we built
+import { SearchSuggestions } from './SearchSuggestions';
 
 export function DesktopHeader({ activeCategory, setActiveCategory, role, firstName, lastName, handleLogout }: any) {
   const { items } = useCartStore();
@@ -50,18 +50,16 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
 
   return (
     <div className="bg-white hidden md:block border-b border-gray-50">
-      {/* 🚀 DIM OVERLAY - Triggers when search is focused (Rule 12) */}
       <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 z-[140] pointer-events-none ${searchFocused ? 'opacity-100' : 'opacity-0'}`} />
 
       <Container className="h-[75px] flex items-center justify-between gap-6 relative z-[150]">
         
-        {/* LEFT: BRAND & NAV */}
         <div className="flex items-center gap-8 shrink-0">
-<Link href="/" className="group flex items-center">
-  <span className="text-2xl md:text-[28px] font-bold tracking-tight text-zinc-900 transition-colors duration-300 group-hover:text-black">
-    Avior<span className="text-[#A4143D]">è</span>
-  </span>
-</Link>
+          <Link href="/" className="group flex items-center">
+            <span className="text-2xl md:text-[28px] font-bold tracking-tight text-zinc-900 transition-colors duration-300 group-hover:text-black">
+              Avior<span className="text-[#A4143D]">è</span>
+            </span>
+          </Link>
 
           <nav className="flex items-center gap-6 text-[13px] font-bold text-[#222]">
             <Link href="/best-sellers" className="flex items-center gap-1.5 hover:text-[#A4143D] transition-colors"><ThumbsUp size={16}/> Best-Sellers</Link>
@@ -73,7 +71,7 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
               
               <div className="absolute top-full left-[-150px] hidden group-hover:flex w-[800px] bg-white shadow-2xl border border-gray-100 rounded-b-3xl z-[200] h-[480px] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
                  <div className="w-[240px] bg-gray-50/50 border-r border-gray-100 p-2 overflow-y-auto">
-                    {CATEGORY_TREE.map(cat => (
+                    {MEGA_MENU_DATA.map(cat => (
                       <div key={cat.id} onMouseEnter={() => setActiveCategory(cat)}
                         className={`px-5 py-4 text-[13px] font-black cursor-pointer transition-all rounded-xl mb-1 ${activeCategory.id === cat.id ? "bg-white text-[#A4143D] shadow-sm border-l-4 border-[#A4143D]" : "text-[#555] hover:bg-white hover:text-[#A4143D]"}`}
                       >
@@ -83,13 +81,30 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
                  </div>
                  <div className="flex-1 bg-white p-8 overflow-y-auto no-scrollbar">
                     <h4 className="text-[14px] font-black text-[#111] mb-8 uppercase tracking-widest border-b border-gray-100 pb-3">Discover {activeCategory.name}</h4>
-                    <div className="grid grid-cols-3 gap-y-10 gap-x-6">
-                      {activeCategory.items.map((item: any, i: number) => (
-                        <div key={i} className="flex flex-col items-center gap-3 group/item cursor-pointer">
-                          <div className="w-20 h-20 rounded-full bg-gray-50 border border-gray-100 overflow-hidden relative group-hover/item:border-[#A4143D] group-hover/item:scale-110 transition-all duration-500 shadow-sm">
-                             <Image src={item.img} alt={item.name} fill className="object-cover" />
+                    
+                    {/* 🛰️ Refactored Tree-Mapping Logic */}
+                    <div className="space-y-10">
+                      {activeCategory.children?.map((sub: any) => (
+                        <div key={sub.slug} className="flex flex-col gap-6">
+                          <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-l-2 border-[#A4143D] pl-2">
+                            {sub.name}
+                          </h5>
+                          <div className="grid grid-cols-3 gap-y-10 gap-x-6">
+                            {sub.items.map((item: any, i: number) => {
+                              const isObj = typeof item !== 'string';
+                              const name = isObj ? item.name : item;
+                              const img = isObj ? item.img : '/placeholder.png';
+
+                              return (
+                                <div key={i} className="flex flex-col items-center gap-3 group/item cursor-pointer">
+                                  <div className="w-20 h-20 rounded-full bg-gray-50 border border-gray-100 overflow-hidden relative group-hover/item:border-[#A4143D] group-hover/item:scale-110 transition-all duration-500 shadow-sm">
+                                     <Image src={img} alt={name} fill className="object-cover" />
+                                  </div>
+                                  <span className="text-[11px] font-black text-center text-gray-700 leading-tight group-hover/item:text-[#A4143D]">{name}</span>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <span className="text-[11px] font-black text-center text-gray-700 leading-tight group-hover/item:text-[#A4143D]">{item.name}</span>
                         </div>
                       ))}
                     </div>
@@ -99,7 +114,6 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
           </nav>
         </div>
 
-        {/* 🚀 CENTER: SMART SEARCH BAR HUB */}
         <div className="flex-1 max-w-[550px] relative">
           <div className={`h-[46px] flex items-center bg-gray-100 rounded-full border-2 transition-all duration-300 overflow-hidden ${searchFocused ? 'border-[#A4143D] bg-white shadow-[0_0_0_4px_rgba(164,20,61,0.1)]' : 'border-transparent'}`}>
             <input 
@@ -113,15 +127,10 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
               <Search size={20}/>
             </button>
           </div>
-
-          {/* Integration of the Molecule built in previous step */}
           <SearchSuggestions isOpen={searchFocused} onClose={() => setSearchFocused(false)} />
         </div>
 
-        {/* RIGHT: ACTIONS */}
         <div className="flex items-center gap-6 shrink-0">
-          
-          {/* ACCOUNT DROPDOWN */}
           <div className="group relative py-6">
             <button className="flex items-center gap-3 text-[13px] font-black text-[#222] hover:text-[#A4143D] transition-all">
               <div className="w-9 h-9 rounded-full bg-[#A4143D] text-white flex items-center justify-center font-black text-[11px] shrink-0 border-2 border-white shadow-md ring-1 ring-gray-100">
@@ -172,11 +181,10 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
             </div>
           </div>
 
-          {/* HELP HUB */}
           <div className="group relative py-6">
              <button className="flex flex-col items-center gap-1 text-[#222] hover:text-[#A4143D] transition-colors">
-               <MessageSquare size={24} strokeWidth={2.5}/>
-               <span className="text-[10px] font-black uppercase tracking-tighter">Support</span>
+                <MessageSquare size={24} strokeWidth={2.5}/>
+                <span className="text-[10px] font-black uppercase tracking-tighter">Support</span>
              </button>
              <div className="absolute top-full right-[-40px] hidden group-hover:block w-56 bg-white shadow-2xl border border-gray-100 rounded-2xl p-4 animate-in fade-in duration-200">
                 <Link href="/help" className="block text-sm font-black hover:text-[#A4143D] mb-3 pb-2 border-b border-gray-50">Customer Service</Link>
@@ -184,7 +192,6 @@ export function DesktopHeader({ activeCategory, setActiveCategory, role, firstNa
              </div>
           </div>
 
-          {/* CART CTA - Rule 2 (8-Point spacing) */}
           <Link href="/cart" className="relative p-3 hover:bg-gray-50 rounded-full transition-all group active:scale-90">
             <ShoppingCart size={26} className="text-[#111] group-hover:text-[#A4143D] transition-colors" />
             <span className="absolute top-1 right-1 bg-[#e01c24] text-white text-[9px] font-black rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center border-2 border-white shadow-md">

@@ -2,18 +2,21 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-// 🚀 Components - Rule 2: Atomic Hierarchy
-import { Providers } from "../components/Providers";
+// 🚀 Core Infrastructure
+import { Providers } from "../components/providers/Provider";
+import { CartSyncProvider } from "../components/providers/CartSyncProvider";
+
+// 🚀 UI Hierarchy - Rule 2: Atomic Hubs
 import { Navbar } from "../components/navbar/Navbar";
 import { MobileBottomNav } from "../components/navbar/MobileBottomNav";
-import { Container } from "../components/layout/Container";
 import { BackToTop } from "../components/ui/BackToTop";
 import { Footer } from "../components/Footer";
 
+// 🏛️ Font Instrumentation
 const geistSans = Geist({ 
   variable: "--font-geist-sans", 
   subsets: ["latin"],
-  display: 'swap', // Optimization for Rule 15
+  display: 'swap', 
 });
 
 const geistMono = Geist_Mono({ 
@@ -22,25 +25,22 @@ const geistMono = Geist_Mono({
   display: 'swap',
 });
 
-// 🚀 SEO & Metadata - Rule 9 (Trust Signals)
+// 🏛️ Registry Metadata
 export const metadata: Metadata = {
   title: {
     default: "Aviore Marketplace | Unique Artifacts & Global Deals",
-    template: "%s | Aviore Marketplace"
+    template: "%s | Aviore"
   },
   description: "Experience the ultimate discovery loop. Shop artifacts, electronics, and fashion with 90-day returns and secure payments.",
-  keywords: ["e-commerce", "marketplace", "artifacts", "deals", "Temu clone", "Nigeria shopping"],
-  authors: [{ name: "Aviore Team" }],
-  icons: {
-    icon: "/favicon.ico",
-  },
+  keywords: ["e-commerce", "marketplace", "artifacts", "deals", "industrial shopping", "Aviore"],
+  icons: { icon: "/favicon.ico" },
 };
 
-// 🚀 Mobile Viewport Optimization
+// 🏛️ Hardware Optimization
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1, // Prevents annoying zoom on input focus in iOS
+  maximumScale: 1, 
   userScalable: false,
 };
 
@@ -52,34 +52,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ${geistMono.variable} 
         antialiased 
         bg-white 
-        text-[#222] 
+        text-zinc-900
         selection:bg-[#A4143D] selection:text-white
       `}>
         <Providers>
-          {/* 🚀 THE LAYOUT ENGINE 
-            We keep the Navbar and Mobile Nav here so they are 
-            persisted across page transitions.
-          */}
+          {/* 🛰️ REGISTRY_HANDSHAKE: Background data sync with NestJS */}
+          <CartSyncProvider />
+
           <div className="relative flex min-h-screen flex-col">
-            
-            {/* Global Navigation Hub */}
+            {/* Navigation Hub */}
             <Navbar />
 
-            {/* Page Content Area */}
+            {/* Main Stage */}
             <main className="flex-1">
               {children}
             </main>
 
-            {/* 🚀 STICKY MOBILE NAVIGATION 
-              This follows Rule 13 (Mobile First). It is hidden on 
-              Desktop via CSS within the component.
-            */}
+            {/* Mobile Interaction Tier (Hidden on Desktop via CSS) */}
             <MobileBottomNav />
 
+            {/* Global Instrumentation Tools */}
             <BackToTop />
-            <Footer/>
-
-            {/* Global Footer (Optional: You can add it here or in specific pages) */}
+            <Footer />
           </div>
         </Providers>
       </body>

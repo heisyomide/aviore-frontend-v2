@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* 🚀 1. SYSTEM_THEME_REGISTRY */
+/* Standardizes colors across light and dark modes */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -10,6 +12,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Industrial Spacing Scale */
+  --spacing-225: 56.25rem; /* 900px */
+  --spacing-125: 31.25rem; /* 500px */
+  --spacing-55: 13.75rem;  /* 220px */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +26,25 @@
   }
 }
 
+/* 🚀 2. BASE_STYLING */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 🚀 3. INDUSTRIAL_UTILITIES (v4 Optimized) */
+
+/* Define the base utility for the Tailwind compiler (Firefox/IE) */
+@utility no-scrollbar {
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+  scrollbar-width: none;    /* Firefox */
+}
+
+/* Apply the Webkit-specific fix globally to the utility class */
+/* This is kept outside @utility to satisfy Turbopack parsing rules */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;            /* Chrome, Safari, and Opera */
 }

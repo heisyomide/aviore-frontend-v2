@@ -30,14 +30,14 @@ export function Hero() {
           {/* Side Banners (4/12 columns) */}
           <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
             <div className="relative rounded-2xl overflow-hidden h-[200px] lg:h-full bg-orange-500 border-4 border-orange-100">
-               <Image src="/categories/side1.jpg" alt="Deal 1" fill className="object-cover" />
+               <Image src="/registry/categories/side1.jpeg" alt="Deal 1" fill className="object-cover" />
                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur p-3 rounded-xl shadow-xl">
                   <p className="text-[10px] font-bold text-gray-500 uppercase">Flash Discount</p>
                   <p className="text-sm font-black text-orange-600">UP TO 70% OFF</p>
                </div>
             </div>
             <div className="relative rounded-2xl overflow-hidden h-[200px] lg:h-full bg-zinc-900 border-4 border-zinc-100 hidden lg:block">
-               <Image src="/categories/arrival.jpg" alt="Deal 2" fill className="object-cover opacity-80" />
+               <Image src="/registry/categories/arrivals.jpg" alt="Deal 2" fill className="object-cover opacity-80" />
                <div className="absolute top-4 left-4">
                   <p className="text-white font-black text-lg italic tracking-tighter uppercase">New Arrivals</p>
                </div>
