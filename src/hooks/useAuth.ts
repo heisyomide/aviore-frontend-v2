@@ -1,18 +1,50 @@
-'use client';
-import { useState, useEffect } from 'react';
+'use client'
 
-export const useAuth = () => {
-  const [role, setRole] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+import { useEffect, useState } from "react"
+
+export type Role = "ADMIN" | "VENDOR" | "USER"
+
+type AuthUser = {
+  id: string
+  role: Role
+  firstName?: string
+  lastName?: string
+}
+export function useAuth() {
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('role');
-    if (token) {
-      setIsAuthenticated(true);
-      setRole(storedRole);
-    }
-  }, []);
+    syncUser()
+  }, [])
 
-  return { isAuthenticated, role };
-};
+  const syncUser = () => {
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
+    const role = localStorage.getItem("role") as Role
+    const firstName = localStorage.getItem("firstName") || ""
+    const lastName = localStorage.getItem("lastName") || ""
+
+    setUser({
+      id: "temp-id",
+      role,
+      firstName,
+      lastName
+    })
+
+    setLoading(false)
+  }
+
+  const logout = () => {
+    localStorage.clear()
+    setUser(null) // 🔥 THIS IS THE FIX
+  }
+
+  return { user, loading, logout }
+}

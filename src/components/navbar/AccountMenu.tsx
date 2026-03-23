@@ -4,208 +4,136 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
-User,
-Package,
-Star,
-MapPin,
-History,
-Ticket,
-LogOut,
-LayoutDashboard
+  User,
+  Package,
+  Star,
+  MapPin,
+  History,
+  Ticket,
+  LogOut,
+  LogIn,
+  LayoutDashboard,
+  ShieldCheck,
+  Store
 } from "lucide-react"
 
 type Role = "admin" | "vendor" | "customer" | null
 
-export function AccountMenu(){
-
-const router = useRouter()
-
-const [role,setRole] = useState<Role>(null)
-const [firstName,setFirstName] = useState("")
-const [lastName,setLastName] = useState("")
-
-useEffect(()=>{
-
-const token = localStorage.getItem("token")
-
-if(token){
-
-setRole(localStorage.getItem("role") as Role)
-
-setFirstName(localStorage.getItem("firstName") || "")
-
-setLastName(localStorage.getItem("lastName") || "")
-
-}
-
-},[])
-
-const handleLogout = ()=>{
-
-localStorage.removeItem("token")
-localStorage.removeItem("role")
-localStorage.removeItem("firstName")
-localStorage.removeItem("lastName")
-
-router.push("/")
-}
-
-const userInitials = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}` || "U"
-
-const roleMenus = {
-admin:[
-{label:"Admin Dashboard",href:"/admin/dashboard"},
-],
-vendor:[
-{label:"Vendor Dashboard",href:"/vendor/dashboard"},
-],
-customer:[
-{label:"Account Dashboard",href:"/dashboard"},
-]
-}
-
-return(
-
-<div className="relative group">
-
-{/* ACCOUNT BUTTON */}
-
-<button className="flex items-center gap-2">
-
-<div className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-sm">
-
-{userInitials}
-
-</div>
-
-<div className="hidden md:flex flex-col text-left leading-tight">
-
-<span className="text-xs text-gray-500">
-
-Orders &
-
-</span>
-
-<span className="text-sm font-semibold">
-
-Account
-
-</span>
-
-</div>
-
-</button>
-
-{/* DROPDOWN */}
-
-<div
-className="
-absolute right-0 top-full
-hidden group-hover:block
-w-72 bg-white border shadow-xl rounded-xl
-overflow-hidden z-50
-"
->
-
-{/* USER INFO */}
-
-<div className="p-4 border-b">
-
-<p className="font-semibold text-sm truncate">
-
-{firstName ? `${firstName} ${lastName}` : "Guest"}
-
-</p>
-
-<p className="text-xs text-gray-500">
-
-{role ?? "Not logged in"}
-
-</p>
-
-</div>
-
-{/* MENU */}
-
-<div className="p-2 text-sm">
-
-<Link href="/dashboard/orders"
-className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
-
-<Package size={16}/> Orders
-
-</Link>
-
-<Link href="/dashboard/reviews"
-className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
-
-<Star size={16}/> Reviews
-
-</Link>
-
-<Link href="/dashboard/profile"
-className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
-
-<User size={16}/> Profile
-
-</Link>
-
-<Link href="/dashboard/addresses"
-className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
-
-<MapPin size={16}/> Addresses
-
-</Link>
-
-<Link href="/history"
-className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
-
-<History size={16}/> Browsing History
-
-</Link>
-
-<Link href="/coupons"
-className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
-
-<Ticket size={16}/> Coupons
-
-</Link>
-
-{/* ROLE MENU */}
-
-{role && roleMenus[role]?.map(item=>(
-<Link
-key={item.label}
-href={item.href}
-className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-orange-600 font-semibold"
->
-
-<LayoutDashboard size={16}/> {item.label}
-
-</Link>
-))}
-
-{/* LOGOUT */}
-
-<button
-onClick={handleLogout}
-className="
-w-full flex items-center gap-3
-px-3 py-3 mt-2
-text-red-600 font-semibold
-border-t hover:bg-red-50
-"
->
-
-<LogOut size={16}/> Sign out
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-)
+export function AccountMenu() {
+  const router = useRouter()
+  const [role, setRole] = useState<Role>(null)
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (token) {
+      setIsLoggedIn(true)
+      setRole(localStorage.getItem("role") as Role)
+      setFirstName(localStorage.getItem("firstName") || "")
+      setLastName(localStorage.getItem("lastName") || "")
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.clear()
+    setIsLoggedIn(false)
+    setRole(null)
+    router.push("/")
+  }
+
+  // 🚀 PATH DYNAMIC LOGIC
+  // This ensures the links change based on who is logged in
+  const getBasePath = () => {
+    if (role === 'admin') return '/admin'
+    if (role === 'vendor') return '/vendor'
+    return '/dashboard' // Default for customer
+  }
+
+  const basePath = getBasePath()
+
+  return (
+    <div className="relative group">
+      {/* TRIGGER BUTTON */}
+      <button className="flex items-center gap-2">
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs transition-all ${isLoggedIn ? 'bg-[#A4143D] text-white shadow-md' : 'bg-gray-100 text-gray-400'}`}>
+          {isLoggedIn ? `${firstName?.[0]}${lastName?.[0]}` : <User size={18} />}
+        </div>
+        <div className="hidden md:flex flex-col text-left leading-tight">
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+            {isLoggedIn ? `Hello, ${firstName}` : "Sign In"}
+          </span>
+          <span className="text-xs font-bold uppercase tracking-tighter">Account</span>
+        </div>
+      </button>
+
+      {/* DROPDOWN */}
+      <div className="absolute right-0 top-full hidden group-hover:block w-72 pt-2 z-50">
+        <div className="bg-white border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl overflow-hidden">
+          
+          {/* TOP IDENTITY SECTION */}
+          <div className="p-5 border-b border-gray-50 bg-gray-50/50">
+            <p className="font-black text-sm text-slate-900 uppercase tracking-tighter truncate">
+              {isLoggedIn ? `${firstName} ${lastName}` : "Welcome to Aviorè"}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+               {isLoggedIn && (
+                 <span className="text-[9px] font-black text-[#A4143D] bg-[#A4143D]/10 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                   {role} Account
+                 </span>
+               )}
+            </div>
+          </div>
+
+          {/* 🎯 DYNAMIC MENU LINKS */}
+          <div className="p-2 space-y-1">
+            {/* Dashboard Redirect: Admin Panel, Vendor Dashboard, or Customer Overview */}
+            <Link href={basePath} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-[#A4143D] font-black group/link transition-all">
+              {role === 'admin' ? <ShieldCheck size={18} /> : role === 'vendor' ? <Store size={18} /> : <LayoutDashboard size={18} />}
+              <span className="text-[11px] uppercase tracking-wide">
+                {role === 'admin' ? 'Admin Control' : role === 'vendor' ? 'Vendor Center' : 'My Account'}
+              </span>
+            </Link>
+
+            {/* Orders Link: /admin/orders, /vendor/orders, or /dashboard/orders */}
+            <Link href={`${basePath}/orders`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-slate-600 font-bold group/link transition-all">
+              <Package size={18} className="text-gray-400 group-hover/link:text-slate-900" />
+              <span className="text-[11px] uppercase tracking-wide">Manage Orders</span>
+            </Link>
+
+            {/* Profile Link: /admin/profile, /vendor/profile, or /dashboard/profile */}
+            <Link href={`${basePath}/profile`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-slate-600 font-bold group/link transition-all">
+              <User size={18} className="text-gray-400 group-hover/link:text-slate-900" />
+              <span className="text-[11px] uppercase tracking-wide">Profile Settings</span>
+            </Link>
+
+            {/* Conditional Reviews (Vendors/Customers only) */}
+            {role !== 'admin' && (
+              <Link href={`${basePath}/reviews`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-slate-600 font-bold group/link transition-all">
+                <Star size={18} className="text-gray-400 group-hover/link:text-slate-900" />
+                <span className="text-[11px] uppercase tracking-wide">
+                  {role === 'vendor' ? 'Store Reviews' : 'My Reviews'}
+                </span>
+              </Link>
+            )}
+          </div>
+
+          {/* BOTTOM ACTION */}
+          <div className="p-4 border-t border-gray-50 bg-white">
+            {!isLoggedIn ? (
+              <Link href="/login" className="flex items-center justify-center gap-3 w-full py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-black transition-all">
+                <LogIn size={18} /> Sign In Safely
+              </Link>
+            ) : (
+              <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2 text-red-600 font-black text-[11px] uppercase tracking-widest hover:bg-red-50 rounded-xl transition-all">
+                <LogOut size={18} /> Secure Logout
+              </button>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
 }

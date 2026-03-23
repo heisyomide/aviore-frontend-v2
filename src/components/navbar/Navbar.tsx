@@ -5,36 +5,37 @@ import { TopBar } from './TopBar';
 import { DesktopHeader } from './DesktopHeader';
 import { MobileHeader } from './MobileHeader';
 import { MobileSidebar } from './MobileSidebar';
-import { TrendingTags } from '../home/TrendingTags'; // 🚀 New: Discovery Trigger
+import { TrendingTags } from '../home/TrendingTags'; 
 import { MEGA_MENU_DATA } from '../../data/categories';
 
 /**
  * 🚀 NAVBAR ORGANISM
- * Rule 14: Component Line Limit - We keep the assembly clean.
- * Rule 10: Performance - States are localized here to prevent full-page re-renders.
+ * We removed the category state from here because DesktopHeader 
+ * now uses the self-contained CategoryMegaMenu component.
  */
 export function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
- const [activeCategory, setActiveCategory] = useState(MEGA_MENU_DATA[0]);
+  
+  // Keep this only for the MobileSidebar if it still needs it
+  const [activeCategory, setActiveCategory] = useState(MEGA_MENU_DATA[0]);
 
   return (
     <>
-      <header className="sticky top-0 z-[150] w-full bg-white transition-all duration-300 shadow-sm">
+      {/* 🛠️ FIXED: Updated z-index to canonical class as per linter */}
+      <header className="sticky top-0 z-150 w-full bg-white transition-all duration-300 shadow-sm">
         
         {/* 1. Psychological Hook - Ticker for FOMO/Trust */}
         <TopBar />
         
         {/* 2. Main Brand & Navigation Hub */}
         <div className="relative z-20 bg-white">
-          {/* Desktop View - Rule 1: 1400px Container Logic inside */}
+          {/* Desktop View */}
           <div className="hidden md:block border-b border-gray-50">
-            <DesktopHeader 
-              activeCategory={activeCategory} 
-              setActiveCategory={setActiveCategory} 
-            />
+            {/* 🚀 FIXED: Removed the props that DesktopHeader no longer needs */}
+            <DesktopHeader />
           </div>
 
-          {/* Mobile View - Rule 13: Mobile First Optimization */}
+          {/* Mobile View */}
           <div className="md:hidden border-b border-gray-50">
             <MobileHeader 
               openSidebar={() => setSidebarOpen(true)} 
