@@ -2,25 +2,27 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import {
   User,
   Package,
   Star,
-  MapPin,
-  History,
-  Ticket,
   LogOut,
   LogIn,
   LayoutDashboard,
   ShieldCheck,
-  Store
+  Store,
+  ChevronDown
 } from "lucide-react"
 
 type Role = "admin" | "vendor" | "customer" | null
 
 export function AccountMenu() {
   const router = useRouter()
+  const menuRef = useRef<HTMLDivElement>(null)
+  
+  // 🚀 STATE FOR MOBILE & DESKTOP INTERACTION
+  const [isOpen, setIsOpen] = useState(false)
   const [role, setRole] = useState<Role>(null)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -34,106 +36,132 @@ export function AccountMenu() {
       setFirstName(localStorage.getItem("firstName") || "")
       setLastName(localStorage.getItem("lastName") || "")
     }
+
+    // 🚀 CLOSE ON CLICK OUTSIDE
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   const handleLogout = () => {
     localStorage.clear()
     setIsLoggedIn(false)
     setRole(null)
+    setIsOpen(false)
     router.push("/")
+    router.refresh()
   }
 
-  // 🚀 PATH DYNAMIC LOGIC
-  // This ensures the links change based on who is logged in
   const getBasePath = () => {
     if (role === 'admin') return '/admin'
     if (role === 'vendor') return '/vendor'
-    return '/dashboard' // Default for customer
+    return '/dashboard'
   }
 
   const basePath = getBasePath()
+  const initials = `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase()
 
   return (
-    <div className="relative group">
-      {/* TRIGGER BUTTON */}
-      <button className="flex items-center gap-2">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs transition-all ${isLoggedIn ? 'bg-[#A4143D] text-white shadow-md' : 'bg-gray-100 text-gray-400'}`}>
-          {isLoggedIn ? `${firstName?.[0]}${lastName?.[0]}` : <User size={18} />}
+    <div className="relative" ref={menuRef}>
+      {/* 🔘 TRIGGER: Now uses onClick for Mobile Support */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 group outline-none active:scale-95 transition-transform"
+      >
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-[10px] transition-all border-2 
+          ${isLoggedIn 
+            ? 'bg-[#A4143D] border-[#A4143D] text-white shadow-lg shadow-[#A4143D]/20' 
+            : 'bg-white border-gray-100 text-gray-400'}`}>
+          {isLoggedIn ? initials : <User size={18} strokeWidth={2.5} />}
         </div>
+        
         <div className="hidden md:flex flex-col text-left leading-tight">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-            {isLoggedIn ? `Hello, ${firstName}` : "Sign In"}
+          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-gray-400">
+            {isLoggedIn ? `Hello, ${firstName}` : "Welcome"}
           </span>
-          <span className="text-xs font-bold uppercase tracking-tighter">Account</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-[1000] uppercase tracking-tighter">Account</span>
+            <ChevronDown size={10} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+          </div>
         </div>
       </button>
 
-      {/* DROPDOWN */}
-      <div className="absolute right-0 top-full hidden group-hover:block w-72 pt-2 z-50">
-        <div className="bg-white border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl overflow-hidden">
-          
-          {/* TOP IDENTITY SECTION */}
-          <div className="p-5 border-b border-gray-50 bg-gray-50/50">
-            <p className="font-black text-sm text-slate-900 uppercase tracking-tighter truncate">
-              {isLoggedIn ? `${firstName} ${lastName}` : "Welcome to Aviorè"}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-               {isLoggedIn && (
-                 <span className="text-[9px] font-black text-[#A4143D] bg-[#A4143D]/10 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                   {role} Account
-                 </span>
-               )}
+      {/* 🚀 DROPDOWN: Uses conditional rendering instead of group-hover */}
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-72 z-[500] animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[2rem] overflow-hidden">
+            
+            {/* TOP IDENTITY SECTION */}
+            <div className="p-6 border-b border-gray-50 bg-slate-50/50">
+              <p className="font-[1000] text-sm text-slate-900 uppercase tracking-tighter truncate">
+                {isLoggedIn ? `${firstName} ${lastName}` : "Aviorè Identity"}
+              </p>
+              {isLoggedIn && (
+                <div className="flex items-center gap-2 mt-1">
+                   <span className="text-[9px] font-black text-white bg-[#A4143D] px-2 py-0.5 rounded-full uppercase tracking-widest">
+                     {role}
+                   </span>
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* 🎯 DYNAMIC MENU LINKS */}
-          <div className="p-2 space-y-1">
-            {/* Dashboard Redirect: Admin Panel, Vendor Dashboard, or Customer Overview */}
-            <Link href={basePath} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-[#A4143D] font-black group/link transition-all">
-              {role === 'admin' ? <ShieldCheck size={18} /> : role === 'vendor' ? <Store size={18} /> : <LayoutDashboard size={18} />}
-              <span className="text-[11px] uppercase tracking-wide">
-                {role === 'admin' ? 'Admin Control' : role === 'vendor' ? 'Vendor Center' : 'My Account'}
-              </span>
-            </Link>
-
-            {/* Orders Link: /admin/orders, /vendor/orders, or /dashboard/orders */}
-            <Link href={`${basePath}/orders`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-slate-600 font-bold group/link transition-all">
-              <Package size={18} className="text-gray-400 group-hover/link:text-slate-900" />
-              <span className="text-[11px] uppercase tracking-wide">Manage Orders</span>
-            </Link>
-
-            {/* Profile Link: /admin/profile, /vendor/profile, or /dashboard/profile */}
-            <Link href={`${basePath}/profile`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-slate-600 font-bold group/link transition-all">
-              <User size={18} className="text-gray-400 group-hover/link:text-slate-900" />
-              <span className="text-[11px] uppercase tracking-wide">Profile Settings</span>
-            </Link>
-
-            {/* Conditional Reviews (Vendors/Customers only) */}
-            {role !== 'admin' && (
-              <Link href={`${basePath}/reviews`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 text-slate-600 font-bold group/link transition-all">
-                <Star size={18} className="text-gray-400 group-hover/link:text-slate-900" />
-                <span className="text-[11px] uppercase tracking-wide">
-                  {role === 'vendor' ? 'Store Reviews' : 'My Reviews'}
+            {/* 🎯 MENU LINKS */}
+            <div className="p-3 space-y-1">
+              <Link 
+                href={isLoggedIn ? basePath : '/login'} 
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-50 text-slate-900 font-black transition-all group/link"
+              >
+                <div className="p-2 bg-gray-50 rounded-lg group-hover/link:bg-[#A4143D]/10 transition-colors">
+                    {role === 'admin' ? <ShieldCheck size={18} className="text-[#A4143D]" /> : 
+                     role === 'vendor' ? <Store size={18} className="text-[#A4143D]" /> : 
+                     <LayoutDashboard size={18} className="text-[#A4143D]" />}
+                </div>
+                <span className="text-[11px] uppercase tracking-widest">
+                  {role === 'admin' ? 'Admin Panel' : role === 'vendor' ? 'Store Center' : 'Dashboard'}
                 </span>
               </Link>
-            )}
-          </div>
 
-          {/* BOTTOM ACTION */}
-          <div className="p-4 border-t border-gray-50 bg-white">
-            {!isLoggedIn ? (
-              <Link href="/login" className="flex items-center justify-center gap-3 w-full py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-black transition-all">
-                <LogIn size={18} /> Sign In Safely
+              <Link href={`${basePath}/orders`} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-50 text-slate-600 font-bold transition-all group/link">
+                <Package size={18} className="text-gray-400 group-hover/link:text-slate-900" />
+                <span className="text-[11px] uppercase tracking-wide">Manage Orders</span>
               </Link>
-            ) : (
-              <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2 text-red-600 font-black text-[11px] uppercase tracking-widest hover:bg-red-50 rounded-xl transition-all">
-                <LogOut size={18} /> Secure Logout
-              </button>
-            )}
-          </div>
 
+              {role !== 'admin' && (
+                <Link href={`${basePath}/reviews`} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-50 text-slate-600 font-bold transition-all group/link">
+                  <Star size={18} className="text-gray-400 group-hover/link:text-slate-900" />
+                  <span className="text-[11px] uppercase tracking-wide">Reviews</span>
+                </Link>
+              )}
+            </div>
+
+            {/* BOTTOM ACTION */}
+            <div className="p-4 border-t border-gray-50 bg-white">
+              {!isLoggedIn ? (
+                <Link 
+                  href="/login" 
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-center gap-3 w-full py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all"
+                >
+                  <LogIn size={18} /> Sign In
+                </Link>
+              ) : (
+                <button 
+                  onClick={handleLogout} 
+                  className="flex items-center justify-center gap-3 w-full py-3 text-red-600 font-black text-[11px] uppercase tracking-widest hover:bg-red-50 rounded-2xl transition-all"
+                >
+                  <LogOut size={18} /> Secure Logout
+                </button>
+              )}
+            </div>
+
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
