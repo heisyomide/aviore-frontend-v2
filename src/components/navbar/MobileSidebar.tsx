@@ -1,11 +1,9 @@
 'use client';
 
-import { X, Package, ChevronRight } from 'lucide-react';
+import { X, Package, Ticket, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MEGA_MENU_DATA, MegaMainCategory, MegaSubCategory, MegaMenuItem } from '../../data/categories';
-// 🚀 IMPORT THE ACCOUNT MENU COMPONENT
-import { AccountMenu } from '../navbar/AccountMenu'; 
 
 export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory }: any) {
   if (!open) return null;
@@ -22,13 +20,15 @@ export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory
       <div className="absolute top-0 left-0 w-[85%] h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-500">
         
         {/* 🚀 LOGO & CLOSE HEADER */}
-        <div className="bg-slate-900 p-6 text-white pt-10 flex justify-between items-center border-b border-white/10">
-          <span className="text-xl font-black tracking-tighter uppercase italic">
+        <div className="bg-slate-900 p-6 text-white pt-12 flex justify-between items-center border-b border-white/10 relative overflow-hidden">
+          <span className="text-xl font-black tracking-tighter uppercase italic relative z-10">
             Avior<span className="text-[#A4143D]">è</span>
           </span>
-          <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white/70">
+          <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white/70 relative z-10">
             <X size={20} />
           </button>
+          {/* Industrial Accent */}
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-[#A4143D]/20 rounded-full blur-3xl" />
         </div>
 
         {/* 3. NAVIGATION ENGINE */}
@@ -64,9 +64,11 @@ export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory
           <div className="flex-1 bg-white overflow-y-auto p-5 no-scrollbar">
             <div className="flex items-center justify-between mb-8 border-b border-slate-50 pb-2">
                <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-                 Discover {activeCategory.name}
+                 Explore {activeCategory.name}
                </h3>
-               <Link href={`/shop?category=${activeCategory.id}`} onClick={onClose} className="text-[9px] font-black text-[#A4143D] uppercase underline">View All</Link>
+               <Link href={`/shop?category=${activeCategory.id}`} onClick={onClose} className="text-[9px] font-black text-[#A4143D] uppercase underline decoration-2 underline-offset-4">
+                 View All
+               </Link>
             </div>
             
             <div className="space-y-12">
@@ -104,26 +106,28 @@ export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory
           </div>
         </div>
 
-        {/* 4. FOOTER: INTEGRATED SYSTEM ACTIONS */}
+        {/* 4. FOOTER: SYSTEM ACTIONS (Orders & Coupons) */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
             
-            {/* 🚀 THE INTEGRATED ACCOUNT MENU */}
-            <div className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
-                <AccountMenu />
-            </div>
-
             <Link 
               href="/dashboard/orders" 
               onClick={onClose} 
-              className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-all"
+              className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-all"
             >
-              <div className="flex items-center gap-3">
-                <Package size={18} className="text-[#A4143D]" />
-                <span>My Orders</span>
-              </div>
-              <ChevronRight size={14} className="text-gray-300" />
+              <Package size={18} className="text-[#A4143D]" />
+              <span>Orders</span>
             </Link>
+
+            <Link 
+              href="/dashboard/coupons" 
+              onClick={onClose} 
+              className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-all"
+            >
+              <Ticket size={18} className="text-[#A4143D]" />
+              <span>Coupons</span>
+            </Link>
+
           </div>
         </div>
       </div>

@@ -28,11 +28,10 @@ export function DesktopHeader() {
         {/* 1. BRAND LOGO */}
         <div className="flex items-center gap-8 shrink-0">
           <Link href="/" className="group flex items-center">
-            <span className="text-2xl md:text-[30px] font-black tracking-tighter text-zinc-900 transition-colors duration-300">
+            <span className="text-2xl md:text-[28px] font-bold tracking-tight text-zinc-900 transition-colors duration-300 group-hover:text-black">
               Avior<span className="text-[#A4143D]">è</span>
             </span>
           </Link>
-
           {/* 2. MAIN NAV */}
           <nav className="flex items-center gap-6">
             {/* 🚀 REPLACED MANUAL MAPPING WITH THE COMPONENT */}

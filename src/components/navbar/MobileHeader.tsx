@@ -8,48 +8,55 @@ import { AccountMenu } from './AccountMenu';
 
 export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
   const { items } = useCartStore();
-  const cartCount = useMemo(() => items.reduce((a, b) => a + b.quantity, 0), [items]);
+  
+  const cartCount = useMemo(() => 
+    items.reduce((acc, item) => acc + item.quantity, 0), 
+  [items]);
 
   const subCats = ["All", "Men", "Women", "Health", "Home", "Pets", "Electronics"];
 
   return (
-    <div className="md:hidden flex flex-col w-full bg-white sticky top-0 z-[200]">
-      {/* Primary Row: Optimized for Maximum Space */}
-      <div className="flex items-center px-3 py-3 gap-2 border-b border-gray-50">
+    <div className="md:hidden flex flex-col w-full bg-white sticky top-0 z-[200] shadow-sm">
+      
+      {/* --- PRIMARY NAVIGATION ROW --- */}
+      <div className="flex items-center px-3 h-[64px] gap-2 border-b border-gray-50">
         
+        {/* 1. BRAND LOGO (Shrink-0 to prevent squishing) */}
+          <Link href="/" className="group flex items-center">
+            <span className="text-2xl md:text-[28px] font-bold tracking-tight text-zinc-900 transition-colors duration-300 group-hover:text-black">
+              Avior<span className="text-[#A4143D]">è</span>
+            </span>
+          </Link>
 
-
-        {/* 2. LOGO: Compact Version */}
-        <Link href="/" className="shrink-0">
-          <span className="text-xl font-black tracking-tighter text-zinc-900 uppercase italic">
-            Avior<span className="text-[#A4143D]">è</span>
-          </span>
-        </Link>
-
-        {/* 3. SEARCH BAR: Responsive Width */}
-        <div className="flex-1 min-w-[100px] bg-gray-100 h-9 rounded-2xl flex items-center px-3 gap-1.5 transition-all focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-200">
-          <Search size={14} className="text-gray-400 shrink-0"/>
+        {/* 2. SEARCH BAR (Flexible center) */}
+        <div className="flex-1 min-w-[80px] bg-gray-100 h-9 rounded-2xl flex items-center px-3 gap-1.5 transition-all focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-200">
+          <Search size={14} className="text-gray-400 shrink-0" strokeWidth={3} />
           <input 
+            type="text"
             placeholder="Search..." 
             className="bg-transparent text-[11px] outline-none w-full font-bold text-zinc-800 placeholder:text-gray-400" 
           />
         </div>
 
-        {/* 4. SYSTEM ACTIONS: Profile & Cart */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* 3. SYSTEM ACTIONS (Right-aligned) */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          
+          {/* 🚀 ACCOUNT SYSTEM (Ensure AccountMenu uses Click, not Hover) */}
           <AccountMenu />
 
+          {/* SIDEBAR TRIGGER */}
+          <button 
+            onClick={openSidebar} 
+            className="p-2 text-zinc-900 active:bg-gray-100 rounded-xl transition-all"
+          >
+            <Menu size={22} strokeWidth={2.5} />
+          </button>
 
-        {/* 1. MENU TRIGGER */}
-        <button onClick={openSidebar} className="shrink-0 p-1 text-zinc-900 active:scale-90 transition-transform">
-          <Menu size={22} strokeWidth={2.5} />
-        </button>
-
-        
-          <Link href="/cart" className="relative p-1.5 active:scale-95 transition-transform">
-            <ShoppingCart size={20} className="text-zinc-800" strokeWidth={2.5}/>
+          {/* CART SYSTEM */}
+          <Link href="/cart" className="relative p-2 active:scale-90 transition-transform">
+            <ShoppingCart size={22} className="text-zinc-900" strokeWidth={2.5} />
             {cartCount > 0 && (
-              <span className="absolute top-0 right-0 bg-[#A4143D] text-white text-[7px] font-black rounded-full w-3.5 h-3.5 flex items-center justify-center border-2 border-white shadow-sm">
+              <span className="absolute top-1 right-0.5 bg-[#A4143D] text-white text-[8px] font-black rounded-full min-w-[18px] h-[18px] flex items-center justify-center border-2 border-white shadow-sm">
                 {cartCount}
               </span>
             )}
@@ -57,12 +64,18 @@ export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
         </div>
       </div>
       
-      {/* 5. Horizontal Scrollable Bar */}
-      <div className="flex gap-6 overflow-x-auto no-scrollbar px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
+      {/* --- DISCOVERY SCROLL BAR --- */}
+      <div className="flex gap-6 overflow-x-auto no-scrollbar px-4 py-3 bg-white border-b border-gray-50">
         {subCats.map((cat, i) => (
-          <span key={cat} className={`shrink-0 whitespace-nowrap transition-colors ${i === 0 ? "text-[#A4143D] border-b-2 border-[#A4143D] pb-1" : "hover:text-zinc-900"}`}>
+          <Link 
+            key={cat} 
+            href={`/shop?category=${cat.toLowerCase()}`}
+            className={`shrink-0 whitespace-nowrap text-[10px] font-black uppercase tracking-widest transition-all
+              ${i === 0 ? "text-[#A4143D] border-b-2 border-[#A4143D] pb-1" : "text-gray-400 hover:text-zinc-900"}
+            `}
+          >
             {cat}
-          </span>
+          </Link>
         ))}
       </div>
     </div>
