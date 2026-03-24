@@ -1,113 +1,97 @@
 'use client';
 
-import { X, LogOut, Package, User, Ticket } from 'lucide-react';
+import { X, Package, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MEGA_MENU_DATA, MegaMainCategory, MegaSubCategory, MegaMenuItem } from '../../data/categories';
-import { useMemo } from 'react';
+// 🚀 IMPORT THE ACCOUNT MENU COMPONENT
+import { AccountMenu } from '../navbar/AccountMenu'; 
 
-export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory, firstName, lastName, role, handleLogout }: any) {
-  
-  const initials = useMemo(() => {
-    if (!firstName) return '';
-    return `${firstName[0]}${lastName?.[0] || ''}`.toUpperCase();
-  }, [firstName, lastName]);
-
+export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory }: any) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-300 md:hidden">
-      {/* 1. Backdrop */}
+    <div className="fixed inset-0 z-[300] md:hidden">
+      {/* 1. Backdrop Overlay */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" 
         onClick={onClose} 
       />
 
       {/* 2. Sidebar Panel */}
-      <div className="absolute top-0 left-0 w-[85%] h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+      <div className="absolute top-0 left-0 w-[85%] h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-500">
         
-        {/* USER HEADER */}
-        <div className="bg-[#A4143D] p-6 text-white pt-12 relative overflow-hidden">
-          <button onClick={onClose} className="absolute top-4 right-4 text-white/80 hover:text-white">
-            <X size={24} />
+        {/* 🚀 LOGO & CLOSE HEADER */}
+        <div className="bg-slate-900 p-6 text-white pt-10 flex justify-between items-center border-b border-white/10">
+          <span className="text-xl font-black tracking-tighter uppercase italic">
+            Avior<span className="text-[#A4143D]">è</span>
+          </span>
+          <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white/70">
+            <X size={20} />
           </button>
-
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-14 h-14 rounded-full bg-white text-[#A4143D] flex items-center justify-center font-black text-xl shadow-lg border-2 border-white/20">
-              {firstName ? initials : <User size={24} />}
-            </div>
-            <div className="flex flex-col">
-              <span className="font-black text-lg leading-tight truncate max-w-45">
-                {firstName ? `Hello, ${firstName}` : 'Welcome to Aviore'}
-              </span>
-              <Link href="/login" onClick={onClose} className="text-xs font-bold text-white/80 underline decoration-white/40">
-                {firstName ? (role || 'Customer Account') : 'Sign in or Register'}
-              </Link>
-            </div>
-          </div>
-          <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
         </div>
 
-        {/* 3. NAVIGATION TABS */}
+        {/* 3. NAVIGATION ENGINE */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Left Column: Root Categories (using MEGA_MENU_DATA) */}
-          <div className="w-27.5 bg-gray-50 border-r border-gray-100 overflow-y-auto pt-2 no-scrollbar">
+          {/* Root Category Sidebar */}
+          <div className="w-24 bg-gray-50 border-r border-gray-100 overflow-y-auto pt-2 no-scrollbar">
             {MEGA_MENU_DATA.map((cat: MegaMainCategory) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat)}
-                className={`w-full px-2 py-4 flex flex-col items-center gap-2 transition-all ${
-                  activeCategory.id === cat.id 
-                    ? "bg-white text-[#A4143D] border-l-4 border-[#A4143D]" 
-                    : "text-gray-500"
+                className={`w-full px-2 py-5 flex flex-col items-center gap-2 transition-all relative ${
+                  activeCategory.id === cat.id ? "bg-white text-[#A4143D]" : "text-gray-400"
                 }`}
               >
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
-                  {/* 🛡️ Accessing product img from first item to avoid Circle Image clashing */}
+                {activeCategory.id === cat.id && (
+                  <div className="absolute left-0 top-3 bottom-3 w-1 bg-[#A4143D] rounded-r-full" />
+                )}
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center overflow-hidden border transition-all
+                  ${activeCategory.id === cat.id ? "border-[#A4143D]/30 shadow-md scale-105" : "border-transparent opacity-60 grayscale"}`}>
                   <Image 
                     src={(cat.children[0]?.items[0] as MegaMenuItem)?.img || '/placeholder.png'} 
-                    alt={cat.name} 
-                    width={40} 
-                    height={40} 
-                    className="object-cover" 
+                    alt={cat.name} width={44} height={44} className="object-cover" 
                   />
                 </div>
-                <span className="text-[9px] font-black uppercase text-center leading-tight tracking-tighter">
+                <span className="text-[8px] font-[1000] uppercase text-center leading-tight tracking-tighter">
                   {cat.name}
                 </span>
               </button>
             ))}
           </div>
 
-          {/* Right Column: Deep Items */}
-          <div className="flex-1 bg-white overflow-y-auto p-4 no-scrollbar">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 border-b pb-1">
-              Shop {activeCategory.name}
-            </h3>
+          {/* Sub-Category Detail View */}
+          <div className="flex-1 bg-white overflow-y-auto p-5 no-scrollbar">
+            <div className="flex items-center justify-between mb-8 border-b border-slate-50 pb-2">
+               <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+                 Discover {activeCategory.name}
+               </h3>
+               <Link href={`/shop?category=${activeCategory.id}`} onClick={onClose} className="text-[9px] font-black text-[#A4143D] uppercase underline">View All</Link>
+            </div>
             
-            <div className="flex flex-col gap-8">
+            <div className="space-y-12">
               {activeCategory.children.map((sub: MegaSubCategory) => (
-                <div key={sub.slug} className="flex flex-col gap-3">
-                  <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">
+                <div key={sub.slug} className="flex flex-col gap-5">
+                  <h4 className="text-[12px] font-[1000] text-slate-900 uppercase italic flex items-center gap-2">
+                    <span className="w-4 h-[2px] bg-[#A4143D]" />
                     {sub.name}
                   </h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                     {sub.items.map((item: any, i: number) => {
-                      const isObj = typeof item !== 'string';
-                      const name = isObj ? item.name : item;
-                      const img = isObj ? item.img : '/placeholder.png';
+                      const name = typeof item !== 'string' ? item.name : item;
+                      const img = typeof item !== 'string' ? item.img : '/placeholder.png';
                       
                       return (
                         <Link 
                           key={i} 
-                          href={`/search?q=${name}`} 
+                          href={`/shop?category=${activeCategory.id}&sub=${sub.slug}`} 
                           onClick={onClose} 
-                          className="flex flex-col items-center gap-2 group"
+                          className="flex flex-col gap-2 group active:scale-95 transition-transform"
                         >
-                          <div className="w-full aspect-square bg-gray-50 rounded-xl overflow-hidden border border-gray-100 group-active:scale-95 transition-transform">
-                            <Image src={img} alt={name} width={150} height={150} className="object-cover" />
+                          <div className="w-full aspect-square bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center">
+                            <Image src={img} alt={name} width={100} height={100} className="object-contain p-3" />
                           </div>
-                          <span className="text-[9px] font-bold text-center text-gray-600 leading-tight">
+                          <span className="text-[10px] font-bold text-slate-600 leading-tight line-clamp-2 px-1">
                             {name}
                           </span>
                         </Link>
@@ -120,25 +104,27 @@ export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory
           </div>
         </div>
 
-        {/* 4. FOOTER ACTIONS */}
+        {/* 4. FOOTER: INTEGRATED SYSTEM ACTIONS */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <Link href="/dashboard/orders" onClick={onClose} className="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-100 text-[11px] font-bold shadow-sm active:bg-gray-100">
-              <Package size={16} className="text-[#A4143D]" /> Orders
-            </Link>
-            <Link href="/dashboard/coupons" onClick={onClose} className="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-100 text-[11px] font-bold shadow-sm active:bg-gray-100">
-              <Ticket size={16} className="text-[#A4143D]" /> Coupons
+          <div className="flex flex-col gap-3">
+            
+            {/* 🚀 THE INTEGRATED ACCOUNT MENU */}
+            <div className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+                <AccountMenu />
+            </div>
+
+            <Link 
+              href="/dashboard/orders" 
+              onClick={onClose} 
+              className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <Package size={18} className="text-[#A4143D]" />
+                <span>My Orders</span>
+              </div>
+              <ChevronRight size={14} className="text-gray-300" />
             </Link>
           </div>
-
-          {firstName && (
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 p-3 text-red-600 font-black text-xs uppercase tracking-widest hover:bg-red-50 rounded-xl transition-colors"
-            >
-              <LogOut size={16} /> Sign Out
-            </button>
-          )}
         </div>
       </div>
     </div>
