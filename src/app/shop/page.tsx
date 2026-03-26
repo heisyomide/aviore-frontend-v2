@@ -243,8 +243,6 @@ function ShopContent() {
           </section>
         </div>
       </main>
-      
-      <Footer />
     </div>
   );
 }
