@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Star, Store, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { Star, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { Container } from '../layout/Container';
 import { Section } from '../layout/Section';
 
 interface PopularVendorsProps {
-  initialVendors?: any[]; // For SSR support
+  initialVendors?: any[];
 }
 
 export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsProps) {
@@ -19,30 +19,26 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    // Only fetch if we don't have initial data (Rule 15: Save bandwidth)
     if (vendors.length === 0) {
       const fetchVendors = async () => {
         try {
-          // 🚀 Ensure your .env.local has NEXT_PUBLIC_API_URL=http://localhost:5000
           const API_URL = process.env.NEXT_PUBLIC_API_URL;
           const response = await axios.get(`${API_URL}/storefront/vendors`);
-        
-          setVendors(response.data.slice(0, 3));
+          setVendors(response.data.slice(0, 6)); 
           setError(false);
         } catch (err) {
-          console.error("Registry_Sync_Error: Network Connection Failed", err);
+          console.error("Registry_Sync_Error", err);
           setError(true);
         } finally {
           setLoading(false);
         }
       };
-
       fetchVendors();
     }
   }, [vendors.length]);
 
   return (
-    <Section className="!py-16">
+    <Section className="!py-16 overflow-hidden">
       <Container>
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 border-b border-zinc-50 pb-8">
@@ -67,22 +63,22 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
           </button>
         </div>
 
-        {/* VENDOR GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* HORIZONTAL SCROLL ON MOBILE, GRID ON DESKTOP */}
+        <div className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto md:overflow-x-visible no-scrollbar snap-x snap-mandatory pb-4">
           
-          {/* 🚀 LOADING STATE - Rule 15 */}
+          {/* LOADING STATE */}
           {loading && Array(3).fill(0).map((_, i) => (
-            <div key={i} className="h-32 bg-zinc-50 animate-pulse rounded-[2.5rem] border border-zinc-100 flex items-center justify-center">
+            <div key={i} className="min-w-[280px] md:min-w-0 h-32 bg-zinc-50 animate-pulse rounded-[2.5rem] border border-zinc-100 flex items-center justify-center">
               <Loader2 className="animate-spin text-zinc-200" />
             </div>
           ))}
 
-          {/* 🚀 DATA RENDER */}
+          {/* VENDOR DATA */}
           {!loading && !error && vendors.map((vendor: any) => (
             <div 
               key={vendor.id} 
               onClick={() => router.push(`/vendors/${vendor.id}`)}
-              className="group cursor-pointer bg-zinc-50/50 p-6 rounded-[2.5rem] border border-zinc-100 flex items-center gap-5 hover:bg-white hover:shadow-2xl hover:shadow-zinc-200/50 transition-all duration-500"
+              className="min-w-[280px] md:min-w-0 snap-center group cursor-pointer bg-zinc-50/50 p-6 rounded-[2.5rem] border border-zinc-100 flex items-center gap-5 hover:bg-white hover:shadow-2xl transition-all duration-500"
             >
               <div className="relative w-16 h-16 rounded-2xl bg-white border border-zinc-100 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
                 <Image 
@@ -114,26 +110,16 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
             </div>
           ))}
 
-          {/* 🚀 ERROR FALLBACK - Rule 15 */}
-          {error && (
-            <div className="col-span-3 h-32 bg-red-50/30 border border-dashed border-red-100 rounded-[2.5rem] flex items-center justify-center text-red-400 text-[10px] font-black uppercase tracking-widest">
-              Connection_Lost: Retrying_Registry_Sync...
-            </div>
-          )}
-
           {/* BECOME A VENDOR CTA */}
           <div 
             onClick={() => router.push('/become-a-vendor')}
-            className="group cursor-pointer bg-[#111] p-7 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-xl"
+            className="min-w-[280px] md:min-w-0 snap-center group cursor-pointer bg-[#111] p-7 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-xl"
           >
             <div className="absolute -right-6 -top-6 w-32 h-32 bg-[#A4143D]/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
             <div className="relative z-10">
               <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-1 leading-tight">
                 Become <br/> <span className="text-[#A4143D]">Vendor</span>
               </h3>
-              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-6">
-                Join the elite registry.
-              </p>
               <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em]">
                 <span className="border-b border-white/20 pb-0.5 group-hover:border-[#A4143D] transition-colors">Apply_Now</span>
                 <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />

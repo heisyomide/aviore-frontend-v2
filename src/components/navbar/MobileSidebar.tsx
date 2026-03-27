@@ -22,7 +22,7 @@ export function MobileSidebar({ open, onClose, activeCategory, setActiveCategory
         {/* 🚀 LOGO & CLOSE HEADER */}
         <div className="bg-slate-900 p-6 text-white pt-12 flex justify-between items-center border-b border-white/10 relative overflow-hidden">
           <span className="text-xl font-black tracking-tighter uppercase italic relative z-10">
-            Avior<span className="text-[#A4143D]">è</span>
+           
           </span>
           <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white/70 relative z-10">
             <X size={20} />
