@@ -8,7 +8,7 @@ const ADS = [
   { text: "FREE SHIPPING OVER ₦25,000", icon: Truck, color: "text-yellow-400", bg: "from-[#A4143D] to-[#600b24]" },
   { text: "FLASH SALE: 70% OFF ARTIFACTS", icon: Zap, color: "text-white", bg: "from-orange-600 to-red-600" },
   { text: "SECURE PAYMENTS & EASY RETURNS", icon: ShieldCheck, color: "text-emerald-300", bg: "from-emerald-900 to-black" },
-  { text: "EID MUBARAK WEEK : LIVE NOW!", icon: Star, color: "text-yellow-300", bg: "from-blue-600 to-indigo-900" },
+  { text: "WELCOME TO AVIORÈ MARKETPLACE BUY AND SELL NOW!", icon: Star, color: "text-yellow-300", bg: "from-blue-600 to-indigo-900" },
 ];
 
 export function TopBar() {
