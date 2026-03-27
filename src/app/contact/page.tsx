@@ -4,6 +4,7 @@ import { Breadcrumb } from '../../components/Breadcrumb';
 import { FeaturedBrandsSection } from '../../components/FeaturedBrand';
 import { Footer } from '../../components/Footer';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -33,6 +34,7 @@ const cardHover = {
 export default function ContactPage() {
   return (
     <main className="min-h-screen bg-linear-to-b from-gray-50 to-white text-gray-900">
+       <Navbar />
       <div className="max-w-7xl mx-auto px-5 py-6">
         <Breadcrumb />
       </div>

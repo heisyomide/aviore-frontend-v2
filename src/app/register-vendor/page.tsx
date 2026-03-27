@@ -3,6 +3,7 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Store, Mail, Lock, User, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 interface InputGroupProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -68,6 +69,7 @@ export default function RegisterVendor() {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+         <Navbar />
         <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 text-center border border-slate-100 animate-in fade-in zoom-in duration-300">
           <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="text-green-600" size={40} />

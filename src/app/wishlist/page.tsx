@@ -5,6 +5,7 @@ import { ProductCard } from '../../components/product/ProductCard';
 import { Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 export default function WishlistPage() {
   const { items } = useWishlistStore();
@@ -39,6 +40,7 @@ export default function WishlistPage() {
 
   return (
     <main className="max-w-[1400px] mx-auto bg-[#FDFCFB] py-20 px-6 min-h-screen">
+       <Navbar />
       {/* SECTION HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-100 pb-10 mb-12">
         <div className="space-y-1">

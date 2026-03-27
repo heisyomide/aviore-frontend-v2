@@ -14,6 +14,7 @@ import { useCartStore } from '@/src/store/useCartStore';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
 import { ProductCard } from '@/src/components/product/ProductCard';
 import { Container } from '@/src/components/layout/Container';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -135,6 +136,7 @@ export default function ProductDetailsPage() {
 
   return (
     <div className="min-h-screen bg-white pb-24 md:pb-12">
+       <Navbar />
       <div className="bg-black text-white py-2.5 text-[11px] font-black uppercase tracking-widest">
         <Container className="flex justify-between items-center whitespace-nowrap overflow-x-auto no-scrollbar gap-8">
           <div className="flex items-center gap-2"><Truck size={14} className="text-emerald-400"/> Free shipping on all orders</div>

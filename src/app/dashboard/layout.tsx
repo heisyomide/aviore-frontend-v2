@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">
-      
+       <Navbar />
 
       <Container className="flex-1 flex flex-col lg:flex-row gap-10 pt-8 lg:pt-14 pb-24">
         

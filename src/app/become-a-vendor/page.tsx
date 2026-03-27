@@ -7,6 +7,7 @@ import {
   ArrowRight, Check, HelpCircle, FileText, 
   ChevronRight, Percent, Landmark
 } from 'lucide-react';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 // Define proper interfaces for TypeScript
 interface PriceCardProps {
@@ -25,7 +26,7 @@ export default function VendorOnboardingLanding() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-orange-100">
-      
+       <Navbar />
       {/* --- HERO SECTION --- */}
       <section className="relative overflow-hidden bg-[#0a0c10] pt-24 pb-32">
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">

@@ -20,6 +20,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { Breadcrumb } from '@/src/components/Breadcrumb';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 export default function VendorLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();

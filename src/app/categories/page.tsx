@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Search, X, Zap, ListFilter, Star, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MEGA_MENU_DATA, MegaMainCategory, MegaSubCategory, MegaMenuItem } from '../../data/categories';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 export default function MobileCategoriesPage() {
   const [activeTab, setActiveTab] = useState<MegaMainCategory>(MEGA_MENU_DATA[0]);
@@ -29,7 +30,7 @@ export default function MobileCategoriesPage() {
 
   return (
     <div className="min-h-screen bg-white pb-24 select-none overflow-hidden">
-      
+       <Navbar />
       {/* 🧭 1. SEARCH HEADER */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md p-3 border-b border-gray-100 flex items-center gap-3">
         <div className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all duration-300 ${

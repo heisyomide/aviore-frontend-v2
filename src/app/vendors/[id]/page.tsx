@@ -10,6 +10,7 @@ import axios from 'axios';
 import { ProductCard } from "@/src/components/product/ProductCard";
 import { FollowButton } from "@/src/components/vendor/FollowButton";
 import { Container } from '@/src/components/layout/Container';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 interface VendorPageProps {
   params: Promise<{ id: string }>;
@@ -56,6 +57,7 @@ export default function VendorStorefront({ params }: VendorPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
+       <Navbar />
       {/* 🚀 HUD HEADER - Rule 4 (Authority & Brand Power) */}
       <div className="bg-[#09090b] pt-16 pb-32 px-6">
         <Container>

@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Upload, CheckCircle, Loader2, AlertCircle, FileCheck } from 'lucide-react';
 import { api } from '../../lib/axios'; // Assuming you have an axios instance
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 function KYCContent() {
   const router = useRouter();
@@ -99,6 +100,7 @@ function KYCContent() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-500">
+         <Navbar />
         <div className="max-w-md">
           <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-green-100">
             <CheckCircle size={48} />

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/src/lib/axios';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 /**
  * 🚀 MAIN EXPORT
@@ -48,6 +49,7 @@ function VendorsContent() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-20">
+       <Navbar />
       {/* 🚀 PREMIUM HERO HUD */}
       <div className="bg-zinc-950 py-20 px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-[#A4143D]/10 blur-[120px] pointer-events-none" />

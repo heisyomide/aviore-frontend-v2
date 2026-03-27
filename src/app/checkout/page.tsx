@@ -155,6 +155,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="bg-[#FDFCFB] min-h-screen pb-20">
+       <Navbar />
      
 
       <div className="max-w-7xl mx-auto px-4 pt-6 italic font-black uppercase tracking-tighter">

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/axios';
 import { Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 // 1. Updated Interface to match DTO
 interface RegisterInput {
@@ -58,6 +59,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4">
+       <Navbar />
       <div className="w-full max-w-sm bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">
         
         <div className="mb-8 text-center">

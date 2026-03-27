@@ -23,7 +23,7 @@ export default function SettingsPage() {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
       if (!token) {
-        window.location.href = '/auth/login';
+        window.location.href = '/login';
         return;
       }
 
@@ -37,7 +37,7 @@ export default function SettingsPage() {
 
       if (response.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = '/auth/login';
+        window.location.href = '/login';
         return;
       }
 

@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { Container } from '../../components/layout/Container';
 import { Breadcrumb } from '@/src/components/Breadcrumb';
 import { FeaturedBrandsSection } from '@/src/components/FeaturedBrand';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
@@ -52,6 +53,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <main className="min-h-[80vh] flex flex-col items-center justify-center px-6 text-center bg-white">
+         <Navbar />
         <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
           <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mb-8 mx-auto border border-gray-100">
             <ShoppingBag size={48} className="text-gray-200" strokeWidth={1.5} />

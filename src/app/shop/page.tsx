@@ -86,7 +86,7 @@ function ShopContent() {
   return (
     <div className="min-h-screen bg-[#FDFCFB] text-zinc-900 selection:bg-[#A4143D] selection:text-white">
      
-      
+       <Navbar />
       <div className="bg-white border-b border-zinc-100 sticky top-0 z-40">
          <ShopHeader 
             totalItems={meta.total}

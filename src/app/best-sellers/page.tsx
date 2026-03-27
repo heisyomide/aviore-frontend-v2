@@ -5,6 +5,7 @@ import axios from 'axios';
 import { ProductCard } from '../../components/product/ProductCard';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { TrendingUp, Trophy, Award, Flame } from 'lucide-react';
+import { Navbar } from '@/src/components/navbar/Navbar';
 
 interface Product {
   id: string;
@@ -39,6 +40,7 @@ const BestSellersPage = () => {
 
   return (
     <div className="bg-[#fcfcfc] min-h-screen pb-20">
+       <Navbar />
       {/* 🚀 SECTION 1: HEADER & STATS */}
       <section className="bg-white border-b border-gray-100 mb-12">
         <div className="max-w-7xl mx-auto px-6 py-16 text-center lg:text-left lg:flex items-center justify-between">
