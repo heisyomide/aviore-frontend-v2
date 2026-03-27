@@ -61,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <div className="relative flex min-h-screen flex-col">
             {/* Navigation Hub */}
-            <Navbar />
+            
 
             {/* Main Stage */}
             <main className="flex-1">
@@ -73,7 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             {/* Global Instrumentation Tools */}
             <BackToTop />
-            <Footer />
+            
           </div>
         </Providers>
       </body>

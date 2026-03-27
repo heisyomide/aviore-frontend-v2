@@ -16,6 +16,7 @@ import { PopularVendorsSection } from '../components/home/PopularVendors';
 import { api } from '@/src/lib/axios';
 import { ChevronRight, Sparkles, Zap, Loader2, PackageSearch } from 'lucide-react';
 import { Container } from '../components/layout/Container';
+import { Navbar } from '../components/navbar/Navbar';
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
@@ -86,6 +87,7 @@ export default function HomePage() {
 
   return (
     <main className="bg-white min-h-screen pb-24 selection:bg-[#A4143D] selection:text-white">
+       <Navbar />
       <Hero />
 
 {/* 1. QUICK-ACCESS REGISTRY NAV */}
