@@ -1,6 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { AlertTriangle, Download, Upload, Save, Loader2, Package, Search } from 'lucide-react';
+
+import { useEffect, useState, useMemo } from 'react';
+import { 
+  AlertTriangle, Download, Upload, Save, Loader2, 
+  Package, Search, Filter, ArrowUpRight, ArrowDown 
+} from 'lucide-react';
 import { api } from '@/src/lib/axios';
 
 export default function InventoryPage() {
@@ -8,138 +12,167 @@ export default function InventoryPage() {
   const [saving, setSaving] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [updates, setUpdates] = useState<{ [key: string]: number }>({});
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchInventory();
-  }, []);
+  useEffect(() => { fetchInventory(); }, []);
 
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      // Fetches vendor products from your backend
       const res = await api.get('/vendor/inventory'); 
       setProducts(res.data);
     } catch (e) {
-      console.error("Inventory fetch failed");
+      console.error("Inventory sync failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStockChange = (productId: string, newQuantity: string) => {
-    setUpdates(prev => ({
-      ...prev,
-      [productId]: Number(newQuantity)
-    }));
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => 
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.id.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
+
+  const handleStockChange = (productId: string, newQuantity: number) => {
+    setUpdates(prev => ({ ...prev, [productId]: Math.max(0, newQuantity) }));
   };
 
   const handleSaveAll = async () => {
     if (Object.keys(updates).length === 0) return;
-    
     setSaving(true);
     try {
-      // Send bulk updates to backend
       await api.patch('/vendor/inventory/bulk-stock', { updates });
-      await fetchInventory(); // Refresh data
+      await fetchInventory();
       setUpdates({});
-      alert("Inventory synced successfully!");
     } catch (e) {
-      alert("Failed to update stock");
+      alert("Fulfillment Node Error: Sync Failed");
     } finally {
       setSaving(false);
     }
   };
 
-  // UI Helper for bold input styles
-  const inputClasses = "w-24 p-3 bg-slate-900 border-2 border-slate-700 rounded-xl text-sm font-black text-orange-500 text-center outline-none focus:border-orange-500 transition-all";
-
-  if (loading) {
-    return (
-      <div className="h-96 flex flex-col items-center justify-center gap-4 text-slate-400">
-        <Loader2 className="animate-spin" size={40} strokeWidth={3} />
-        <p className="font-black uppercase tracking-widest text-xs">Loading Live Inventory...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingState />;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <Package className="text-orange-600" size={28} strokeWidth={3} />
-            <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Inventory Control</h1>
+    <div className="min-h-screen bg-[#F4F7FE] lg:bg-[#FAFAFA] pb-32 lg:pb-10">
+      
+      {/* 🚀 EXECUTIVE HEADER */}
+      <div className="p-6 lg:p-10 space-y-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Inventory Registry</h1>
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Hardware Stock Synchronization Node</p>
           </div>
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Real-time stock synchronization</p>
-        </div>
-        
-        <div className="flex gap-3 w-full md:w-auto">
-          <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all">
-            <Upload size={16} strokeWidth={3} /> Import
-          </button>
-          <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all">
-            <Download size={16} strokeWidth={3} /> Export
-          </button>
-        </div>
-      </div>
 
-      {/* Main Table Container */}
-      <div className="bg-white rounded-[3rem] border-4 border-slate-50 shadow-2xl overflow-hidden shadow-slate-200/50">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-900">
-              <tr>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Product Details</th>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Category</th>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Current Stock</th>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Status</th>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Adjust Units</th>
+          <div className="flex gap-3 w-full lg:w-auto">
+            <div className="relative flex-1 lg:w-64 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={14} />
+              <input 
+                type="text" 
+                placeholder="SEARCH BY ID/TITLE..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest outline-none shadow-sm focus:ring-4 focus:ring-blue-500/5 transition-all" 
+              />
+            </div>
+            <button className="hidden lg:flex items-center gap-2 px-6 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all">
+              <Download size={14} /> Export CSV
+            </button>
+          </div>
+        </div>
+
+        {/* 📱 MOBILE VIEW: Unit Registry Cards */}
+        <div className="lg:hidden space-y-4">
+          {filteredProducts.map((item) => (
+            <div key={item.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 animate-in fade-in duration-500">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-slate-50 overflow-hidden border border-slate-100">
+                  <img src={item.images[0]?.imageUrl} className="w-full h-full object-cover" alt="" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-black text-slate-900 uppercase italic truncate">{item.title}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">SKU: {item.id.slice(-8)}</span>
+                    {item.stock <= 5 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                <div className="text-center flex-1">
+                  <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Current</p>
+                  <p className="text-xl font-black text-slate-900 italic">{item.stock}</p>
+                </div>
+                <div className="h-8 w-[1px] bg-slate-200" />
+                <div className="flex-1 flex items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleStockChange(item.id, (updates[item.id] ?? item.stock) - 1)}
+                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-900 active:scale-90 transition-transform"
+                  >
+                    -
+                  </button>
+                  <span className="text-xl font-black text-blue-600 italic">
+                    {updates[item.id] ?? item.stock}
+                  </span>
+                  <button 
+                    onClick={() => handleStockChange(item.id, (updates[item.id] ?? item.stock) + 1)}
+                    className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center active:scale-90 transition-transform"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 💻 DESKTOP VIEW: High-Density Table */}
+        <div className="hidden lg:block bg-white rounded-4xl shadow-xl shadow-slate-200/50 border border-slate-50 overflow-hidden">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                <th className="p-6">Product Manifest</th>
+                <th className="p-6 text-center">Registry Node</th>
+                <th className="p-6 text-center">Unit Status</th>
+                <th className="p-6 text-center">Current Stock</th>
+                <th className="p-6 text-right">Adjustment Protocol</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {products.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+            <tbody className="divide-y divide-slate-50">
+              {filteredProducts.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50/30 transition-all group">
                   <td className="p-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200">
-                        <img src={item.images[0]?.imageUrl} className="w-full h-full object-cover" alt="" />
+                      <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                        <img src={item.images[0]?.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt="" />
                       </div>
-                      <div>
-                        <p className="font-black text-slate-900 text-sm line-clamp-1 uppercase tracking-tight">{item.title}</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">ID: {item.id.slice(-8)}</p>
-                      </div>
+                      <p className="font-black text-slate-900 text-sm uppercase italic leading-none">{item.title}</p>
                     </div>
                   </td>
-                  <td className="p-6">
-                    <span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase">
-                      {item.category?.name || 'General'}
-                    </span>
-                  </td>
+                  <td className="p-6 text-center text-[10px] font-mono font-black text-slate-300">#{item.id.slice(-8).toUpperCase()}</td>
                   <td className="p-6 text-center">
-                    <span className="text-lg font-black text-slate-900">{item.stock}</span>
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Units</span>
-                  </td>
-                  <td className="p-6">
                     <div className="flex justify-center">
                       {item.stock <= 5 ? (
-                        <span className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-full font-black text-[10px] uppercase tracking-wider animate-pulse border border-red-100">
-                          <AlertTriangle size={12} strokeWidth={3} /> Critical Stock
+                        <span className="px-3 py-1 bg-red-50 text-red-600 rounded-lg text-[9px] font-black uppercase border border-red-100 flex items-center gap-1.5 animate-pulse">
+                          <AlertTriangle size={10} /> Critical
                         </span>
                       ) : (
-                        <span className="px-4 py-2 bg-green-50 text-green-600 rounded-full font-black text-[10px] uppercase tracking-wider border border-green-100">
-                          Healthy
+                        <span className="px-3 py-1 bg-green-50 text-green-600 rounded-lg text-[9px] font-black uppercase border border-green-100">
+                          Active
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="p-6">
-                    <div className="flex justify-center">
+                  <td className="p-6 text-center font-black text-slate-900 italic text-lg">{item.stock}</td>
+                  <td className="p-6 text-right">
+                    <div className="inline-flex items-center gap-2 bg-slate-900 p-1 rounded-xl">
                       <input 
                         type="number" 
                         defaultValue={item.stock}
-                        onChange={(e) => handleStockChange(item.id, e.target.value)}
-                        className={inputClasses}
+                        onChange={(e) => handleStockChange(item.id, Number(e.target.value))}
+                        className="w-16 bg-transparent text-center text-blue-500 text-sm font-black outline-none appearance-none"
                       />
                     </div>
                   </td>
@@ -148,21 +181,35 @@ export default function InventoryPage() {
             </tbody>
           </table>
         </div>
-
-        {/* Action Bar */}
-        <div className="p-8 bg-slate-50 border-t-2 border-slate-100 flex justify-between items-center">
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic">
-            {Object.keys(updates).length} Pending updates to sync
-          </p>
-          <button 
-            onClick={handleSaveAll}
-            disabled={saving || Object.keys(updates).length === 0}
-            className="flex items-center gap-3 px-10 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-orange-600 disabled:bg-slate-300 transition-all shadow-xl active:scale-95"
-          >
-            {saving ? <Loader2 size={18} className="animate-spin" /> : <><Save size={18} strokeWidth={3} /> Push Updates Live</>}
-          </button>
-        </div>
       </div>
+
+      {/* 🏁 FLOATING ACTION BAR: Only shows when changes are pending */}
+      {Object.keys(updates).length > 0 && (
+        <div className="fixed bottom-24 lg:bottom-10 left-1/2 -translate-x-1/2 z-[100] w-[90%] lg:w-auto animate-in slide-in-from-bottom-10">
+          <div className="bg-[#0F172A] p-4 lg:p-6 rounded-[2.5rem] shadow-2xl flex items-center justify-between gap-8 border border-slate-700/50 backdrop-blur-md">
+            <div className="flex flex-col">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Registry Queue</p>
+              <p className="text-white text-xs font-black italic">{Object.keys(updates).length} Nodes Modified</p>
+            </div>
+            <button 
+              onClick={handleSaveAll}
+              disabled={saving}
+              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+            >
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <><Save size={16} /> Sync Live</>}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="h-[70vh] flex flex-col items-center justify-center gap-6">
+      <Loader2 className="animate-spin text-blue-600" size={48} />
+      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Syncing Hardware Inventory Registry...</p>
     </div>
   );
 }

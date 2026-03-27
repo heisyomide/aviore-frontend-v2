@@ -12,9 +12,6 @@ import { MobileBottomNav } from "../components/navbar/MobileBottomNav";
 import { BackToTop } from "../components/ui/BackToTop";
 import { Footer } from "../components/Footer";
 
-// 🚀 Layout Logic Tools (Added to handle the Dashboard switch)
-import LayoutSwitch from "../components/layout/LayoutSwitch"; 
-
 // 🏛️ Font Instrumentation
 const geistSans = Geist({ 
   variable: "--font-geist-sans", 
@@ -28,7 +25,7 @@ const geistMono = Geist_Mono({
   display: 'swap',
 });
 
-// 🏛️ Registry Metadata (RETAINED)
+// 🏛️ Registry Metadata
 export const metadata: Metadata = {
   title: {
     default: "Aviore Marketplace | Unique Artifacts & Global Deals",
@@ -39,7 +36,7 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.ico" },
 };
 
-// 🏛️ Hardware Optimization (RETAINED)
+// 🏛️ Hardware Optimization
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -63,24 +60,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CartSyncProvider />
 
           <div className="relative flex min-h-screen flex-col">
-            
-            {/* 🏁 THE SWITCH: This handles hiding Navbar/Footer on Dashboard routes */}
-            <LayoutSwitch>
-              {/* Navigation Hub */}
-              <Navbar />
+            {/* Navigation Hub */}
+            <Navbar />
 
-              {/* Main Stage */}
-              <main className="flex-1">
-                {children}
-              </main>
+            {/* Main Stage */}
+            <main className="flex-1">
+              {children}
+            </main>
 
-              {/* Mobile Interaction Tier */}
-              <MobileBottomNav />
+            {/* Mobile Interaction Tier (Hidden on Desktop via CSS) */}
+            <MobileBottomNav />
 
-              {/* Global Instrumentation Tools */}
-              <BackToTop />
-              <Footer />
-            </LayoutSwitch>
+            {/* Global Instrumentation Tools */}
+            <BackToTop />
+            <Footer />
           </div>
         </Providers>
       </body>
