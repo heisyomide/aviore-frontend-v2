@@ -114,6 +114,7 @@ export default function VendorOverview() {
       return;
     }
 
+    // Points to the public vendor listing page on the store-front
     const shareUrl = `${window.location.origin}/vendors/${data.profile.slug}`;
     const shareData = {
       title: data.profile.storeName,
@@ -122,14 +123,13 @@ export default function VendorOverview() {
     };
 
     try {
-      // 1. Attempt Native Mobile Sharing
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
         throw new Error("Native share unavailable");
       }
     } catch (err) {
-      // 2. Clipboard Fallback (Desktop/Chrome Fix)
+      // Clipboard Fallback (For desktop or browsers that block share)
       try {
         await navigator.clipboard.writeText(shareUrl);
         alert("Store Link copied to clipboard!");
@@ -152,7 +152,7 @@ export default function VendorOverview() {
   return (
     <div className="min-h-screen bg-white pb-32 animate-in fade-in duration-700">
       
-      {/* 🚀 1. STICKY IDENTITY HEADER (Top-Left Title + Welcome Note) */}
+      {/* 🚀 1. STICKY IDENTITY HEADER (Top-Left Identity + Initiate Toggle) */}
       <div className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md px-6 py-8 flex justify-between items-center border-b border-slate-50">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
@@ -199,7 +199,7 @@ export default function VendorOverview() {
 
       <div className="px-6 space-y-10 mt-10">
 
-        {/* 🚀 2. REVENUE HERO NODE */}
+        {/* 🚀 2. REVENUE HERO NODE (Available Balance) */}
         <div className="bg-[#0F172A] p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-start relative z-10">
                 <div>
@@ -225,13 +225,13 @@ export default function VendorOverview() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
         </div>
 
-        {/* 🚀 3. OPERATIONAL STATS */}
+        {/* 🚀 3. OPERATIONAL STATS GRID */}
         <div className="grid grid-cols-2 gap-4">
           <OperationalCard label="Active Orders" val={data.stats.totalOrders} icon={<Clock size={18}/>} color="bg-blue-50" textColor="text-blue-600" />
           <OperationalCard label="Product SKU" val={data.stats.activeProducts} icon={<Package size={18}/>} color="bg-slate-50" textColor="text-slate-900" />
         </div>
 
-        {/* 🚀 4. REQUISITION REGISTRY */}
+        {/* 🚀 4. RECENT REQUISITIONS (Recent Orders) */}
         <div className="space-y-6">
           <div className="flex justify-between items-center px-1">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Recent Requisitions</h3>
@@ -254,7 +254,7 @@ export default function VendorOverview() {
           </div>
         </div>
 
-        {/* 🚀 5. SECURITY STATUS */}
+        {/* 🚀 5. SECURITY STATUS HUB */}
         <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-4">
                 <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600 border border-slate-100">
@@ -272,7 +272,7 @@ export default function VendorOverview() {
   );
 }
 
-/* --- SUB-COMPONENTS (PRESERVED) --- */
+/* --- SUB-COMPONENTS (PRESERVED & STYLED) --- */
 
 function OperationalCard({ label, val, icon, color, textColor }: any) {
   return (
