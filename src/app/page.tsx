@@ -84,148 +84,133 @@ export default function HomePage() {
     }, 850);
   }, [isSyncing, hasMoreItems]);
 
+
+
   if (loading) return <HomeSkeleton />;
 
   return (
-    <main className="bg-white min-h-screen pb-24 selection:bg-[#A4143D] selection:text-white">
-       <Navbar />
-      <Hero />
+    /* 🚀 THE FIX: flex flex-col min-h-screen ensures the main container 
+       fills the height of the phone, pushing the footer stack to the bottom. */
+    <main className="bg-white min-h-screen flex flex-col selection:bg-[#A4143D] selection:text-white">
+      <Navbar />
+      
+      {/* WRAPPER: This div grows to fill all available space, 
+          ensuring the footer stack below it is always at the bottom. */}
+      <div className="flex-grow">
+        <Hero />
 
+        {/* 3. URGENCY ZONE */}
+        <div className="mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
+          {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
+        </div>
 
-            {/* 3. URGENCY ZONE */}
-      <div className="mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
-        {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
-        {registry.topSaver.length > 0 && (
-          <div className="mt-12">
-            <TopDealsSection initialDeals={registry.topSaver} />
-          </div>
-        )}
-      </div>
-
-{/* 1. QUICK-ACCESS REGISTRY NAV */}
-<Section className="bg-white border-b border-gray-50 py-8">
-  <Container>
-<div className="flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2 no-scrollbar">
-  
-{/* Dynamic Marketplace Categories */}
-{HOME_CATEGORIES.map((cat) => (
-  <CategoryCircle 
-    key={cat.id}
-    name={cat.name}
-    /** * 🚀 THE FIX: We use cat.image directly. 
-     * No more clashing with the Mega Menu product photos. 
-     */
-    image={cat.image || '/placeholder.png'}
-    slug={cat.id.toLowerCase()} 
-  />
-))}
-
-      {/* Static "Specialty" Collections */}
-      <div className="flex gap-6 border-l border-gray-100 pl-6 md:gap-10 md:pl-10">
-        <CategoryCircle 
-          name="Best Sellers" 
-          image="/registry/categories/bestsellers.jpg" 
-          slug="best-sellers" 
-        />
-        <CategoryCircle 
-          name="Flash Deals" 
-          image="/registry/categories/flash.jpg" 
-          slug="flash-deals" 
-        />
-        <CategoryCircle 
-          name="New Arrivals" 
-          image="/registry/categories/newarrival.jpg" 
-          slug="new-arrivals" 
-        />
-      </div>
-    </div>
-  </Container>
-</Section>
-
-      <div className="py-12">
-        <PopularVendorsSection initialVendors={registry.vendors} />
-      </div>
-
-      {/* 2. DYNAMIC DEPARTMENTS */}
-      <div className="flex flex-col">
-        {registry.departments.map((section: any) => (
-          section.data?.length > 0 && (
-            <CategoryExplorer 
-              key={section.id}
-              categoryName={section.title} 
-              categorySlug={section.slug}
-              products={section.data}
-            />
-          )
-        ))}
-      </div>
-
-   
-          <div className="mt-12">
-            <TopDealsSection initialDeals={registry.topSaver} />
-          </div>
-        
-    
-
-      {/* 4. VISUAL BREAKS */}
-      <div className="py-12">
-        <MultiBannerGrid />
-      </div>
-
-      {/* 🚀 5. DISCOVERY ENGINE - Fixed 'id' error by moving it to a wrapper div */}
-      <div id="discovery-feed">
-        <Container className="mt-32">
-          <header className="mb-16 flex flex-col justify-between gap-6 border-b border-gray-100 pb-10 md:flex-row md:items-end">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-[#A4143D]">
-                <Sparkles size={16} className="animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.5em]">Inventory_Pulse</span>
+        {/* 1. QUICK-ACCESS REGISTRY NAV */}
+        <Section className="bg-white border-b border-gray-50 py-8">
+          <Container>
+            <div className="flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2 no-scrollbar">
+              {HOME_CATEGORIES.map((cat) => (
+                <CategoryCircle 
+                  key={cat.id}
+                  name={cat.name}
+                  image={cat.image || '/placeholder.png'}
+                  slug={cat.id.toLowerCase()} 
+                />
+              ))}
+              <div className="flex gap-6 border-l border-gray-100 pl-6 md:gap-10 md:pl-10">
+                <CategoryCircle name="Best Sellers" image="/registry/categories/bestsellers.jpg" slug="best-sellers" />
+                <CategoryCircle name="Flash Deals" image="/registry/categories/flash.jpg" slug="flash-deals" />
+                <CategoryCircle name="New Arrivals" image="/registry/categories/newarrival.jpg" slug="new-arrivals" />
               </div>
-              <h2 className="text-4xl font-black italic uppercase leading-none tracking-tighter text-gray-900 md:text-6xl">
-                Explore your interests
-              </h2>
             </div>
-          </header>
+          </Container>
+        </Section>
 
-          {paginatedDiscovery.length > 0 ? (
-            <>
-              <ProductGrid products={paginatedDiscovery} />
-              
-              {hasMoreItems && (
-                <div className="mt-24 flex flex-col items-center gap-8 text-center">
-                  <button 
-                    onClick={handleRegistrySync}
-                    disabled={isSyncing}
-                    className="group relative overflow-hidden rounded-full border-2 border-black bg-white px-20 py-6 shadow-2xl transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <span className="relative z-10 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] transition-colors group-hover:text-white">
-                      {isSyncing ? <>Syncing <Loader2 size={16} className="animate-spin" /></> : "Load More Artifacts"}
-                    </span>
-                    {!isSyncing && (
-                      <div className="absolute inset-0 translate-y-full bg-black transition-transform duration-300 group-hover:translate-y-0" />
-                    )}
-                  </button>
+        <div className="py-12">
+          <PopularVendorsSection initialVendors={registry.vendors} />
+        </div>
+
+        {/* 2. DYNAMIC DEPARTMENTS */}
+        <div className="flex flex-col">
+          {registry.departments.map((section: any) => (
+            section.data?.length > 0 && (
+              <CategoryExplorer 
+                key={section.id}
+                categoryName={section.title} 
+                categorySlug={section.slug}
+                products={section.data}
+              />
+            )
+          ))}
+        </div>
+
+        <div className="mt-12">
+          <TopDealsSection initialDeals={registry.topSaver} />
+        </div>
+
+        <div className="py-12">
+          <MultiBannerGrid />
+        </div>
+
+        {/* 5. DISCOVERY ENGINE */}
+        <div id="discovery-feed">
+          <Container className="mt-32">
+            <header className="mb-16 flex flex-col justify-between gap-6 border-b border-gray-100 pb-10 md:flex-row md:items-end">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[#A4143D]">
+                  <Sparkles size={16} className="animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em]">Inventory_Pulse</span>
                 </div>
-              )}
-            </>
-          ) : (
-            <DiscoveryEmptyState />
-          )}
-        </Container>
+                <h2 className="text-4xl font-black italic uppercase leading-none tracking-tighter text-gray-900 md:text-6xl">
+                  Explore your interests
+                </h2>
+              </div>
+            </header>
+
+            {paginatedDiscovery.length > 0 ? (
+              <>
+                <ProductGrid products={paginatedDiscovery} />
+                {hasMoreItems && (
+                  <div className="mt-24 flex flex-col items-center gap-8 text-center">
+                    <button 
+                      onClick={handleRegistrySync}
+                      className="group relative overflow-hidden rounded-full border-2 border-black bg-white px-20 py-6 transition-all active:scale-95"
+                    >
+                      <span className="relative z-10 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] group-hover:text-white transition-colors">
+                        {isSyncing ? "Syncing..." : "Load More Artifacts"}
+                      </span>
+                      <div className="absolute inset-0 translate-y-full bg-black transition-transform duration-300 group-hover:translate-y-0" />
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <DiscoveryEmptyState />
+            )}
+          </Container>
+        </div>
       </div>
 
-      <div className="mt-32">
-        <TrustBar />
+      {/* 🚀 THE FOOTER STACK: Pushed to bottom by flex-grow above */}
+      <div className="mt-auto">
+        <div className="mt-32 w-full border-t border-slate-50 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <TrustBar />
+          </div>
+        </div>
+        
+        <footer className="w-full bg-[#0A0A0A] text-white border-t border-white/5">
+          <div className="max-w-7xl mx-auto">
+            <Footer />
+          </div>
+          {/* Navigation Buffer for Fixed Mobile Nav - Background matches footer black */}
+          <div className="h-24 lg:hidden bg-[#0A0A0A]" />
+        </footer>
       </div>
-     
-   
-    
-     <Footer />
-     
-      </main>
-  
+
+    </main>
   );
 }
+
 
 // 🦴 SKELETON BLUEPRINT - Fixed canonical classes
 function HomeSkeleton() {
