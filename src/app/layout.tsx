@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
 
             {/* Mobile Interaction Tier (Hidden on Desktop via CSS) */}
-            <MobileBottomNav />
+            
 
             {/* Global Instrumentation Tools */}
             <BackToTop />

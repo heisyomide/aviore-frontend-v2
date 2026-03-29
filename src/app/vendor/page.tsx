@@ -52,7 +52,7 @@ export default function VendorOverview() {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
         if (!token) {
-          window.location.href = '/auth/login';
+          window.location.href = '/login';
           return;
         }
         
@@ -66,7 +66,7 @@ export default function VendorOverview() {
 
         if (response.status === 401) {
           localStorage.removeItem('token');
-          window.location.href = '/auth/login';
+          window.location.href = '/login';
           return;
         }
 

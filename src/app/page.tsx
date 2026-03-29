@@ -17,6 +17,7 @@ import { api } from '@/src/lib/axios';
 import { ChevronRight, Sparkles, Zap, Loader2, PackageSearch } from 'lucide-react';
 import { Container } from '../components/layout/Container';
 import { Navbar } from '../components/navbar/Navbar';
+import { Footer } from '../components/Footer';
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
@@ -205,7 +206,13 @@ export default function HomePage() {
       <div className="mt-32">
         <TrustBar />
       </div>
-    </main>
+     
+   
+    
+     <Footer />
+     
+      </main>
+  
   );
 }
 
