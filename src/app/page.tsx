@@ -91,6 +91,17 @@ export default function HomePage() {
        <Navbar />
       <Hero />
 
+
+            {/* 3. URGENCY ZONE */}
+      <div className="mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
+        {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
+        {registry.topSaver.length > 0 && (
+          <div className="mt-12">
+            <TopDealsSection initialDeals={registry.topSaver} />
+          </div>
+        )}
+      </div>
+
 {/* 1. QUICK-ACCESS REGISTRY NAV */}
 <Section className="bg-white border-b border-gray-50 py-8">
   <Container>
@@ -131,6 +142,10 @@ export default function HomePage() {
   </Container>
 </Section>
 
+      <div className="py-12">
+        <PopularVendorsSection initialVendors={registry.vendors} />
+      </div>
+
       {/* 2. DYNAMIC DEPARTMENTS */}
       <div className="flex flex-col">
         {registry.departments.map((section: any) => (
@@ -145,20 +160,16 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* 3. URGENCY ZONE */}
-      <div className="mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
-        {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
-        {registry.topSaver.length > 0 && (
+   
           <div className="mt-12">
             <TopDealsSection initialDeals={registry.topSaver} />
           </div>
-        )}
-      </div>
+        
+    
 
       {/* 4. VISUAL BREAKS */}
       <div className="py-12">
         <MultiBannerGrid />
-        <PopularVendorsSection initialVendors={registry.vendors} />
       </div>
 
       {/* 🚀 5. DISCOVERY ENGINE - Fixed 'id' error by moving it to a wrapper div */}

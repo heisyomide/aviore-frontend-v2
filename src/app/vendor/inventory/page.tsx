@@ -91,7 +91,7 @@ export default function InventoryPage() {
            <div className="p-6 rounded-[2.2rem] bg-blue-600 border border-blue-500 shadow-xl shadow-blue-900/20">
               <Package size={20} className="text-white mb-6" />
               <p className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-100 mb-1.5">Total SKU</p>
-              <h2 className="text-xl font-black text-white italic">{products.length} Nodes</h2>
+              <h2 className="text-xl font-black text-white italic">{products.length} Products</h2>
            </div>
            <div className="p-6 rounded-[2.2rem] bg-white/5 border border-white/10">
               <AlertTriangle size={20} className="text-orange-500 mb-6" />

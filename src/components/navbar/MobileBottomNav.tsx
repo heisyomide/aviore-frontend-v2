@@ -34,7 +34,7 @@ const VENDOR_EXTENDED: NavLink[] = [
   { label: 'Analytics', href: '/vendor/analytics', icon: BarChart },
   { label: 'Reviews', href: '/vendor/reviews', icon: Star },
   { label: 'Customers', href: '/vendor/customers', icon: Users },
-  { label: 'Support', href: '/vendor/marketing/campaigns', icon: LifeBuoy },
+  { label: 'Support', href: '/vendor/support', icon: LifeBuoy },
   { label: 'Inventorty', href: '/vendor/inventory', icon: Boxes },
   
   { label: 'Settings', href: '/vendor/settings', icon: Settings },
