@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { 
   ShoppingCart, Wallet, Loader2, PackageOpen, BadgeCheck,
   TrendingUp, ArrowUpRight, ShieldCheck, Bell, ChevronRight,
-  Package, CheckCircle2, Truck, Clock, AlertCircle
+  Package, CheckCircle2, Truck, Clock, AlertCircle, MoreHorizontal
 } from 'lucide-react';
 
 const CURRENCY_SYMBOL = '₦';
@@ -74,7 +74,6 @@ export default function VendorOverview() {
 
         const result = await response.json();
 
-        // --- FIXED NaN BUG: Added strict fallbacks to 0 ---
         const sanitizedData: DashboardData = {
           profile: {
             storeName: result.profile?.storeName || "Registry Node",
@@ -114,80 +113,103 @@ export default function VendorOverview() {
   if (error || !data) return <ErrorState message={error} />;
 
   return (
-    <div className="min-h-screen bg-[#F4F7FE] lg:bg-[#FAFAFA] pb-32 lg:pb-10">
+    <div className="min-h-screen bg-white lg:bg-[#FAFAFA] pb-32 pt-10 px-6 lg:px-10 space-y-10 animate-in fade-in duration-700">
       
-      {/* 📱 MOBILE VIEW */}
-      <div className="lg:hidden animate-in fade-in duration-500">
-        <div className="bg-[#1E293B] p-6 pt-12 pb-14 rounded-b-[2.5rem] text-white flex justify-between items-center shadow-2xl relative z-10">
-          <div>
-            <h1 className="text-2xl font-black tracking-tighter italic uppercase leading-none">Logistics Hub</h1>
-            <p className="opacity-50 text-[9px] font-bold uppercase tracking-[0.2em] mt-2">
-               Verified Node: {data.profile.storeName}
-            </p>
+      {/* 🚀 1. INTEGRATED GREETING & NOTIFICATION (Replaces Header) */}
+      <div className="lg:hidden flex justify-between items-start">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight uppercase italic">
+            Let's become <br />
+            <span className="text-blue-600">more Productive</span>
+          </h1>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
+            {data.profile.storeName} • Registry Hub
+          </p>
+        </div>
+        <div className="relative p-1">
+          <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+            <Bell size={22} />
           </div>
-          <div className="relative bg-slate-800 p-3 rounded-full border border-slate-700 shadow-inner">
-            <Bell size={20} />
-            <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-[#1E293B]" />
-          </div>
+          <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-blue-600 rounded-full border-2 border-white" />
+        </div>
+      </div>
+
+      {/* 🚀 2. MOBILE PROGRESS CARD (From Sample) */}
+      <div className="lg:hidden bg-[#1E293B] p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden flex items-center justify-between">
+        <div className="space-y-5 z-10">
+          <p className="text-sm font-bold text-slate-300 leading-relaxed italic">
+            Great, your today's <br />
+            plan almost done
+          </p>
+          <button className="bg-orange-500 text-white text-[9px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+            View Task List
+          </button>
         </div>
 
-        {/* Status Grid */}
-        <div className="px-6 -mt-8 grid grid-cols-2 gap-4 relative z-20">
-          <MobileStatCard color="bg-blue-600" label="Active Orders" count={data.stats.totalOrders} icon={<Clock size={16}/>} />
-          <MobileStatCard color="bg-[#0F172A]" label="Inventory" count={data.stats.activeProducts} icon={<Package size={16}/>} />
-          <MobileStatCard color="bg-orange-500" label="In Transit" count={2} icon={<Truck size={16}/>} />
-          <MobileStatCard color="bg-emerald-600" label="Fulfilled" count={data.stats.totalOrders} icon={<CheckCircle2 size={16}/>} />
+        <div className="relative w-24 h-24 flex items-center justify-center z-10 shrink-0">
+          <svg className="w-full h-full transform -rotate-90">
+            <circle cx="48" cy="48" r="38" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-700" />
+            <circle 
+              cx="48" cy="48" r="38" 
+              stroke="currentColor" strokeWidth="8" fill="transparent" 
+              strokeDasharray={239} 
+              strokeDashoffset={239 * (1 - 0.8)} 
+              className="text-orange-500" 
+              strokeLinecap="round" 
+            />
+          </svg>
+          <span className="absolute text-sm font-black italic tracking-tighter">80%</span>
         </div>
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl opacity-20" />
+      </div>
 
-        {/* Mobile Wallet Section */}
-        <div className="px-6 mt-8">
-           <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl flex justify-between items-center border border-slate-800">
-              <div>
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1.5">Liquid Liquidity</p>
-                <p className="text-3xl font-black italic tracking-tighter">{CURRENCY_SYMBOL}{data.wallet.availableBalance.toLocaleString()}</p>
-              </div>
-              <button className="bg-blue-600 p-4 rounded-2xl shadow-lg shadow-blue-900/40 active:scale-90 transition-transform">
-                <ArrowUpRight size={22} />
-              </button>
-           </div>
-        </div>
-
-        {/* 🚀 FIXED: PRO REQUISITIONS BOX (Larger & Professional) */}
-        <div className="px-6 mt-10 space-y-4">
-          <div className="flex justify-between items-center px-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Recent Requisitions</h3>
-            <span className="text-[9px] font-bold text-blue-600 uppercase italic">View All Nodes</span>
-          </div>
-          <div className="bg-white rounded-[2.5rem] p-3 shadow-sm border border-slate-100 min-h-[300px]">
-            {data.recentOrders.length > 0 ? (
-              data.recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center gap-5 p-5 border-b border-slate-50 last:border-0 hover:bg-slate-50 rounded-2xl transition-colors">
-                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
-                     <Package size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-black text-slate-900 uppercase italic truncate">{order.artifact}</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">{order.status} • {new Date(order.date).toLocaleDateString()}</p>
-                  </div>
-                  <p className="text-sm font-black text-slate-900 italic tracking-tighter">{CURRENCY_SYMBOL}{order.amount.toLocaleString()}</p>
-                </div>
-              ))
-            ) : (
-               <div className="h-[250px] flex flex-col items-center justify-center text-slate-300">
-                  <PackageOpen size={48} className="opacity-20 mb-3" />
-                  <p className="text-[10px] font-black uppercase tracking-widest italic">Registry Neutral</p>
-               </div>
-            )}
+      {/* 🚀 3. OPERATIONAL GRID (Replacing old status grid) */}
+      <div className="lg:hidden space-y-6">
+        <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic px-1">Today's Protocol</h3>
+        <div className="grid grid-cols-2 gap-5">
+          <OperationalCard bg="bg-blue-50" text="text-blue-600" label="Active Orders" val={data.stats.totalOrders} icon={<Clock size={16}/>} />
+          <OperationalCard bg="bg-orange-50" text="text-orange-600" label="Stock Hub" val={data.stats.activeProducts} icon={<Package size={16}/>} />
+          <OperationalCard bg="bg-slate-900" text="text-white" label="Liquid Balance" val={`${CURRENCY_SYMBOL}${data.wallet.availableBalance.toLocaleString()}`} icon={<Wallet size={16}/>} isWide />
+          <div className="bg-slate-50 p-6 rounded-[2.2rem] flex flex-col items-center justify-center border border-slate-100 group active:scale-95 transition-all">
+             <div className="p-3 bg-white rounded-xl shadow-sm text-slate-400 group-hover:text-blue-600 transition-colors">
+               <MoreHorizontal size={20}/>
+             </div>
+             <p className="text-[9px] font-black uppercase text-slate-400 mt-3 tracking-widest">Analytics</p>
           </div>
         </div>
       </div>
 
-      {/* 💻 DESKTOP VIEW */}
+      {/* 🚀 4. RECENT REQUISITIONS (Mobile List structure) */}
+      <div className="lg:hidden space-y-6">
+        <div className="flex justify-between items-center px-1">
+          <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Recent Artifacts</h3>
+          <ArrowUpRight size={18} className="text-blue-600" />
+        </div>
+        <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-slate-100">
+          {data.recentOrders.length > 0 ? data.recentOrders.map((order) => (
+            <div key={order.id} className="flex items-center gap-4 p-5 border-b border-slate-50 last:border-0 hover:bg-slate-50 rounded-3xl transition-colors group">
+              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0 border border-slate-100">
+                <Package size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-black text-slate-900 uppercase italic truncate">{order.artifact}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">NODE_{order.id.slice(-6).toUpperCase()}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-black text-slate-900 italic tracking-tighter">{CURRENCY_SYMBOL}{order.amount.toLocaleString()}</p>
+                <StatusBadge status={order.status} />
+              </div>
+            </div>
+          )) : <EmptyState />}
+        </div>
+      </div>
+
+      {/* 💻 DESKTOP VIEW: MAINTAINED ORIGINAL CONTEXT */}
       <div className="hidden lg:block space-y-8 p-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Consolidated Ledger</h1>
-            <p className="text-slate-400 text-sm font-medium italic">Hardware & asset fulfillment performance tracking.</p>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Consolidated Ledger</h1>
+            <p className="text-slate-400 text-sm font-medium italic mt-3">Hardware & asset fulfillment performance tracking.</p>
           </div>
           <VendorBadge profile={data.profile} />
         </div>
@@ -214,17 +236,14 @@ export default function VendorOverview() {
   );
 }
 
-/* --- COMPONENTS --- */
+/* --- SUPPORTING COMPONENTS (PRESERVED CONTEXT) --- */
 
-function MobileStatCard({ color, label, count, icon }: any) {
+function OperationalCard({ bg, text, label, val, icon, isWide }: any) {
   return (
-    <div className={`${color} p-6 rounded-[2.2rem] text-white shadow-xl relative overflow-hidden active:scale-95 transition-all`}>
-      <div className="flex justify-between items-start mb-6">
-        <div className="bg-white/10 p-2.5 rounded-xl border border-white/5">{icon}</div>
-      </div>
-      <p className="text-[9px] font-black opacity-60 uppercase tracking-widest leading-none">{label}</p>
-      {/* --- FIX: Strict Number formatting --- */}
-      <h2 className="text-3xl font-black mt-2 italic tracking-tighter leading-none">{Number(count || 0)}</h2>
+    <div className={`${bg} p-6 rounded-[2.2rem] shadow-sm relative overflow-hidden active:scale-95 transition-all border border-transparent hover:border-slate-100 ${isWide ? 'col-span-1' : ''}`}>
+       <div className={`p-3 rounded-xl inline-block mb-6 bg-white shadow-sm ${text}`}>{icon}</div>
+       <p className={`text-[8px] font-black uppercase tracking-[0.2em] opacity-60 ${text}`}>{label}</p>
+       <h2 className={`text-xl font-black mt-1 italic tracking-tighter truncate ${text}`}>{val}</h2>
     </div>
   );
 }
@@ -357,7 +376,7 @@ function SecurityCard() {
 
 function LoadingState() {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#F4F7FE] gap-6">
+    <div className="h-screen flex flex-col items-center justify-center bg-white gap-6">
       <div className="relative">
         <Loader2 className="animate-spin text-blue-600" size={56} />
         <div className="absolute inset-0 flex items-center justify-center">

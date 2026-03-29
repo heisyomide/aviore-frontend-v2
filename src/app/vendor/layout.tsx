@@ -47,14 +47,6 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F7FE] lg:bg-gray-100">
       
-      {/* 📱 MOBILE HEADER: 
-          Kept outside any relative wrappers to ensure 'fixed' positioning 
-          works globally without clipping. 
-      */}
-      <div className="lg:hidden">
-        <VendorHeader />
-      </div>
-
       <div className="flex flex-1">
         
         {/* 💻 DESKTOP SIDEBAR */}

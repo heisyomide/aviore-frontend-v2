@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { 
-  AlertTriangle, Download, Upload, Save, Loader2, 
-  Package, Search, Filter, ArrowUpRight, ArrowDown 
+  AlertTriangle, Save, Loader2, Bell,
+  Package, Search, ArrowUpRight, Plus, Minus, Inbox, MoreHorizontal
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 
@@ -56,160 +56,191 @@ export default function InventoryPage() {
   if (loading) return <LoadingState />;
 
   return (
-    <div className="min-h-screen bg-[#F4F7FE] lg:bg-[#FAFAFA] pb-32 lg:pb-10">
+    <div className="min-h-screen bg-[#0A0F1C] pb-40 animate-in fade-in duration-700">
       
-      {/* 🚀 EXECUTIVE HEADER */}
-      <div className="p-6 lg:p-10 space-y-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Inventory Registry</h1>
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Hardware Stock Synchronization Node</p>
-          </div>
+      {/* 🚀 1. STICKY HEADER NODE (Top-Left Label) */}
+      <div className="sticky top-0 z-50 bg-[#0A0F1C]/90 backdrop-blur-xl px-6 py-8 flex justify-between items-center border-b border-white/5">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+            Inventory
+          </h1>
+          <p className="text-[8px] font-black text-blue-500 uppercase tracking-[0.4em] mt-2 italic">Stock Synchronization</p>
+        </div>
+        <button className="relative p-3 bg-white/5 rounded-full border border-white/10 text-white active:scale-90 transition-all">
+          <Bell size={22} />
+          <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-[#0A0F1C]" />
+        </button>
+      </div>
 
-          <div className="flex gap-3 w-full lg:w-auto">
-            <div className="relative flex-1 lg:w-64 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={14} />
-              <input 
-                type="text" 
-                placeholder="SEARCH BY ID/TITLE..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest outline-none shadow-sm focus:ring-4 focus:ring-blue-500/5 transition-all" 
-              />
-            </div>
-            <button className="hidden lg:flex items-center gap-2 px-6 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all">
-              <Download size={14} /> Export CSV
-            </button>
-          </div>
+      <div className="px-6 space-y-10 mt-8">
+        
+        {/* 🚀 2. SEARCH INTERFACE (Full Width Dark Node) */}
+        <div className="relative group">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={20} />
+          <input 
+            type="text" 
+            placeholder="SEARCH REGISTRY ID..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-14 pr-6 py-5 bg-white/5 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-white outline-none focus:bg-white/10 focus:border-blue-500/50 transition-all shadow-2xl" 
+          />
         </div>
 
-        {/* 📱 MOBILE VIEW: Unit Registry Cards */}
-        <div className="lg:hidden space-y-4">
-          {filteredProducts.map((item) => (
-            <div key={item.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 animate-in fade-in duration-500">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-slate-50 overflow-hidden border border-slate-100">
-                  <img src={item.images[0]?.imageUrl} className="w-full h-full object-cover" alt="" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black text-slate-900 uppercase italic truncate">{item.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">SKU: {item.id.slice(-8)}</span>
-                    {item.stock <= 5 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+        {/* 🚀 3. UNIT STATUS GRID */}
+        <div className="grid grid-cols-2 gap-4">
+           <div className="p-6 rounded-[2.2rem] bg-blue-600 border border-blue-500 shadow-xl shadow-blue-900/20">
+              <Package size={20} className="text-white mb-6" />
+              <p className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-100 mb-1.5">Total SKU</p>
+              <h2 className="text-xl font-black text-white italic">{products.length} Nodes</h2>
+           </div>
+           <div className="p-6 rounded-[2.2rem] bg-white/5 border border-white/10">
+              <AlertTriangle size={20} className="text-orange-500 mb-6" />
+              <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1.5">Critical Units</p>
+              <h2 className="text-xl font-black text-white italic">
+                {products.filter(p => p.stock <= 5).length} SKU
+              </h2>
+           </div>
+        </div>
+
+        {/* 🚀 4. INVENTORY REGISTRY (Mobile Full-Bleed Nodes) */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center px-1">
+             <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] italic">Manifest Registry</h3>
+             <button className="p-2 bg-white/5 rounded-xl text-blue-500 hover:bg-white/10 transition-colors"><MoreHorizontal size={18}/></button>
+          </div>
+
+          <div className="space-y-4">
+            {filteredProducts.length > 0 ? filteredProducts.map((item) => (
+              <div key={item.id} className="bg-white/5 border border-white/10 p-6 rounded-[2.2rem] animate-in fade-in duration-500 active:bg-white/10 transition-all">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-white/10 overflow-hidden border border-white/10 shrink-0 shadow-inner">
+                    <img src={item.images[0]?.imageUrl} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" alt="" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-white uppercase italic truncate leading-none">{item.title}</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">SKU_{item.id.slice(-8).toUpperCase()}</p>
+                      {item.stock <= 5 && <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                     <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-1">State</p>
+                     <p className="text-lg font-black text-white italic tracking-tighter">
+                        {updates[item.id] ?? item.stock}
+                     </p>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                <div className="text-center flex-1">
-                  <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Current</p>
-                  <p className="text-xl font-black text-slate-900 italic">{item.stock}</p>
-                </div>
-                <div className="h-8 w-[1px] bg-slate-200" />
-                <div className="flex-1 flex items-center justify-center gap-4">
+                {/* ADJUSTMENT CONSOLE */}
+                <div className="flex items-center justify-between bg-[#0F172A] p-3 rounded-[1.5rem] border border-white/5 shadow-inner">
                   <button 
                     onClick={() => handleStockChange(item.id, (updates[item.id] ?? item.stock) - 1)}
-                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-900 active:scale-90 transition-transform"
+                    className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white active:scale-90 transition-transform"
                   >
-                    -
+                    <Minus size={18} />
                   </button>
-                  <span className="text-xl font-black text-blue-600 italic">
-                    {updates[item.id] ?? item.stock}
-                  </span>
+                  <div className="flex flex-col items-center">
+                     <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Stock Adjustment</p>
+                     <span className="text-sm font-black text-blue-500 italic">
+                        {updates[item.id] ?? item.stock} Units
+                     </span>
+                  </div>
                   <button 
                     onClick={() => handleStockChange(item.id, (updates[item.id] ?? item.stock) + 1)}
-                    className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center active:scale-90 transition-transform"
+                    className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white active:scale-90 transition-transform shadow-lg shadow-blue-900/40"
                   >
-                    +
+                    <Plus size={18} />
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 💻 DESKTOP VIEW: High-Density Table */}
-        <div className="hidden lg:block bg-white rounded-4xl shadow-xl shadow-slate-200/50 border border-slate-50 overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                <th className="p-6">Product Manifest</th>
-                <th className="p-6 text-center">Registry Node</th>
-                <th className="p-6 text-center">Unit Status</th>
-                <th className="p-6 text-center">Current Stock</th>
-                <th className="p-6 text-right">Adjustment Protocol</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredProducts.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/30 transition-all group">
-                  <td className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
-                        <img src={item.images[0]?.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt="" />
-                      </div>
-                      <p className="font-black text-slate-900 text-sm uppercase italic leading-none">{item.title}</p>
-                    </div>
-                  </td>
-                  <td className="p-6 text-center text-[10px] font-mono font-black text-slate-300">#{item.id.slice(-8).toUpperCase()}</td>
-                  <td className="p-6 text-center">
-                    <div className="flex justify-center">
-                      {item.stock <= 5 ? (
-                        <span className="px-3 py-1 bg-red-50 text-red-600 rounded-lg text-[9px] font-black uppercase border border-red-100 flex items-center gap-1.5 animate-pulse">
-                          <AlertTriangle size={10} /> Critical
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 bg-green-50 text-green-600 rounded-lg text-[9px] font-black uppercase border border-green-100">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-6 text-center font-black text-slate-900 italic text-lg">{item.stock}</td>
-                  <td className="p-6 text-right">
-                    <div className="inline-flex items-center gap-2 bg-slate-900 p-1 rounded-xl">
-                      <input 
-                        type="number" 
-                        defaultValue={item.stock}
-                        onChange={(e) => handleStockChange(item.id, Number(e.target.value))}
-                        className="w-16 bg-transparent text-center text-blue-500 text-sm font-black outline-none appearance-none"
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            )) : <EmptyState />}
+          </div>
         </div>
       </div>
 
-      {/* 🏁 FLOATING ACTION BAR: Only shows when changes are pending */}
+      {/* 🏁 5. FLOATING REGISTRY QUEUE: Only shows when changes are pending */}
       {Object.keys(updates).length > 0 && (
-        <div className="fixed bottom-24 lg:bottom-10 left-1/2 -translate-x-1/2 z-[100] w-[90%] lg:w-auto animate-in slide-in-from-bottom-10">
-          <div className="bg-[#0F172A] p-4 lg:p-6 rounded-[2.5rem] shadow-2xl flex items-center justify-between gap-8 border border-slate-700/50 backdrop-blur-md">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-[92%] lg:w-auto animate-in slide-in-from-bottom-10 duration-500">
+          <div className="bg-[#1E293B] p-5 lg:p-6 rounded-[2rem] shadow-2xl flex items-center justify-between gap-8 border border-white/10 backdrop-blur-xl ring-1 ring-white/5">
             <div className="flex flex-col">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Registry Queue</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Registry Sync Pending</p>
               <p className="text-white text-xs font-black italic">{Object.keys(updates).length} Nodes Modified</p>
             </div>
             <button 
               onClick={handleSaveAll}
               disabled={saving}
-              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/40 active:scale-95 disabled:opacity-50"
             >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : <><Save size={16} /> Sync Live</>}
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <><Save size={16} /> Deploy Changes</>}
             </button>
           </div>
         </div>
       )}
+
+      {/* 💻 DESKTOP COMPATIBILITY TABLE */}
+      <div className="hidden lg:block px-10 mt-10">
+         <div className="bg-white/5 rounded-[2.5rem] border border-white/10 overflow-hidden">
+            <table className="w-full text-left">
+                <thead>
+                    <tr className="bg-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">
+                        <th className="p-8">Product Manifest</th>
+                        <th className="p-8 text-center">Unit Status</th>
+                        <th className="p-8 text-center">Current Stock</th>
+                        <th className="p-8 text-right">Adjustment</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-white">
+                    {filteredProducts.map((item) => (
+                        <tr key={item.id} className="hover:bg-white/5 transition-all">
+                            <td className="p-8 flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                                    <img src={item.images[0]?.imageUrl} className="w-full h-full object-cover grayscale" alt="" />
+                                </div>
+                                <p className="font-black text-sm uppercase italic">{item.title}</p>
+                            </td>
+                            <td className="p-8 text-center">
+                                {item.stock <= 5 ? 
+                                    <span className="text-orange-500 text-[10px] font-black italic">CRITICAL</span> : 
+                                    <span className="text-blue-500 text-[10px] font-black italic">STABLE</span>
+                                }
+                            </td>
+                            <td className="p-8 text-center font-black italic text-lg">{item.stock}</td>
+                            <td className="p-8 text-right">
+                                <div className="inline-flex items-center gap-2 bg-[#0F172A] p-2 rounded-xl">
+                                    <input 
+                                        type="number" 
+                                        defaultValue={item.stock}
+                                        onChange={(e) => handleStockChange(item.id, Number(e.target.value))}
+                                        className="w-16 bg-transparent text-center text-blue-500 text-sm font-black outline-none"
+                                    />
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+         </div>
+      </div>
     </div>
   );
 }
 
+/* 🎨 SUB-COMPONENTS */
+
 function LoadingState() {
   return (
-    <div className="h-[70vh] flex flex-col items-center justify-center gap-6">
+    <div className="h-screen flex flex-col items-center justify-center bg-[#0A0F1C] gap-6">
       <Loader2 className="animate-spin text-blue-600" size={48} />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Syncing Hardware Inventory Registry...</p>
+      <p className="font-black uppercase tracking-[0.4em] text-[10px] text-blue-500 italic animate-pulse">Synchronizing Inventory Hub...</p>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="py-24 text-center text-slate-600 flex flex-col items-center gap-4 border-2 border-dashed border-white/5 rounded-[2.5rem]">
+      <Inbox size={64} className="opacity-20" />
+      <p className="font-black uppercase text-[10px] tracking-[0.3em]">No items in manifest</p>
     </div>
   );
 }

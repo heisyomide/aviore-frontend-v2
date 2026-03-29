@@ -20,6 +20,8 @@ interface CartState {
   subtotal: number;
   lastAddedItem: CartItem | null;
   showToast: boolean;
+  _hasHydrated: boolean; // 🚀 New: Hydration tracker
+  setHasHydrated: (state: boolean) => void;
   setShowToast: (open: boolean) => void;
   syncWithBackend: () => Promise<void>;
   calculateTotals: () => void;
@@ -39,14 +41,18 @@ export const useCartStore = create<CartState>()(
       subtotal: 0,
       lastAddedItem: null,
       showToast: false,
+      _hasHydrated: false,
 
-      setShowToast: (open: boolean) => set({ showToast: open }),
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+      setShowToast: (open) => set({ showToast: open }),
 
       syncWithBackend: async () => {
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
           const { data } = await api.get('/cart');
+          if (!data?.items) return;
+
           const mappedItems: CartItem[] = data.items.map((item: any) => ({
             id: item.productId,
             name: item.product.name,
@@ -58,6 +64,7 @@ export const useCartStore = create<CartState>()(
             selected: true,
             isOutOfStock: (item.product.stock || 0) <= 0
           }));
+
           set({ items: mappedItems });
           get().calculateTotals();
         } catch (err) {
@@ -67,88 +74,97 @@ export const useCartStore = create<CartState>()(
 
       calculateTotals: () => {
         const { items } = get();
-        const selectedItems = items.filter((i: CartItem) => i.selected && !i.isOutOfStock);
-        const subtotal = selectedItems.reduce((sum: number, i: CartItem) => sum + (i.price * i.quantity), 0);
-        const count = selectedItems.reduce((sum: number, i: CartItem) => sum + i.quantity, 0);
+        const activeItems = items.filter((i) => i.selected && !i.isOutOfStock);
+        const subtotal = activeItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+        const count = activeItems.reduce((sum, i) => sum + i.quantity, 0);
         set({ subtotal, totalItems: count });
       },
 
-      addItem: async (item) => {
+      addItem: async (incomingItem) => {
         const { items } = get();
         const token = localStorage.getItem('token');
 
+        // 🚨 FIX: Strict Item Identification
+        const existingItemIndex = items.findIndex((i) => i.id === incomingItem.id);
+        let updatedItems = [...items];
+        let targetItem: CartItem;
+
+        if (existingItemIndex > -1) {
+          // Item exists: Update quantity only
+          const existingItem = items[existingItemIndex];
+          const newQty = Math.min(existingItem.quantity + incomingItem.quantity, existingItem.stock);
+          
+          targetItem = { ...existingItem, quantity: newQty };
+          updatedItems[existingItemIndex] = targetItem;
+        } else {
+          // New item: Initialize properties
+          targetItem = { 
+            ...incomingItem, 
+            selected: true, 
+            isOutOfStock: incomingItem.stock <= 0 
+          };
+          updatedItems.push(targetItem);
+        }
+
+        // 🚀 Optimistic UI Update
+        set({ items: updatedItems, lastAddedItem: targetItem, showToast: true });
+        get().calculateTotals();
+
+        // Backend sync (Async background)
         if (token) {
           try {
-            await api.post('/cart/add', { productId: item.id, quantity: item.quantity });
+            await api.post('/cart/add', { 
+              productId: incomingItem.id, 
+              quantity: incomingItem.quantity 
+            });
           } catch (e) {
-            console.error("BACKEND_INGESTION_FAILED");
+            console.error("INGESTION_ERROR: Backend out of sync");
           }
         }
-
-        const existing = items.find((i: CartItem) => i.id === item.id);
-        let updatedItem: CartItem;
-
-        if (existing) {
-          updatedItem = { 
-            ...existing, 
-            quantity: Math.min(existing.quantity + item.quantity, existing.stock) 
-          };
-          set({
-            items: items.map((i: CartItem) => i.id === item.id ? updatedItem : i),
-          });
-        } else {
-          updatedItem = { 
-            ...item, 
-            selected: true, 
-            isOutOfStock: item.stock <= 0 
-          };
-          set({ items: [...items, updatedItem] });
-        }
-
-        set({ lastAddedItem: updatedItem, showToast: true });
-        get().calculateTotals();
       },
 
-      updateQuantity: async (id: string, quantity: number) => {
+      updateQuantity: async (id, quantity) => {
+        const { items } = get();
         const token = localStorage.getItem('token');
+
+        const updatedItems = items.map((i) =>
+          i.id === id ? { ...i, quantity: Math.min(Math.max(1, quantity), i.stock) } : i
+        );
+
+        set({ items: updatedItems });
+        get().calculateTotals();
+
         if (token) {
           try {
             await api.patch(`/cart/item/${id}`, { quantity });
-          } catch (e) { console.error(e); }
+          } catch (e) { console.error("QTY_SYNC_FAILURE"); }
         }
-
-        set({
-          items: get().items.map((i: CartItem) =>
-            i.id === id ? { ...i, quantity: Math.min(Math.max(1, quantity), i.stock) } : i
-          ),
-        });
-        get().calculateTotals();
       },
 
-      removeItem: async (id: string) => {
+      removeItem: async (id) => {
         const token = localStorage.getItem('token');
+        set({ items: get().items.filter((i) => i.id !== id) });
+        get().calculateTotals();
+
         if (token) {
           try {
             await api.delete(`/cart/item/${id}`);
-          } catch (e) { console.error(e); }
+          } catch (e) { console.error("REMOVAL_SYNC_FAILURE"); }
         }
-
-        set({ items: get().items.filter((i: CartItem) => i.id !== id) });
-        get().calculateTotals();
       },
 
-      toggleSelect: (id: string) => {
+      toggleSelect: (id) => {
         set({
-          items: get().items.map((i: CartItem) =>
+          items: get().items.map((i) =>
             i.id === id ? { ...i, selected: !i.selected } : i
           ),
         });
         get().calculateTotals();
       },
 
-      toggleSelectAll: (selected: boolean) => {
+      toggleSelectAll: (selected) => {
         set({
-          items: get().items.map((i: CartItem) => ({ 
+          items: get().items.map((i) => ({ 
             ...i, 
             selected: i.isOutOfStock ? false : selected 
           })),
@@ -160,9 +176,15 @@ export const useCartStore = create<CartState>()(
     }),
     { 
       name: 'aviorè-registry-v1',
-      partialize: (state: CartState) => Object.fromEntries(
-        Object.entries(state).filter(([key]) => !['showToast', 'lastAddedItem'].includes(key))
-      ) as CartState,
+      // Ensure specific UI states aren't saved to localStorage
+      partialize: (state) => ({
+        items: state.items,
+        totalItems: state.totalItems,
+        subtotal: state.subtotal
+      }) as CartState,
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      }
     }
   )
 );

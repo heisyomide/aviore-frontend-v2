@@ -87,9 +87,11 @@ export default function VendorOrdersPage() {
       
       {/* 1. EXECUTIVE HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Logistics Hub</h1>
-          <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em]">Fulfillment Protocol & Registry Tracking</p>
+ <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+            Orders
+          </h1>
+          <div className="h-1 w-12 bg-blue-600 mt-2 rounded-full" />
         </div>
         
         <div className="relative w-full md:w-72 group">

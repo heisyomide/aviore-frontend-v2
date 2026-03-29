@@ -6,7 +6,7 @@ import "./globals.css";
 import { Providers } from "../components/providers/Provider";
 import { CartSyncProvider } from "../components/providers/CartSyncProvider";
 
-// 🚀 UI Hierarchy - Rule 2: Atomic Hubs
+// 🚀 UI Hierarchy
 import { Navbar } from "../components/navbar/Navbar";
 import { MobileBottomNav } from "../components/navbar/MobileBottomNav";
 import { BackToTop } from "../components/ui/BackToTop";
@@ -51,27 +51,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ${geistSans.variable} 
         ${geistMono.variable} 
         antialiased 
-        bg-white 
+        bg-[#FAFAFA] 
         text-zinc-900
-        selection:bg-[#A4143D] selection:text-white
+        selection:bg-blue-600 selection:text-white
       `}>
         <Providers>
-          {/* 🛰️ REGISTRY_HANDSHAKE: Background data sync with NestJS */}
+          {/* 🛰️ REGISTRY_HANDSHAKE: Keeps Laptop & Phone in sync via NestJS */}
           <CartSyncProvider />
 
           <div className="relative flex min-h-screen flex-col">
-            {/* Navigation Hub */}
-            
 
-            {/* Main Stage */}
+
+            {/* 2. Main Stage (Registry Content) */}
             <main className="flex-1">
               {children}
             </main>
 
-            {/* Mobile Interaction Tier (Hidden on Desktop via CSS) */}
-            
-
-            {/* Global Instrumentation Tools */}
+     
+            {/* 5. Global Utility Tools */}
             <BackToTop />
             
           </div>
