@@ -108,38 +108,43 @@ export default function VendorOverview() {
   }, []);
 
   // 🚀 FIXED SHARING PROTOCOL
-  const handleShareProfile = async () => {
-    if (!data?.profile.slug) {
-      alert("Store ID missing. Sync required.");
+const handleShareProfile = async () => {
+  const slug = data?.profile?.slug;
+
+  if (!slug) {
+    alert("Store link unavailable. Please sync profile.");
+    return;
+  }
+
+  const shareUrl = `${window.location.origin}/vendors/${slug}`;
+
+  const shareData = {
+    title: data.profile.storeName,
+    text: `Check out ${data.profile.storeName} on Aviore.`,
+    url: shareUrl,
+  };
+
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
       return;
     }
 
-    // Points to the public vendor listing page on the store-front
-    const shareUrl = `${window.location.origin}/vendors/${data.profile.slug}`;
-    const shareData = {
-      title: data.profile.storeName,
-      text: `Check out artifacts from ${data.profile.storeName} on Aviore Registry.`,
-      url: shareUrl,
-    };
+    await navigator.clipboard.writeText(shareUrl);
+    alert("Store link copied to clipboard!");
+  } catch (error) {
+    console.error("Share failed:", error);
 
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        throw new Error("Native share unavailable");
-      }
-    } catch (err) {
-      // Clipboard Fallback (For desktop or browsers that block share)
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        alert("Store Link copied to clipboard!");
-      } catch (clipErr) {
-        console.error("Critical failure during transmission.");
-      }
-    } finally {
-      setIsIdentityMenuOpen(false);
+      await navigator.clipboard.writeText(shareUrl);
+      alert("Store link copied to clipboard!");
+    } catch {
+      alert("Unable to share link. Please try again.");
     }
-  };
+  } finally {
+    setIsIdentityMenuOpen(false);
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem('token');
