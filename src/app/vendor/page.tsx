@@ -14,7 +14,7 @@ interface DashboardData {
     storeName: string;
     isVerified: boolean;
     ownerName: string;
-    slug: string; // Used for Open Graph sharing
+    slug: string; 
   };
   wallet: {
     availableBalance: number;
@@ -107,20 +107,37 @@ export default function VendorOverview() {
     return () => controller.abort();
   }, []);
 
-  // 🚀 OPEN GRAPH SHARING LOGIC
-  const handleShareProfile = () => {
-    if (!data?.profile.slug) return;
+  // 🚀 FIXED SHARING PROTOCOL
+  const handleShareProfile = async () => {
+    if (!data?.profile.slug) {
+      alert("Store ID missing. Sync required.");
+      return;
+    }
+
     const shareUrl = `${window.location.origin}/vendors/${data.profile.slug}`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: data.profile.storeName,
-        text: `Check out ${data.profile.storeName} on Aviore Registry.`,
-        url: shareUrl,
-      });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      alert("Store Link copied to clipboard for listing!");
+    const shareData = {
+      title: data.profile.storeName,
+      text: `Check out artifacts from ${data.profile.storeName} on Aviore Registry.`,
+      url: shareUrl,
+    };
+
+    try {
+      // 1. Attempt Native Mobile Sharing
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        throw new Error("Native share unavailable");
+      }
+    } catch (err) {
+      // 2. Clipboard Fallback (Desktop/Chrome Fix)
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert("Store Link copied to clipboard!");
+      } catch (clipErr) {
+        console.error("Critical failure during transmission.");
+      }
+    } finally {
+      setIsIdentityMenuOpen(false);
     }
   };
 
@@ -135,13 +152,13 @@ export default function VendorOverview() {
   return (
     <div className="min-h-screen bg-white pb-32 animate-in fade-in duration-700">
       
-      {/* 🚀 1. STICKY IDENTITY HEADER (Top-Left Label + Initiate Node) */}
+      {/* 🚀 1. STICKY IDENTITY HEADER (Top-Left Title + Welcome Note) */}
       <div className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md px-6 py-8 flex justify-between items-center border-b border-slate-50">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
             Dashboard
           </h1>
-          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-2 italic">
+          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-2 italic leading-none">
             Welcome Back, {data.profile.storeName}
           </p>
         </div>
@@ -156,29 +173,33 @@ export default function VendorOverview() {
           </button>
 
           {isIdentityMenuOpen && (
-            <div className="absolute right-0 top-16 w-56 bg-white rounded-3xl shadow-2xl border border-slate-100 p-3 animate-in zoom-in-95 duration-200 z-[110]">
-               <button 
-                onClick={handleShareProfile}
-                className="w-full flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-colors text-slate-700"
-               >
-                 <Share2 size={18} className="text-blue-600" />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Share Profile</span>
-               </button>
-               <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-2xl transition-colors text-red-600"
-               >
-                 <LogOut size={18} />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Logout Node</span>
-               </button>
-            </div>
+            <>
+              {/* Invisible Backdrop to close menu */}
+              <div className="fixed inset-0 z-10" onClick={() => setIsIdentityMenuOpen(false)} />
+              <div className="absolute right-0 top-16 w-56 bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-3 animate-in zoom-in-95 duration-200 z-20">
+                 <button 
+                  onClick={handleShareProfile}
+                  className="w-full flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-colors text-slate-700"
+                 >
+                   <Share2 size={18} className="text-blue-600" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Share Profile</span>
+                 </button>
+                 <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-2xl transition-colors text-red-600"
+                 >
+                   <LogOut size={18} />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Logout Node</span>
+                 </button>
+              </div>
+            </>
           )}
         </div>
       </div>
 
       <div className="px-6 space-y-10 mt-10">
 
-        {/* 🚀 2. REVENUE HERO (Liquid Balance) */}
+        {/* 🚀 2. REVENUE HERO NODE */}
         <div className="bg-[#0F172A] p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-start relative z-10">
                 <div>
@@ -204,13 +225,13 @@ export default function VendorOverview() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
         </div>
 
-        {/* 🚀 3. CORE STATS GRID */}
+        {/* 🚀 3. OPERATIONAL STATS */}
         <div className="grid grid-cols-2 gap-4">
           <OperationalCard label="Active Orders" val={data.stats.totalOrders} icon={<Clock size={18}/>} color="bg-blue-50" textColor="text-blue-600" />
           <OperationalCard label="Product SKU" val={data.stats.activeProducts} icon={<Package size={18}/>} color="bg-slate-50" textColor="text-slate-900" />
         </div>
 
-        {/* 🚀 4. RECENT REQUISITIONS */}
+        {/* 🚀 4. REQUISITION REGISTRY */}
         <div className="space-y-6">
           <div className="flex justify-between items-center px-1">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Recent Requisitions</h3>
@@ -220,11 +241,11 @@ export default function VendorOverview() {
           <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm">
             {data.recentOrders.length > 0 ? data.recentOrders.map((order) => (
                 <div key={order.id} className="flex items-center gap-4 p-5 border-b border-slate-50 last:border-0 group active:bg-slate-50 transition-all rounded-3xl">
-                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-active:text-blue-600 border border-slate-100 shrink-0">
+                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
                     <Package size={22} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-slate-900 uppercase italic truncate">{order.artifact}</p>
+                    <p className="text-xs font-black text-slate-900 uppercase italic truncate leading-none mb-1.5">{order.artifact}</p>
                     <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">{order.status} • {new Date(order.date).toLocaleDateString()}</p>
                   </div>
                   <p className="text-sm font-black text-slate-900 italic tracking-tighter">{CURRENCY_SYMBOL}{order.amount.toLocaleString()}</p>
@@ -234,9 +255,9 @@ export default function VendorOverview() {
         </div>
 
         {/* 🚀 5. SECURITY STATUS */}
-        <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 flex items-center justify-between">
+        <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-4">
-                <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600">
+                <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600 border border-slate-100">
                     <ShieldCheck size={24} />
                 </div>
                 <div>
@@ -251,11 +272,11 @@ export default function VendorOverview() {
   );
 }
 
-/* --- COMPONENTS --- */
+/* --- SUB-COMPONENTS (PRESERVED) --- */
 
 function OperationalCard({ label, val, icon, color, textColor }: any) {
   return (
-    <div className={`${color} p-6 rounded-[2.2rem] border border-transparent hover:border-slate-200 transition-all active:scale-95`}>
+    <div className={`${color} p-6 rounded-[2.2rem] border border-transparent transition-all active:scale-95`}>
        <div className={`w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm ${textColor}`}>
          {icon}
        </div>
@@ -269,7 +290,7 @@ function LoadingState() {
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-white gap-6">
       <Loader2 className="animate-spin text-blue-600" size={48} />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Syncing Dashboard Node...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Synchronizing Node...</p>
     </div>
   );
 }
@@ -278,9 +299,9 @@ function ErrorState({ message }: { message: string | null }) {
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
       <AlertCircle size={40} className="text-red-500 mb-4" />
-      <h3 className="text-xl font-black text-slate-900 uppercase italic">Connection Failure</h3>
+      <h3 className="text-xl font-black text-slate-900 uppercase italic">Transmission Error</h3>
       <p className="text-[10px] font-bold text-slate-400 uppercase mt-2 mb-8 max-w-xs">{message || "Registry sync interrupted."}</p>
-      <button onClick={() => window.location.reload()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Retry Protocol</button>
+      <button onClick={() => window.location.reload()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Reconnect</button>
     </div>
   );
 }
