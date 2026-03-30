@@ -139,8 +139,8 @@ function VendorCard({ vendor }: { vendor: any }) {
       </div>
 
       <div className="flex items-center gap-8 mt-8 pt-6 border-t border-zinc-50 relative z-10">
-        <Stat icon={<UserPlus size={14} />} value={vendor._count?.followers} label="Network" />
-        <Stat icon={<Package size={14} />} value={vendor._count?.products} label="Registry" />
+        <Stat icon={<UserPlus size={14} />} value={vendor._count?.followers} label="Followers" />
+        <Stat icon={<Package size={14} />} value={vendor._count?.products} label="Products" />
       </div>
     </Link>
   );

@@ -1,13 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Store,
-  ArrowLeft,
-  ShieldCheck,
-  Loader2,
-  PackageSearch,
-} from 'lucide-react';
+import { Store, ArrowLeft, ShieldCheck, Loader2, PackageSearch, Globe, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
@@ -19,6 +13,8 @@ import { Navbar } from '@/src/components/navbar/Navbar';
 
 interface Product {
   id: string;
+  title: string;
+  price: number;
   image?: string;
   imageUrl?: string;
   images?: string[];
@@ -37,17 +33,8 @@ interface Vendor {
   };
 }
 
-interface VendorPageProps {
-  params: {
-    slug: string;
-  };
-}
-
-export default function VendorStorefront({
-  params,
-}: VendorPageProps) {
+export default function VendorStorefront({ params }: { params: { slug: string } }) {
   const { slug } = params;
-
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,160 +43,133 @@ export default function VendorStorefront({
 
   useEffect(() => {
     let mounted = true;
-
     const fetchVendor = async () => {
       try {
         setLoading(true);
-        setError(null);
-
-        const response = await axios.get(
-          `${API_URL}/storefront/vendors/${slug}`
-        );
-
-        if (mounted) {
-          setVendor(response.data);
-        }
+        const response = await axios.get(`${API_URL}/storefront/vendors/${slug}`);
+        if (mounted) setVendor(response.data);
       } catch (err) {
-        console.error('Vendor fetch failed:', err);
-
-        if (mounted) {
-          setError('Vendor not found');
-        }
+        if (mounted) setError('Vendor Node Offline');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
-
     fetchVendor();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [slug, API_URL]);
 
   const logoUrl = useMemo(() => {
     if (!vendor?.imageUrl) return null;
-
-    return vendor.imageUrl.startsWith('http')
-      ? vendor.imageUrl
-      : `${API_URL}/uploads/${vendor.imageUrl}`;
+    return vendor.imageUrl.startsWith('http') ? vendor.imageUrl : `${API_URL}/uploads/${vendor.imageUrl}`;
   }, [vendor, API_URL]);
 
   if (loading) return <VendorLoadingState />;
   if (error || !vendor) return <VendorNotFound />;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white selection:bg-blue-600 selection:text-white">
       <Navbar />
 
-      <div className="bg-[#09090b] pt-16 pb-32 px-6">
+      {/* 🌑 1. COMMAND HEADER NODE (Full Bleed) */}
+      <header className="bg-[#0A0A0A] pt-20 pb-40 px-6">
         <Container>
-          <Link
-            href="/vendors"
-            className="group inline-flex items-center gap-2 text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] mb-12 transition-all"
-          >
-            <ArrowLeft
-              size={14}
-              className="group-hover:-translate-x-1 transition-transform"
-            />
-            Back_to_Directory
-          </Link>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+            <Link
+              href="/vendors"
+              className="group inline-flex items-center gap-2 text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-[0.3em] transition-all"
+            >
+              <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+              Registry_Index
+            </Link>
+            
+            <button className="p-3 bg-white/5 border border-white/10 rounded-full text-zinc-400 hover:text-white transition-all">
+               <Share2 size={16} />
+            </button>
+          </div>
 
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-10">
-            <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-4xl bg-white overflow-hidden border-[6px] border-[#111] shadow-2xl shrink-0">
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-12">
+            {/* Massive Store Identity Node */}
+            <div className="relative w-40 h-40 md:w-56 md:h-56 rounded-[3rem] bg-white overflow-hidden border-[8px] border-zinc-900 shadow-2xl shrink-0 group">
               {logoUrl ? (
                 <Image
                   src={logoUrl}
                   alt={vendor.storeName}
                   fill
-                  className="object-cover"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700"
                   priority
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-zinc-50">
-                  <Store size={40} className="text-zinc-200" />
+                  <Store size={64} className="text-zinc-200" />
                 </div>
               )}
             </div>
 
-            <div className="flex-grow text-center md:text-left space-y-4 pb-2">
-              <div className="flex items-center justify-center md:justify-start gap-2 text-[#A4143D]">
-                <ShieldCheck size={16} />
-                <span className="text-[9px] font-black uppercase tracking-[0.3em]">
-                  Verified_Registry_Partner
+            <div className="flex-grow text-center md:text-left space-y-6 pb-2">
+              <div className="flex items-center justify-center md:justify-start gap-3 text-blue-500">
+                <ShieldCheck size={18} />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em]">
+                  Verified_Registry_Node
                 </span>
               </div>
 
-              <h1 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white leading-[0.8]">
+              <h1 className="text-5xl md:text-8xl font-black italic uppercase tracking-tighter text-white leading-[0.75]">
                 {vendor.storeName}
               </h1>
 
-              <p className="text-zinc-500 max-w-xl text-xs font-bold leading-relaxed uppercase tracking-tight">
-                {vendor.description ||
-                  'Official marketplace partner specializing in premium artifacts and curated essentials.'}
+              <p className="text-zinc-500 max-w-xl text-[11px] font-bold leading-relaxed uppercase tracking-tight italic">
+                {vendor.description || 'Specialized marketplace partner optimizing premium artifact distribution and curated hardware essentials.'}
               </p>
 
-              <div className="flex items-center justify-center md:justify-start gap-8 pt-4">
-                <Metric
-                  label="Collection"
-                  value={vendor._count?.products || 0}
-                />
-
-                <Metric
-                  label="Followers"
-                  value={vendor._count?.followers || 0}
-                  border
-                />
-
-                <FollowButton
-                  vendorId={vendor.id}
-                  initialIsFollowing={false}
-                />
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-10 pt-4">
+                <Metric label="Artifacts" value={vendor._count?.products || 0} />
+                <Metric label="Followers" value={vendor._count?.followers || 0} border />
+                
+                <div className="pt-2 md:pt-0">
+                  <FollowButton
+                    vendorId={vendor.id}
+                    initialIsFollowing={false}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </Container>
-      </div>
+      </header>
 
-      <Container className="-mt-16 pb-32">
-        <div className="bg-white rounded-4xl p-8 md:p-16 shadow-2xl shadow-zinc-200/50 border border-zinc-50">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4 border-b border-zinc-50 pb-8">
-            <div className="space-y-1">
-              <span className="text-[#A4143D] text-[9px] font-black uppercase tracking-[0.4em]">
-                Available_Inventory
+      {/* ⚪ 2. CATALOG REGISTRY NODE */}
+      <Container className="-mt-20 pb-40 px-6">
+        <div className="bg-white rounded-[3rem] p-8 md:p-20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] border border-zinc-50 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 border-b border-zinc-50 pb-12">
+            <div className="space-y-3">
+              <span className="text-blue-600 text-[10px] font-black uppercase tracking-[0.5em]">
+                Inventory_Catalog
               </span>
 
-              <h2 className="text-3xl font-black italic uppercase tracking-tighter">
-                Store <span className="text-zinc-400">Catalog</span>
+              <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900">
+                Live <span className="text-zinc-300">Artifacts</span>
               </h2>
             </div>
 
-            <div className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">
-              Live_Items: {vendor.products?.length || 0}
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-zinc-50 rounded-2xl border border-zinc-100">
+                <Globe size={14} className="text-blue-500 animate-pulse" />
+                <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                  Registry_Nodes: {vendor.products?.length || 0}
+                </span>
             </div>
           </div>
 
           {vendor.products?.length ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
-              {vendor.products.map((product) => {
-                const normalizedProduct = {
-                  ...product,
-                  image:
-                    product.image ||
-                    product.imageUrl ||
-                    product.images?.[0] ||
-                    '',
-                };
-
-                return (
-                  <ProductCard
-                    key={product.id}
-                    product={normalizedProduct}
-                  />
-                );
-              })}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-16">
+              {vendor.products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={{
+                    ...product,
+                    image: product.image || product.imageUrl || product.images?.[0] || '',
+                  }}
+                />
+              ))}
             </div>
           ) : (
             <EmptyInventory />
@@ -220,21 +180,15 @@ export default function VendorStorefront({
   );
 }
 
-function Metric({
-  label,
-  value,
-  border,
-}: {
-  label: string;
-  value: number;
-  border?: boolean;
-}) {
+/* --- COMPONENTS --- */
+
+function Metric({ label, value, border }: { label: string; value: number; border?: boolean; }) {
   return (
-    <div className={`text-white ${border ? 'border-l border-zinc-800 pl-8' : ''}`}>
-      <span className="block text-2xl font-black italic">
-        {value}
+    <div className={`${border ? 'md:border-l border-zinc-800 md:pl-10' : ''}`}>
+      <span className="block text-3xl font-black italic text-white leading-none mb-1">
+        {value.toLocaleString()}
       </span>
-      <span className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+      <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em]">
         {label}
       </span>
     </div>
@@ -243,10 +197,15 @@ function Metric({
 
 function VendorLoadingState() {
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center space-y-4">
-      <Loader2 className="animate-spin text-[#A4143D]" size={40} />
-      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-        Initializing_Secure_Storefront...
+    <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center space-y-6">
+      <div className="relative">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
+        <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+        </div>
+      </div>
+      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em] animate-pulse">
+        Synchronizing_Registry_Storefront...
       </p>
     </div>
   );
@@ -254,13 +213,16 @@ function VendorLoadingState() {
 
 function VendorNotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-40 text-center space-y-6">
-      <PackageSearch size={32} className="text-zinc-200" />
-      <h2 className="text-3xl font-black italic uppercase tracking-tighter">
-        Vendor Not Found
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
+      <PackageSearch size={48} strokeWidth={1} className="text-zinc-200 mb-6" />
+      <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 mb-4">
+        Registry_Node_Null
       </h2>
-      <Link href="/vendors">
-        Return to Global Directory
+      <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-10">
+        The requested vendor node does not exist in the global directory.
+      </p>
+      <Link href="/vendors" className="px-12 py-5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10">
+        Return to Global Registry
       </Link>
     </div>
   );
@@ -268,13 +230,10 @@ function VendorNotFound() {
 
 function EmptyInventory() {
   return (
-    <div className="py-32 text-center border-2 border-dashed border-zinc-100 rounded-3xl">
-      <PackageSearch
-        size={40}
-        className="mx-auto text-zinc-100 mb-4"
-      />
-      <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">
-        No Active Listings
+    <div className="py-40 text-center border-2 border-dashed border-zinc-100 rounded-[3rem] bg-zinc-50/50">
+      <PackageSearch size={48} className="mx-auto text-zinc-200 mb-6" strokeWidth={1} />
+      <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.4em] italic leading-none">
+        Zero_Active_Listings_Detected
       </p>
     </div>
   );
