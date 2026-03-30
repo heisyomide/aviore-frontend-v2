@@ -106,7 +106,7 @@ function VendorCard({ vendor }: { vendor: any }) {
 
   return (
     <Link 
-      href={`/vendors/${vendor.slug ?? vendor.id}`}
+      href={`/vendors/${vendor.slug}`}
       className="group relative bg-white border border-zinc-100 rounded-[2.5rem] p-8 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-700 flex flex-col overflow-hidden"
     >
       <div className="absolute top-0 right-0 w-24 h-24 bg-zinc-50 -mr-12 -mt-12 rounded-full group-hover:bg-[#A4143D]/5 transition-colors duration-500" />
