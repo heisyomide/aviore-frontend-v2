@@ -24,9 +24,7 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
         try {
           const API_URL = process.env.NEXT_PUBLIC_API_URL;
           const response = await axios.get(`${API_URL}/storefront/vendors`);
-          // 🚀 Added a filter to ensure only vendors with slugs are mapped initially
-          const data = Array.isArray(response.data) ? response.data : [];
-          setVendors(data.slice(0, 6)); 
+          setVendors(response.data.slice(0, 6)); 
           setError(false);
         } catch (err) {
           console.error("Registry_Sync_Error", err);
@@ -79,12 +77,7 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
           {!loading && !error && vendors.map((vendor: any) => (
             <div 
               key={vendor.id} 
-              onClick={() => {
-                // 🚀 EMERGENCY SAFETY GUARD:
-                // Fallback to ID if slug is missing to prevent /vendors/undefined
-                const identifier = vendor.slug || vendor.id;
-                router.push(`/vendors/${identifier}`);
-              }}
+             onClick={() => router.push(`/vendors/${vendor.slug}`)}
               className="min-w-[280px] md:min-w-0 snap-center group cursor-pointer bg-zinc-50/50 p-6 rounded-[2.5rem] border border-zinc-100 flex items-center gap-5 hover:bg-white hover:shadow-2xl transition-all duration-500"
             >
               <div className="relative w-16 h-16 rounded-2xl bg-white border border-zinc-100 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
