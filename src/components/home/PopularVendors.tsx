@@ -79,12 +79,12 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
           {!loading && !error && vendors.map((vendor: any) => (
             <div 
               key={vendor.id} 
-              onClick={() => {
-                // 🚀 EMERGENCY SAFETY GUARD:
-                // Fallback to ID if slug is missing to prevent /vendors/undefined
-                const identifier = vendor.slug || vendor.id;
-                router.push(`/vendors/${identifier}`);
-              }}
+// 🚀 REPLACE the router.push lines with this logic:
+onClick={() => {
+  // If slug is null in the JSON you showed me, use the ID instead
+  const target = vendor.slug || vendor.id; 
+  router.push(`/vendors/${target}`);
+}}
               className="min-w-[280px] md:min-w-0 snap-center group cursor-pointer bg-zinc-50/50 p-6 rounded-[2.5rem] border border-zinc-100 flex items-center gap-5 hover:bg-white hover:shadow-2xl transition-all duration-500"
             >
               <div className="relative w-16 h-16 rounded-2xl bg-white border border-zinc-100 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
