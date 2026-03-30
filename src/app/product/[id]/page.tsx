@@ -54,6 +54,7 @@ export default function ProductDetailsPage() {
             setIsFollowing(followed.some((v: any) => v.id === productData.vendorId));
           } catch (e) {
             console.warn("Guest session detected");
+            console.log("STOREFRONT DATA:", storefront.data);
           }
         }
       }
@@ -183,8 +184,15 @@ export default function ProductDetailsPage() {
                        {(vendorData?.isVerified || product.vendor?.isVerified) && <BadgeCheck size={18} className="text-blue-500 fill-blue-50" />}
                     </div>
                     <div className="flex items-center gap-4 mt-2 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">
-                      <span className="flex items-center gap-1"><Users size={12}/> {vendorData?._count?.followers || 0} Followers</span>
-                      <span className="flex items-center gap-1"><ShoppingBag size={12}/> {vendorData?._count?.products || 0} Items Listed</span>
+<span className="flex items-center gap-1">
+  <Users size={12}/> 
+  {vendorData?.followers || 0} Followers
+</span>
+
+<span className="flex items-center gap-1">
+  <ShoppingBag size={12}/> 
+  {vendorData?.products || 0} Items Listed
+</span>
                       <span className="flex items-center gap-1 text-gray-900"><Star size={12} fill="currentColor"/> 4.8</span>
                     </div>
                   </div>
@@ -196,7 +204,7 @@ export default function ProductDetailsPage() {
                  >
                    {isFollowing ? 'Unfollow' : '+ Follow'}
                  </button>
-                 <button onClick={() => router.push(`/vendors/${product.vendorId}`)} className="flex-1 md:flex-none px-6 py-2.5 border-2 border-zinc-900 rounded-full text-[10px] font-black uppercase tracking-widest">Shop All</button>
+                 <button onClick={() => router.push(`/vendors/${vendorData.slug}`)} className="flex-1 md:flex-none px-6 py-2.5 border-2 border-zinc-900 rounded-full text-[10px] font-black uppercase tracking-widest">Shop All</button>
                </div>
             </div>
 
