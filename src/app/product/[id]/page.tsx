@@ -196,13 +196,7 @@ export default function ProductDetailsPage() {
                  >
                    {isFollowing ? 'Unfollow' : '+ Follow'}
                  </button>
-                 // Inside ProductDetailsPage
-<button 
-  onClick={() => router.push(`/vendors/${vendorData?.slug || product.vendorId}`)} 
-  className="..."
->
-  Shop All
-</button>
+                 <button onClick={() => router.push(`/vendors/${vendorData?.slug || product.vendorId}`)} className="flex-1 md:flex-none px-6 py-2.5 border-2 border-zinc-900 rounded-full text-[10px] font-black uppercase tracking-widest">Shop All</button>
                </div>
             </div>
 
