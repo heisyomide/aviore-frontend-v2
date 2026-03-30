@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Store, ArrowLeft, ShieldCheck, Loader2, PackageSearch, Globe, Share2, Award, Zap } from 'lucide-react';
+import {
+  Store,
+  ArrowLeft,
+  Loader2,
+  PackageSearch,
+  Share2,
+  Users,
+  ShoppingBag,
+} from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
@@ -12,7 +20,6 @@ import { FollowButton } from '@/src/components/vendor/FollowButton';
 import { Container } from '@/src/components/layout/Container';
 import { Navbar } from '@/src/components/navbar/Navbar';
 
-// --- Registry Interfaces ---
 interface Product {
   id: string;
   title: string;
@@ -41,246 +48,189 @@ export default function VendorStorefront() {
 
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
   useEffect(() => {
-    if (!slug || !API_URL) return;
+    if (!slug) return;
 
-    let mounted = true;
     const fetchVendor = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/storefront/vendors/public-profile/${slug}`);
-        if (mounted) setVendor(response.data);
-      } catch (err) {
-        if (mounted) setError('Registry Node Offline');
+
+        const response = await axios.get(
+          `${API_URL}/storefront/vendors/public-profile/${slug}`
+        );
+
+        setVendor(response.data);
+      } catch (error) {
+        console.error(error);
+        setVendor(null);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
 
     fetchVendor();
-    return () => { mounted = false; };
   }, [slug, API_URL]);
 
   const logoUrl = useMemo(() => {
     if (!vendor?.imageUrl) return null;
-    return vendor.imageUrl.startsWith('http') 
-      ? vendor.imageUrl 
+
+    return vendor.imageUrl.startsWith('http')
+      ? vendor.imageUrl
       : `${API_URL}/uploads/${vendor.imageUrl}`;
   }, [vendor, API_URL]);
 
-  if (loading) return <VendorLoadingState />;
-  if (error || !vendor) return <VendorNotFound />;
+  if (loading) return <LoadingState />;
+  if (!vendor) return <VendorNotFound />;
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      {/* 🌑 1. PREMIUM HERO NODE */}
-      <header className="bg-[#050505] pt-28 pb-60 px-6 relative overflow-hidden">
-        {/* Subtle Background Textures */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-            <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-blue-600/20 blur-[140px] rounded-full" />
-            <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-white/5 blur-[100px] rounded-full" />
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <Container className="px-4 py-3 flex items-center justify-between">
+          <Link
+            href="/vendors"
+            className="flex items-center gap-2 text-sm font-medium text-gray-600"
+          >
+            <ArrowLeft size={18} />
+            Back
+          </Link>
+
+          <button className="p-2 rounded-full border border-gray-200">
+            <Share2 size={18} />
+          </button>
+        </Container>
+      </div>
+
+      {/* Vendor Info */}
+      <Container className="px-4 py-6">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 shrink-0 relative">
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt={vendor.storeName}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Store className="text-gray-300" size={28} />
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900">
+                {vendor.storeName}
+              </h1>
+
+              <p className="text-sm text-gray-500 mt-1 leading-6">
+                {vendor.description || 'Trusted seller with quality products.'}
+              </p>
+
+              <div className="flex gap-6 mt-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag size={16} />
+                  {vendor._count?.products || 0} Products
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Users size={16} />
+                  {vendor._count?.followers || 0} Followers
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <FollowButton
+              vendorId={vendor.id}
+              initialIsFollowing={false}
+            />
+          </div>
         </div>
 
-        <Container className="relative z-10">
-          <div className="flex justify-between items-center mb-20">
-            <Link
-              href="/vendors"
-              className="group flex items-center gap-4 text-zinc-500 hover:text-white transition-all"
-            >
-              <div className="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center group-hover:border-white transition-colors">
-                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-              </div>
-              <span className="text-[11px] font-black uppercase tracking-[0.4em] italic">Back_to_Index</span>
-            </Link>
-            
-            <button className="w-12 h-12 bg-white/5 border border-white/10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
-               <Share2 size={18} />
-            </button>
+        {/* Product Section */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Products
+            </h2>
+
+            <span className="text-sm text-gray-500">
+              {vendor.products?.length || 0} items
+            </span>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-center lg:items-end gap-16">
-            {/* Identity Hex-Node */}
-            <div className="relative group shrink-0">
-              <div className="absolute inset-0 bg-blue-600/20 blur-3xl rounded-full scale-75 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              <div className="relative w-48 h-48 lg:w-72 lg:h-72 rounded-[4rem] bg-white p-2 shadow-[0_0_80px_-20px_rgba(255,255,255,0.1)] overflow-hidden transition-transform duration-700 group-hover:scale-[1.02]">
-                <div className="w-full h-full rounded-[3.5rem] overflow-hidden relative border-4 border-zinc-100">
-                  {logoUrl ? (
-                    <Image
-                      src={logoUrl}
-                      alt={vendor.storeName}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-zinc-50">
-                      <Store size={80} className="text-zinc-200" />
-                    </div>
-                  )}
-                </div>
-              </div>
+          {vendor.products?.length ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {vendor.products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={{
+                    ...product,
+                    image:
+                      product.image ||
+                      product.imageUrl ||
+                      product.images?.[0] ||
+                      '',
+                  }}
+                />
+              ))}
             </div>
-
-            <div className="flex-grow text-center lg:text-left space-y-10">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-3 px-4 py-2 bg-blue-600/10 border border-blue-500/20 rounded-full text-blue-500">
-                  <ShieldCheck size={16} />
-                  <span className="text-[9px] font-black uppercase tracking-[0.5em]">Verified Vendor</span>
-                </div>
-
-                <h1 className="text-7xl lg:text-[11rem] font-black italic uppercase tracking-[-0.05em] text-white leading-[0.8] mb-4">
-                  {vendor.storeName}
-                </h1>
-
-                <p className="text-zinc-500 max-w-2xl text-[13px] font-medium leading-relaxed uppercase tracking-tight italic opacity-70">
-                  {vendor.description || 'ESTABLISHED PARTNER NODE OPTIMIZING THE DISTRIBUTION OF PREMIUM ARTIFACTS AND CURATED LIFESTYLE ESSENTIALS.'}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-12 border-t border-zinc-900 pt-10">
-                <Metric label="Products" value={vendor._count?.products || 0} />
-                <Metric label="Followers" value={vendor._count?.followers || 0} />
-                
-                <div className="w-full lg:w-auto pt-6 lg:pt-0">
-                  <FollowButton
-                    vendorId={vendor.id}
-                    initialIsFollowing={false}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </header>
-
-      {/* ⚪ 2. CATALOG SECTION */}
-      <Container className="-mt-32 pb-40 px-6">
-        <div className="bg-white rounded-[5rem] shadow-[0_100px_150px_-50px_rgba(0,0,0,0.12)] border border-zinc-100 overflow-hidden relative z-20">
-          
-          {/* Header of the catalog */}
-          <div className="px-10 lg:px-24 pt-20 pb-16 border-b border-zinc-50">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12">
-                <div className="space-y-4">
-                    <span className="text-blue-600 text-[11px] font-black uppercase tracking-[0.6em] flex items-center gap-3">
-                        <Zap size={14} fill="currentColor" /> Live_Inventory
-                    </span>
-                    <h2 className="text-5xl lg:text-7xl font-black italic uppercase tracking-tighter text-zinc-900">
-                        Registry <span className="text-zinc-200">Vault</span>
-                    </h2>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                    <div className="text-right">
-                        <p className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">Registry_Status</p>
-                        <p className="text-[11px] font-bold text-emerald-500 uppercase tracking-widest">Active_and_Verified</p>
-                    </div>
-                    <div className="w-px h-10 bg-zinc-100 hidden lg:block" />
-                    <div className="px-8 py-4 bg-zinc-900 rounded-[2rem] text-white flex items-center gap-4">
-                        <Globe size={16} className="text-blue-500 animate-pulse" />
-                        <span className="text-[11px] font-black uppercase tracking-widest leading-none">
-                            Nodes: {vendor.products?.length || 0}
-                        </span>
-                    </div>
-                </div>
-            </div>
-          </div>
-
-          <div className="p-10 lg:p-24 bg-[#FAFAFA]">
-            {vendor.products?.length ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-12 gap-y-24">
-                {vendor.products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={{
-                      ...product,
-                      image: product.image || product.imageUrl || product.images?.[0] || '',
-                    }}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyInventory />
-            )}
-          </div>
-
-          {/* Catalog Footer Decorative element */}
-          <div className="h-4 bg-gradient-to-r from-blue-600 via-zinc-900 to-black" />
+          ) : (
+            <EmptyProducts />
+          )}
         </div>
       </Container>
-
-      <footer className="py-20 text-center border-t border-zinc-100">
-            <p className="text-zinc-300 text-[10px] font-black uppercase tracking-[0.8em]">End_of_Registry_Transmission</p>
-      </footer>
     </div>
   );
 }
 
-/* --- REFINED SUB-COMPONENTS --- */
-
-function Metric({ label, value }: { label: string; value: number }) {
+function LoadingState() {
   return (
-    <div className="space-y-1">
-      <h3 className="text-5xl font-black italic text-white tracking-tighter leading-none">
-        {value.toLocaleString()}
-      </h3>
-      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] italic">
-        {label}
-      </p>
-    </div>
-  );
-}
-
-function VendorLoadingState() {
-  return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-12">
-      <div className="relative w-24 h-24">
-        <div className="absolute inset-0 border-4 border-blue-600/20 rounded-[2rem] animate-pulse" />
-        <div className="absolute inset-0 border-t-4 border-blue-600 rounded-[2rem] animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center">
-            <Zap className="text-blue-600 animate-pulse" size={32} fill="currentColor" />
-        </div>
-      </div>
-      <div className="space-y-2 text-center">
-        <p className="text-[12px] font-black text-white uppercase tracking-[0.8em] animate-pulse">Syncing_Registry</p>
-        <div className="w-48 h-[1px] bg-zinc-800 mx-auto overflow-hidden">
-            <div className="w-full h-full bg-blue-600 translate-x-[-100%] animate-loading-bar" />
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <Loader2 className="animate-spin text-gray-400" size={32} />
     </div>
   );
 }
 
 function VendorNotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 p-6 text-center">
-      <div className="w-24 h-24 rounded-[2.5rem] bg-white shadow-xl flex items-center justify-center mb-10 border border-zinc-100">
-        <PackageSearch size={40} strokeWidth={1} className="text-zinc-300" />
-      </div>
-      <h2 className="text-6xl font-black italic uppercase tracking-tighter text-zinc-900 mb-4">
-        Null_Registry_Node
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-white text-center">
+      <PackageSearch size={48} className="text-gray-300 mb-4" />
+
+      <h2 className="text-xl font-semibold text-gray-900">
+        Store not found
       </h2>
-      <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-12 max-w-sm mx-auto leading-relaxed">
-        The requested connection could not be established with the global artifact directory.
+
+      <p className="text-sm text-gray-500 mt-2">
+        This vendor page is not available right now.
       </p>
-      <Link href="/vendors" className="px-16 py-6 bg-zinc-950 text-white rounded-full text-[11px] font-black uppercase tracking-[0.5em] hover:bg-blue-600 transition-all shadow-2xl">
-        Restart_Directory_Search
+
+      <Link
+        href="/vendors"
+        className="mt-6 px-5 py-3 rounded-xl bg-black text-white text-sm font-medium"
+      >
+        Go back
       </Link>
     </div>
   );
 }
 
-function EmptyInventory() {
+function EmptyProducts() {
   return (
-    <div className="py-40 text-center rounded-[4rem] border-2 border-dashed border-zinc-100 bg-white">
-      <PackageSearch size={64} className="mx-auto text-zinc-200 mb-10" strokeWidth={1} />
-      <p className="text-zinc-400 text-xs font-black uppercase tracking-[0.6em] italic">
-        Zero_Active_Data_Nodes
+    <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
+      <PackageSearch size={40} className="mx-auto text-gray-300 mb-3" />
+
+      <p className="text-sm text-gray-500">
+        No products available
       </p>
     </div>
   );
