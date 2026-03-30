@@ -53,7 +53,7 @@ export default function VendorStorefront() {
       try {
         setLoading(true);
         // Ensure path matches NestJS: vendors/public-profile/:slug
-        const response = await axios.get(`${API_URL}/vendors/public-profile/${slug}`);
+        const response = await axios.get(`${API_URL}/storefront/vendors/public-profile/${slug}`);
         if (mounted) setVendor(response.data);
       } catch (err) {
         if (mounted) setError('Vendor Node Offline');

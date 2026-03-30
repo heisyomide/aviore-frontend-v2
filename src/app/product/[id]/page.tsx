@@ -34,41 +34,63 @@ export default function ProductDetailsPage() {
   // 🛡️ Ensure apiBase matches your deployed NestJS URL in production
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-  const fetchAllData = async () => {
-    try {
-      setLoading(true);
-      // 1. PUBLIC_ACCESS: Fetching product details (No token needed)
-      const { data: productData } = await api.get(`/products/${id}`);
-      setProduct(productData);
+const fetchAllData = async () => {
+  if (!id) return;
 
-      // 2. PUBLIC_ACCESS: Fetching vendor stats
-      if (productData.vendorId) {
-        const { data: storefront } = await api.get(`/storefront/vendors/${productData.vendorId}`);
-        setVendorData(storefront);
+  try {
+    setLoading(true);
+
+    // 🚀 STEP 1: Core Product Fetch (Required for everything else)
+    const { data: productData } = await api.get(`/products/${id}`);
+    setProduct(productData);
+
+    // 🚀 STEP 2: Parallel Discovery (Vendor, Recommendations, & Auth Status)
+    if (productData.vendorId) {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+      // Execute these three independent requests simultaneously
+      const [vendorRes, recsRes, followRes] = await Promise.allSettled([
+        // A. Public Vendor Stats & Slug
+        api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
         
-        // 🛡️ AUTH_CHECK: Only try to fetch following status if a token exists
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            const { data: followed } = await api.get('/vendors/followed');
-            setIsFollowing(followed.some((v: any) => v.id === productData.vendorId));
-          } catch (e) {
-            console.warn("Guest session detected");
-          }
-        }
+        // B. Contextual Recommendations
+        api.get('/products', { 
+          params: { 
+            category: productData.category?.slug, 
+            limit: 10 
+          } 
+        }),
+
+        // C. Auth-dependent Following Status
+        token ? api.get('/vendors/followed') : Promise.reject('GUEST_SESSION')
+      ]);
+
+      // --- Handle Vendor Results ---
+      if (vendorRes.status === 'fulfilled') {
+        setVendorData(vendorRes.value.data);
+      } else {
+        console.warn("VENDOR_REGISTRY_OFFLINE", vendorRes.reason);
       }
 
-      // 3. PUBLIC_ACCESS: Fetching recommendations
-      const recParams = { category: productData.category?.slug, limit: 10 };
-      const recResponse = await api.get('/products', { params: recParams });
-      setRecommended(recResponse.data.data.filter((p: any) => p.id !== id));
-    } catch (err) {
-      console.error("REGISTRY_SYNC_ERROR", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      // --- Handle Recommendations ---
+      if (recsRes.status === 'fulfilled') {
+        const recData = recsRes.value.data.data || [];
+        setRecommended(recData.filter((p: any) => p.id !== id));
+      }
 
+      // --- Handle Following Status ---
+      if (followRes.status === 'fulfilled') {
+        const followedArray = followRes.value.data || [];
+        setIsFollowing(followedArray.some((v: any) => v.id === productData.vendorId));
+      }
+    }
+  } catch (err) {
+    console.error("REGISTRY_CRITICAL_SYNC_ERROR", err);
+    // Optional: toast.error("Failed to sync item data")
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     fetchAllData();
   }, [id]);
