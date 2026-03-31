@@ -27,25 +27,26 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
   const [couponCount, setCouponCount] = useState(0);
 
   // 1. DYNAMIC GREETING LOGIC (Morning/Afternoon/Evening)
-  const greeting = useMemo(() => {
+const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
   }, []);
 
+
   // 2. DATA SYNC: USER IDENTITY (Firstname + Lastname)
-  const firstName = data?.firstName || '';
-  const lastName = data?.lastName || '';
-  const fullName = `${firstName} ${lastName}`.trim() || 'User';
-  
-  // Create Initials from First and Last Name
+const fullName = useMemo(() => {
+    const first = data?.firstName || '';
+    const last = data?.lastName || '';
+    return `${first} ${last}`.trim() || 'Customer';
+  }, [data]);
+
   const userInitials = useMemo(() => {
-    if (firstName && lastName) {
-      return (firstName[0] + lastName[0]).toUpperCase();
-    }
-    return fullName.slice(0, 2).toUpperCase();
-  }, [firstName, lastName, fullName]);
+    const firstInitial = data?.firstName?.[0] || '';
+    const lastInitial = data?.lastName?.[0] || '';
+    return (firstInitial + lastInitial).toUpperCase() || 'CU';
+  }, [data]);
 
   // 3. DATA SYNC: WISHLIST (Zustand Store)
   const { items: wishlistItems } = useWishlistStore();

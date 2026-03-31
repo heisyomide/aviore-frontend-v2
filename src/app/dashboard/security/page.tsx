@@ -68,7 +68,7 @@ export default function SecurityPage() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.patch('/user/change-password', passwords);
+      await api.patch('/user/profile', passwords);
       alert("Password updated successfully!");
       setActiveModal(null);
       setPasswords({ oldPassword: '', newPassword: '' });
