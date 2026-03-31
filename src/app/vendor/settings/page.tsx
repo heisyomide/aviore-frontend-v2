@@ -208,7 +208,7 @@ export default function SettingsPage() {
                           onChange={(e) => setFormData({...formData, bankName: e.target.value})}
                           className="w-full p-5 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase text-slate-900 outline-none focus:border-blue-600 transition-all"
                         >
-                          <option value="">Choose Node</option>
+                          <option value="">Choose Bank</option>
                           <option value="GTBank">Guaranty Trust Bank</option>
                           <option value="Zenith">Zenith Bank</option>
                           <option value="Kuda">Kuda Microfinance</option>
@@ -238,7 +238,7 @@ export default function SettingsPage() {
                     <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl border-4 border-blue-500"><RefreshCcw className="text-blue-500 animate-spin-slow" size={48} strokeWidth={3} /></div>
                   )}
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{formData.isVerified ? 'Certified Node' : 'Audit Pending'}</h3>
+                    <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{formData.isVerified ? 'Certified Vendor' : 'Audit Pending'}</h3>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 max-w-xs mx-auto leading-relaxed">
                       {formData.isVerified ? 'Your business credentials have been indexed. Access to all treasury protocols is granted.' : 'The registry is currently auditing your documentation. Platform discovery is active, but settlements are on standby.'}
                     </p>
