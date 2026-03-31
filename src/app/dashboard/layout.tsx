@@ -70,7 +70,7 @@ export default function DashboardLayout({
           }
           className="lg:hidden w-full mb-4 bg-white border border-zinc-200 rounded-2xl px-4 py-4 flex items-center justify-between"
         >
-          <span className="font-medium text-sm">
+          <span className="font-medium text-gray-900 text-sm">
             Dashboard Menu
           </span>
 

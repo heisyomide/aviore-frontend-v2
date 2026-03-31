@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Package,
   Heart,
@@ -17,13 +17,16 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
+import { api } from '@/src/lib/axios';
 
 interface MobileDashboardProps {
-  data: any; // This is the user/profile data you provided
+  data: any; // user/profile data
 }
 
 export function MobileDashboard({ data }: MobileDashboardProps) {
-  // 1. DYNAMIC GREETING LOGIC
+  const [couponCount, setCouponCount] = useState(0);
+
+  // 1. DYNAMIC GREETING LOGIC (Morning/Afternoon/Evening)
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -31,43 +34,59 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
     return 'Good evening';
   }, []);
 
-  // 2. DATA SYNC: USER IDENTITY
-  // Extracts firstName from your provided JSON structure
-  const userName = data?.firstName || data?.name?.split(' ')[0] || 'User';
+  // 2. DATA SYNC: USER IDENTITY (Firstname + Lastname)
+  const firstName = data?.firstName || '';
+  const lastName = data?.lastName || '';
+  const fullName = `${firstName} ${lastName}`.trim() || 'User';
   
-  // Create Initials from Name
+  // Create Initials from First and Last Name
   const userInitials = useMemo(() => {
-    if (data?.firstName && data?.lastName) {
-      return (data.firstName[0] + data.lastName[0]).toUpperCase();
+    if (firstName && lastName) {
+      return (firstName[0] + lastName[0]).toUpperCase();
     }
-    return data?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'AY';
-  }, [data]);
+    return fullName.slice(0, 2).toUpperCase();
+  }, [firstName, lastName, fullName]);
 
   // 3. DATA SYNC: WISHLIST (Zustand Store)
   const { items: wishlistItems } = useWishlistStore();
   const wishlistCount = wishlistItems.length;
 
+  // 4. DATA SYNC: COUPONS (Fetch from /vendor/marketing/active)
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const response = await api.get('/vendor/marketing/active');
+        if (Array.isArray(response.data)) {
+          setCouponCount(response.data.length);
+        }
+      } catch (err) {
+        console.error("Coupon_Sync_Error", err);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
+      {/* Header Section */}
       <header className="bg-white px-4 pt-12 pb-6 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1 pr-4">
             <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-              {greeting}, <br /> <span className="capitalize">{userName}</span>
+              {greeting}, <br /> <span className="capitalize">{fullName}</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-1 uppercase tracking-widest font-medium text-[10px]">
+            <p className="text-sm text-gray-400 mt-1 uppercase tracking-widest font-medium text-[9px]">
               Registry Terminal Active
             </p>
           </div>
 
-          {/* Real Initiate / Initials using your provided Profile Data */}
-          <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-white font-black italic border-2 border-white shadow-xl">
+          {/* User Initial Circle */}
+          <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-white font-black italic border-2 border-white shadow-xl shrink-0">
             {userInitials}
           </div>
         </div>
 
-        {/* Quick Stats Grid - Mapping your real _count data */}
+        {/* Quick Stats Grid */}
         <div className="grid grid-cols-2 gap-3 mt-8">
           <QuickCard
             icon={<Package size={18} />}
@@ -86,7 +105,7 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
           <QuickCard
             icon={<Ticket size={18} />}
             title="Coupons"
-            value={data?.activeCoupons || 0}
+            value={couponCount} // Real count from /vendor/marketing/active
             href="/dashboard/coupons"
           />
 
@@ -99,13 +118,12 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
         </div>
       </header>
 
-      {/* Saved Items (Visual Row) */}
+      {/* Saved Items Section */}
       <section className="mt-4 bg-white py-6">
         <div className="flex items-center justify-between px-4 mb-5">
           <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
-            Saved <span className="text-zinc-300">Artifacts</span>
+            Saved <span className="text-zinc-300">Products</span>
           </h2>
-
           <Link href="/wishlist" className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1">
             See all <ChevronRight size={12} />
           </Link>
@@ -118,19 +136,20 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
             ))}
           </div>
         ) : (
-          <p className="px-6 py-4 text-[10px] font-bold text-gray-300 uppercase tracking-widest italic border-2 border-dashed border-gray-50 mx-4 rounded-2xl text-center">
-            Registry_Empty
-          </p>
+          <div className="px-4">
+             <div className="py-6 border-2 border-dashed border-gray-100 rounded-2xl text-center">
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">No Saved Items</p>
+             </div>
+          </div>
         )}
       </section>
 
-      {/* Recent Orders Section */}
+      {/* Recent Manifests Section */}
       <section className="mt-4 bg-white px-4 py-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
-            Recent <span className="text-zinc-300">Manifests</span>
+            Recent <span className="text-zinc-300">Orders</span>
           </h2>
-
           <Link href="/dashboard/orders" className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1">
             View all <ChevronRight size={12} />
           </Link>
@@ -144,19 +163,17 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
           ) : (
             <div className="text-center py-6 border-t border-gray-50">
                <ShoppingBag className="mx-auto text-gray-200 mb-2" size={32} strokeWidth={1} />
-               <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">
-                Zero_Active_Orders
-               </p>
+               <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">Zero_Active_Orders</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Account Navigator */}
+      {/* Nav Menu */}
       <section className="mt-4 bg-white px-4 py-2 mb-10 divide-y divide-gray-50">
-        <MenuItem label="User Profile" icon={<User size={18} />} href="/dashboard/profile" />
-        <MenuItem label="Address Registry" icon={<MapPin size={18} />} href="/dashboard/address" />
-        <MenuItem label="Support Node" icon={<MessageSquare size={18} />} href="/dashboard/support" />
+        <MenuItem label="Profile" icon={<User size={18} />} href="/dashboard/profile" />
+        <MenuItem label="Address" icon={<MapPin size={18} />} href="/dashboard/address" />
+        <MenuItem label="Support" icon={<MessageSquare size={18} />} href="/dashboard/support" />
         <MenuItem label="Security" icon={<Shield size={18} />} href="/dashboard/security" />
 
         <button
@@ -164,20 +181,20 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
             localStorage.removeItem('token');
             window.location.href = '/login';
           }}
-          className="w-full flex items-center justify-between py-5 active:bg-red-50 transition-colors"
+          className="w-full flex items-center justify-between py-5 active:bg-red-50 transition-colors px-2"
         >
           <div className="flex items-center gap-3 text-red-500">
             <LogOut size={18} />
-            <span className="text-[11px] font-black uppercase tracking-widest">Terminate Session</span>
+            <span className="text-[11px] font-black uppercase tracking-widest">Logout</span>
           </div>
-          <ChevronRight size={16} className="text-gray-200" />
+          <ChevronRight size={16} className="text-gray-300" />
         </button>
       </section>
     </div>
   );
 }
 
-/* --- COMPONENTS --- */
+/* --- ATOMS --- */
 
 function QuickCard({ icon, title, value, href }: any) {
   return (
@@ -193,9 +210,8 @@ function QuickCard({ icon, title, value, href }: any) {
 
 function SavedItemCard({ item }: any) {
   const displayImage = item.image || item.imageUrl || (item.images && item.images[0]?.imageUrl);
-
   return (
-    <Link href={`/product/${item.id}`} className="min-w-[150px] max-w-[150px] group">
+    <Link href={`/product/${item.id}`} className="min-w-[150px] max-w-[150px] group shrink-0">
       <div className="h-40 rounded-[1.8rem] bg-gray-50 overflow-hidden relative border border-gray-100 shadow-sm group-active:scale-95 transition-all">
         {displayImage ? (
           <Image src={displayImage} alt={item.title} fill className="object-cover" />
@@ -205,7 +221,7 @@ function SavedItemCard({ item }: any) {
       </div>
       <div className="mt-3 px-1">
         <p className="text-[10px] font-black uppercase italic text-zinc-900 line-clamp-1 leading-none">{item.title}</p>
-        <p className="text-[11px] font-black text-[#A4143D] mt-1 tracking-tighter">₦{Number(item.price)?.toLocaleString()}</p>
+        <p className="text-[11px] font-black text-[#A4143D] mt-1 tracking-tighter">₦{Number(item.price || 0).toLocaleString()}</p>
       </div>
     </Link>
   );
@@ -213,7 +229,6 @@ function SavedItemCard({ item }: any) {
 
 function OrderRow({ order }: any) {
   const orderImage = order.items?.[0]?.product?.images?.[0]?.imageUrl || order.items?.[0]?.product?.image;
-
   return (
     <div className="flex items-center justify-between py-2 group">
       <div className="flex items-center gap-4">
@@ -224,7 +239,6 @@ function OrderRow({ order }: any) {
             <ShoppingBag size={20} className="text-gray-300" />
           )}
         </div>
-
         <div className="space-y-1">
           <p className="font-black text-[11px] uppercase italic text-zinc-900">
             #{order.orderNumber || order.id.slice(-6).toUpperCase()}
@@ -235,9 +249,8 @@ function OrderRow({ order }: any) {
           </div>
         </div>
       </div>
-
       <p className="font-black italic text-sm text-zinc-900 tracking-tighter">
-        ₦{Number(order.amount || order.totalAmount).toLocaleString()}
+        ₦{Number(order.totalAmount || 0).toLocaleString()}
       </p>
     </div>
   );
