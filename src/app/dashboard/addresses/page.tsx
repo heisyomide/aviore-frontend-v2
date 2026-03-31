@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { MapPin, Trash2, Edit2, CheckCircle, X, Loader2, Home, Fingerprint, Activity } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { toast } from 'react-hot-toast';
+import AddressModal from '@/src/components/dashboard/AddressModal';
 
 interface Address {
   id: string;
@@ -233,107 +234,17 @@ export default function AddressesPage() {
         </div>
       )}
 
-     {/* 🛡️ MODAL SYSTEM: True Viewport Centering */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-zinc-900/60 p-34 backdrop-blur-md animate-in fade-in duration-300">
-          
-          {/* 🚀 THE CARD: max-h-[85vh] + m-auto for perfect centering */}
-          <div className="relative m-auto w-full max-w-md overflow-hidden rounded-[2.5rem] bg-white shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh] border border-zinc-100">
-            
-            {/* Background Aesthetic */}
-            <div className="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-[#A4143D]/5 blur-3xl pointer-events-none" />
-
-            {/* 1. FIXED HEADER */}
-            <header className="relative z-10 px-8 pt-8 pb-4 flex items-center justify-between border-b border-zinc-50 bg-white">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-[#A4143D]">
-                  <Fingerprint size={14} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">Logistics_Override</span>
-                </div>
-                <h2 className="text-2xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">
-                  {editingId ? 'Modify Address' : 'New Address'}
-                </h2>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setIsModalOpen(false)} 
-                className="rounded-full p-2 text-zinc-300 hover:text-black transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </header>
-
-            {/* 🚀 FIXED STRUCTURE: The <form> now wraps both the scrollable area AND the button footer */}
-            <form onSubmit={handleSubmit} className="relative z-10 flex-1 flex flex-col overflow-hidden">
-              
-              {/* 2. SCROLLABLE CONTENT AREA */}
-              <div className="flex-1 overflow-y-auto no-scrollbar px-8 py-6 space-y-6">
-                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
-                  // Linked to: {profile.fullName || 'IDENTITY_REQUIRED'}
-                </p>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-zinc-400 ml-1">Street_Address</label>
-                  <input 
-                    placeholder="STREET_ADDRESS"
-                    required 
-                    value={formData.street}
-                    className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:bg-white focus:border-[#A4143D]/20 text-xs font-bold font-mono"
-                    onChange={(e) => setFormData({...formData, street: e.target.value})}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[8px] font-black uppercase tracking-widest text-zinc-400 ml-1">City</label>
-                    <input 
-                      placeholder="CITY"
-                      required 
-                      value={formData.city}
-                      className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:bg-white focus:border-[#A4143D]/20 text-xs font-bold font-mono"
-                      onChange={(e) => setFormData({...formData, city: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[8px] font-black uppercase tracking-widest text-zinc-400 ml-1">State</label>
-                    <input 
-                      placeholder="STATE"
-                      required 
-                      value={formData.state}
-                      className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:bg-white focus:border-[#A4143D]/20 text-xs font-bold font-mono"
-                      onChange={(e) => setFormData({...formData, state: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. PINNED ACTION FOOTER (Inside form to allow submission) */}
-              <footer className="px-8 py-6 border-t border-zinc-50 bg-white">
-                <div className="flex gap-4">
-                  <button 
-                    type="button" 
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1 px-6 py-4 rounded-xl border-2 border-zinc-100 text-[10px] font-black uppercase tracking-widest text-zinc-400 transition-all hover:bg-zinc-50"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="group relative flex-1 overflow-hidden bg-black text-white py-4 rounded-xl transition-all active:scale-95 shadow-xl shadow-zinc-200"
-                  >
-                    <span className="relative z-10 text-[10px] font-black uppercase tracking-widest">
-                      {editingId ? 'Update Address' : 'Save Address'}
-                    </span>
-                    <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                  </button>
-                </div>
-              </footer>
-            </form>
+<AddressModal
+  isOpen={isModalOpen}
+  editingId={editingId}
+  profile={profile}
+  formData={formData}
+  setFormData={setFormData}
+  onClose={() => setIsModalOpen(false)}
+  onSubmit={handleSubmit}
+/>
           </div>
-        </div>
+       
       )}
-       </div>
+      
 
-  );
-
-}
