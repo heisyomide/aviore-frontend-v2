@@ -144,7 +144,7 @@ export default function DashboardLayout({
                 )}
 
                 {navItem(
-                  '/dashboard/address',
+                  '/dashboard/addresses',
                   'Address',
                   MapPin
                 )}

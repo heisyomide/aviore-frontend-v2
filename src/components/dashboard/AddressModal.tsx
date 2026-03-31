@@ -35,27 +35,27 @@ export default function AddressModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-zinc-100 overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-md flex items-center justify-center px-4 py-6 sm:px-6">
+      <div className="w-[min(100%,42rem)] bg-white rounded-[2rem] shadow-2xl border border-zinc-100 overflow-hidden max-h-[90dvh] flex flex-col">
         
         {/* Header */}
-        <header className="px-6 md:px-8 py-5 border-b border-zinc-100 flex items-center justify-between">
-          <div>
+        <header className="px-5 sm:px-8 py-5 border-b border-zinc-100 flex items-center justify-between">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 text-[#A4143D]">
               <Fingerprint size={14} />
               <span className="text-[10px] font-black uppercase tracking-[0.3em]">
-                Logistics_Override
+                Logistics
               </span>
             </div>
 
-            <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight mt-1">
+            <h2 className="text-lg sm:text-2xl font-black uppercase italic tracking-tight mt-1 break-words">
               {editingId ? 'Modify Address' : 'New Address'}
             </h2>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-zinc-100 transition"
+            className="p-2 rounded-full hover:bg-zinc-100 transition shrink-0"
           >
             <X size={20} />
           </button>
@@ -67,8 +67,8 @@ export default function AddressModal({
           className="flex flex-col flex-1 overflow-hidden"
         >
           {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto px-6 md:px-8 py-6 space-y-6">
-            <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
+          <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-6 space-y-6">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold break-words">
               Linked to: {profile.fullName || 'IDENTITY_REQUIRED'}
             </p>
 
@@ -85,12 +85,12 @@ export default function AddressModal({
                     street: e.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-medium outline-none focus:border-[#A4143D]"
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm outline-none focus:border-[#A4143D]"
                 placeholder="Enter street address"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                   City
@@ -104,7 +104,7 @@ export default function AddressModal({
                       city: e.target.value,
                     }))
                   }
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-medium outline-none focus:border-[#A4143D]"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm outline-none focus:border-[#A4143D]"
                   placeholder="City"
                 />
               </div>
@@ -122,7 +122,7 @@ export default function AddressModal({
                       state: e.target.value,
                     }))
                   }
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-medium outline-none focus:border-[#A4143D]"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm outline-none focus:border-[#A4143D]"
                   placeholder="State"
                 />
               </div>
@@ -130,7 +130,7 @@ export default function AddressModal({
           </div>
 
           {/* Footer */}
-          <footer className="px-6 md:px-8 py-5 border-t border-zinc-100 bg-white">
+          <footer className="px-5 sm:px-8 py-5 border-t border-zinc-100 bg-white">
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
