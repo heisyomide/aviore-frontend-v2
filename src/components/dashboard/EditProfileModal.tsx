@@ -74,50 +74,61 @@ export default function EditProfileModal({ user, isOpen, onClose, onUpdate }: Ed
         </header>
         
         {/* 2. BODY: Input Registry */}
-        <form onSubmit={handleSubmit} className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-8 py-6 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <InputField 
-              label="First_Name" 
-              value={formData.firstName}
-              onChange={(val: string) => setFormData({...formData, firstName: val})}
-            />
-            <InputField 
-              label="Last_Name" 
-              value={formData.lastName}
-              onChange={(val: string) => setFormData({...formData, lastName: val})}
-            />
-          </div>
+<form
+  onSubmit={handleSubmit}
+  className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-8 py-6 space-y-6"
+>
+  <div className="grid grid-cols-2 gap-4">
+    <InputField
+      label="First_Name"
+      value={formData.firstName}
+      onChange={(val: string) =>
+        setFormData({ ...formData, firstName: val })
+      }
+    />
+    <InputField
+      label="Last_Name"
+      value={formData.lastName}
+      onChange={(val: string) =>
+        setFormData({ ...formData, lastName: val })
+      }
+    />
+  </div>
 
-          <InputField 
-            label="Phone_String" 
-            placeholder="+234 ..."
-            value={formData.phone}
-            onChange={(val: string) => setFormData({...formData, phone: val})}
-          />
-        </form>
+  <InputField
+    label="Phone_String"
+    placeholder="+234 ..."
+    value={formData.phone}
+    onChange={(val: string) =>
+      setFormData({ ...formData, phone: val })
+    }
+  />
 
-        {/* 3. FOOTER: Execution Controls */}
-        <footer className="relative z-10 px-8 py-6 border-t border-zinc-50 bg-white">
-          <div className="flex gap-4">
-            <button 
-              type="button" 
-              onClick={onClose}
-              className="flex-1 rounded-xl border-2 border-zinc-100 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:bg-zinc-50 transition-all"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit"
-              disabled={loading}
-              className="group relative flex-1 overflow-hidden rounded-xl bg-black px-6 py-4 shadow-xl active:scale-95 transition-all disabled:opacity-50"
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
-                {loading ? <Loader2 className="animate-spin" size={14} /> : "Execute Changes"}
-              </span>
-              <div className="absolute inset-0 translate-y-full bg-[#A4143D] transition-transform duration-300 group-hover:translate-y-0" />
-            </button>
-          </div>
-        </footer>
+  {/* MOVE FOOTER INSIDE FORM */}
+  <footer className="relative z-10 pt-6 border-t border-zinc-50 bg-white">
+    <div className="flex gap-4">
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex-1 rounded-xl border-2 border-zinc-100 py-4"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="flex-1 rounded-xl bg-black px-6 py-4"
+      >
+        {loading ? (
+          <Loader2 className="animate-spin" size={14} />
+        ) : (
+          "Execute Changes"
+        )}
+      </button>
+    </div>
+  </footer>
+</form>
       </div>
     </div>
   );
