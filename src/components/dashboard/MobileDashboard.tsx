@@ -24,29 +24,42 @@ interface MobileDashboardProps {
 }
 
 export function MobileDashboard({ data }: MobileDashboardProps) {
-  const [couponCount, setCouponCount] = useState(0);
+const [couponCount, setCouponCount] = useState(0);
 
-  // 1. DYNAMIC GREETING LOGIC (Morning/Afternoon/Evening)
 const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }, []);
+  const hour = new Date().getHours();
 
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}, []);
 
-  // 2. DATA SYNC: USER IDENTITY (Firstname + Lastname)
+/**
+ * FULL NAME
+ * Uses backend `name` first
+ */
 const fullName = useMemo(() => {
-    const first = data?.firstName || '';
-    const last = data?.lastName || '';
-    return `${first} ${last}`.trim() || 'Customer';
-  }, [data]);
+  return (
+    data?.name ||
+    `${data?.firstName || ''} ${data?.lastName || ''}`.trim()
+  );
+}, [data]);
 
-  const userInitials = useMemo(() => {
-    const firstInitial = data?.firstName?.[0] || '';
-    const lastInitial = data?.lastName?.[0] || '';
-    return (firstInitial + lastInitial).toUpperCase() || 'CU';
-  }, [data]);
+/**
+ * USER INITIALS
+ * Example: adedayo yomide => AY
+ */
+const userInitials = useMemo(() => {
+  if (!fullName) return '';
+
+  const parts = fullName.trim().split(' ');
+
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+
+  return fullName.slice(0, 2).toUpperCase();
+}, [fullName]);
 
   // 3. DATA SYNC: WISHLIST (Zustand Store)
   const { items: wishlistItems } = useWishlistStore();
@@ -70,54 +83,57 @@ const fullName = useMemo(() => {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header Section */}
-      <header className="bg-white px-4 pt-12 pb-6 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 pr-4">
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-              {greeting}, <br /> <span className="capitalize">{fullName}</span>
-            </h1>
-            <p className="text-sm text-gray-400 mt-1 uppercase tracking-widest font-medium text-[9px]">
-              Registry Terminal Active
-            </p>
-          </div>
+    <header className="bg-white px-4 pt-12 pb-6 border-b border-gray-100">
+  <div className="flex items-center justify-between gap-4">
+    <div className="flex-1">
+      <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+        {greeting},
+      </h1>
 
-          {/* User Initial Circle */}
-          <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-white font-black italic border-2 border-white shadow-xl shrink-0">
-            {userInitials}
-          </div>
-        </div>
+      <p className="text-xl font-semibold text-[#A4143D] capitalize mt-1">
+        {fullName}
+      </p>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mt-8">
-          <QuickCard
-            icon={<Package size={18} />}
-            title="Orders"
-            value={data?._count?.orders || 0}
-            href="/dashboard/orders"
-          />
+      <p className="text-xs text-gray-400 mt-2 uppercase tracking-wider">
+        Manage your account
+      </p>
+    </div>
 
-          <QuickCard
-            icon={<Heart size={18} />}
-            title="Wishlist"
-            value={wishlistCount}
-            href="/wishlist"
-          />
+    <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+      {userInitials}
+    </div>
+  </div>
 
-          <QuickCard
-            icon={<Ticket size={18} />}
-            title="Coupons"
-            value={couponCount} // Real count from /vendor/marketing/active
-            href="/dashboard/coupons"
-          />
+  <div className="grid grid-cols-2 gap-3 mt-8">
+    <QuickCard
+      icon={<Package size={18} />}
+      title="Orders"
+      value={data?._count?.orders || 0}
+      href="/dashboard/orders"
+    />
 
-          <QuickCard
-            icon={<Star size={18} />}
-            title="Reviews"
-            value={data?._count?.reviews || 0}
-            href="/dashboard/reviews"
-          />
-        </div>
-      </header>
+    <QuickCard
+      icon={<Heart size={18} />}
+      title="Wishlist"
+      value={wishlistCount}
+      href="/wishlist"
+    />
+
+    <QuickCard
+      icon={<Ticket size={18} />}
+      title="Coupons"
+      value={couponCount}
+      href="/dashboard/coupons"
+    />
+
+    <QuickCard
+      icon={<Star size={18} />}
+      title="Reviews"
+      value={data?._count?.reviews || 0}
+      href="/dashboard/reviews"
+    />
+  </div>
+</header>
 
       {/* Saved Items Section */}
       <section className="mt-4 bg-white py-6">

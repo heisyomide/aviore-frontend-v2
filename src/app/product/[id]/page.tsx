@@ -19,6 +19,8 @@ import { Navbar } from '@/src/components/navbar/Navbar';
 export default function ProductDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
+    const params = useParams();
+  const productId = params?.id as string;
   
   const [product, setProduct] = useState<any>(null);
   const [vendorData, setVendorData] = useState<any>(null);
@@ -91,6 +93,22 @@ const fetchAllData = async () => {
     setLoading(false);
   }
 };
+
+ useEffect(() => {
+    if (!productId) return;
+
+    const recordView = async () => {
+      try {
+        await api.post(`/user/history/${productId}`);
+      } catch (error) {
+        console.error('History record failed:', error);
+      }
+    };
+
+    recordView();
+  }, [productId]);
+
+
   useEffect(() => {
     fetchAllData();
   }, [id]);
