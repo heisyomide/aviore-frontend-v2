@@ -12,13 +12,14 @@ import {
   LogOut,
   ShoppingBag,
   Shield,
+  Star,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
 
 interface MobileDashboardProps {
-  data: any;
+  data: any; // This is the user/profile data you provided
 }
 
 export function MobileDashboard({ data }: MobileDashboardProps) {
@@ -31,9 +32,16 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
   }, []);
 
   // 2. DATA SYNC: USER IDENTITY
-  // Fetches real name from backend data
-  const userName = data?.profile?.fullName || data?.profile?.firstName || 'User';
-  const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  // Extracts firstName from your provided JSON structure
+  const userName = data?.firstName || data?.name?.split(' ')[0] || 'User';
+  
+  // Create Initials from Name
+  const userInitials = useMemo(() => {
+    if (data?.firstName && data?.lastName) {
+      return (data.firstName[0] + data.lastName[0]).toUpperCase();
+    }
+    return data?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'AY';
+  }, [data]);
 
   // 3. DATA SYNC: WISHLIST (Zustand Store)
   const { items: wishlistItems } = useWishlistStore();
@@ -46,25 +54,25 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-              {greeting}, <br /> {userName}
+              {greeting}, <br /> <span className="capitalize">{userName}</span>
             </h1>
             <p className="text-sm text-gray-500 mt-1 uppercase tracking-widest font-medium text-[10px]">
               Registry Terminal Active
             </p>
           </div>
 
-          {/* Real Initiate / Initials */}
+          {/* Real Initiate / Initials using your provided Profile Data */}
           <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-white font-black italic border-2 border-white shadow-xl">
-            {userInitials || 'AY'}
+            {userInitials}
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
+        {/* Quick Stats Grid - Mapping your real _count data */}
         <div className="grid grid-cols-2 gap-3 mt-8">
           <QuickCard
             icon={<Package size={18} />}
             title="Orders"
-            value={data?.stats?.totalOrders || 0}
+            value={data?._count?.orders || 0}
             href="/dashboard/orders"
           />
 
@@ -78,15 +86,15 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
           <QuickCard
             icon={<Ticket size={18} />}
             title="Coupons"
-            value={data?.stats?.activeCoupons || 0}
+            value={data?.activeCoupons || 0}
             href="/dashboard/coupons"
           />
 
           <QuickCard
-            icon={<MapPin size={18} />}
-            title="Addresses"
-            value={data?.addresses?.length || 0}
-            href="/dashboard/address"
+            icon={<Star size={18} />}
+            title="Reviews"
+            value={data?._count?.reviews || 0}
+            href="/dashboard/reviews"
           />
         </div>
       </header>
@@ -94,7 +102,7 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
       {/* Saved Items (Visual Row) */}
       <section className="mt-4 bg-white py-6">
         <div className="flex items-center justify-between px-4 mb-5">
-          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900">
+          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
             Saved <span className="text-zinc-300">Artifacts</span>
           </h2>
 
@@ -116,10 +124,10 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
         )}
       </section>
 
-      {/* Recent Orders (Image Sync) */}
+      {/* Recent Orders Section */}
       <section className="mt-4 bg-white px-4 py-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900">
+          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
             Recent <span className="text-zinc-300">Manifests</span>
           </h2>
 
@@ -134,9 +142,12 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
               <OrderRow key={order.id} order={order} />
             ))
           ) : (
-            <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic text-center py-4">
-              Zero_Active_Orders
-            </p>
+            <div className="text-center py-6 border-t border-gray-50">
+               <ShoppingBag className="mx-auto text-gray-200 mb-2" size={32} strokeWidth={1} />
+               <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">
+                Zero_Active_Orders
+               </p>
+            </div>
           )}
         </div>
       </section>
@@ -144,6 +155,7 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
       {/* Account Navigator */}
       <section className="mt-4 bg-white px-4 py-2 mb-10 divide-y divide-gray-50">
         <MenuItem label="User Profile" icon={<User size={18} />} href="/dashboard/profile" />
+        <MenuItem label="Address Registry" icon={<MapPin size={18} />} href="/dashboard/address" />
         <MenuItem label="Support Node" icon={<MessageSquare size={18} />} href="/dashboard/support" />
         <MenuItem label="Security" icon={<Shield size={18} />} href="/dashboard/security" />
 
@@ -165,7 +177,7 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
   );
 }
 
-/* --- ATOMIC COMPONENTS --- */
+/* --- COMPONENTS --- */
 
 function QuickCard({ icon, title, value, href }: any) {
   return (
@@ -180,7 +192,6 @@ function QuickCard({ icon, title, value, href }: any) {
 }
 
 function SavedItemCard({ item }: any) {
-  // Safe Image Logic
   const displayImage = item.image || item.imageUrl || (item.images && item.images[0]?.imageUrl);
 
   return (
@@ -194,14 +205,13 @@ function SavedItemCard({ item }: any) {
       </div>
       <div className="mt-3 px-1">
         <p className="text-[10px] font-black uppercase italic text-zinc-900 line-clamp-1 leading-none">{item.title}</p>
-        <p className="text-[11px] font-black text-[#A4143D] mt-1 tracking-tighter">₦{item.price?.toLocaleString()}</p>
+        <p className="text-[11px] font-black text-[#A4143D] mt-1 tracking-tighter">₦{Number(item.price)?.toLocaleString()}</p>
       </div>
     </Link>
   );
 }
 
 function OrderRow({ order }: any) {
-  // Real Image Logic: Tries to find the product image from the order items
   const orderImage = order.items?.[0]?.product?.images?.[0]?.imageUrl || order.items?.[0]?.product?.image;
 
   return (
@@ -227,7 +237,7 @@ function OrderRow({ order }: any) {
       </div>
 
       <p className="font-black italic text-sm text-zinc-900 tracking-tighter">
-        ₦{(order.amount || order.totalAmount).toLocaleString()}
+        ₦{Number(order.amount || order.totalAmount).toLocaleString()}
       </p>
     </div>
   );
@@ -235,7 +245,7 @@ function OrderRow({ order }: any) {
 
 function MenuItem({ label, icon, href }: any) {
   return (
-    <Link href={href} className="flex items-center justify-between py-5 group active:bg-gray-50 transition-colors">
+    <Link href={href} className="flex items-center justify-between py-5 group active:bg-gray-50 transition-colors px-2">
       <div className="flex items-center gap-4">
         <div className="text-zinc-400 group-active:text-[#A4143D] transition-colors">{icon}</div>
         <span className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-900">{label}</span>
