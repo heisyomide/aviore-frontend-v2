@@ -1,26 +1,35 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Package,
   Heart,
-  Wallet,
+  Ticket, // Changed from Wallet to Ticket
   MapPin,
   ChevronRight,
   User,
   MessageSquare,
   LogOut,
   ShoppingBag,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useWishlistStore } from '@/src/store/useWishlistStore'; // Importing your Wishlist Store
 
 interface MobileDashboardProps {
   data: any;
 }
 
 export function MobileDashboard({ data }: MobileDashboardProps) {
-  const userName = data?.profile?.ownerName || 'Hart';
-  const savedItems = data?.savedItems || [];
+  // 1. DATA FETCHING: Name and Initials
+  // We get the firstName from the profile or fall back to 'Hart'
+  const userName = data?.profile?.firstName || data?.profile?.ownerName || 'Hart';
+  const userInitials = userName.slice(0, 2).toUpperCase();
+
+  // 2. WISHLIST SYNC: Using your existing store
+  const { items: wishlistItems } = useWishlistStore();
+  const wishlistCount = wishlistItems.length;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -37,7 +46,7 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
           </div>
 
           <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center text-white font-semibold">
-            {userName.slice(0, 2).toUpperCase()}
+            {userInitials}
           </div>
         </div>
 
@@ -53,29 +62,28 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
           <QuickCard
             icon={<Heart size={18} />}
             title="Wishlist"
-            value={data?.wishlistCount || 0}
+            value={wishlistCount}
             href="/wishlist"
           />
 
+          {/* 🎫 CHANGED: Wallet to Coupons */}
           <QuickCard
-            icon={<Wallet size={18} />}
-            title="Wallet"
-            value={`₦${(
-              data?.wallet?.availableBalance || 0
-            ).toLocaleString()}`}
-            href="/dashboard/finance"
+            icon={<Ticket size={18} />}
+            title="Coupons"
+            value={data?.stats?.activeCoupons || 0}
+            href="/dashboard/coupons"
           />
 
           <QuickCard
             icon={<MapPin size={18} />}
             title="Addresses"
             value={data?.addresses?.length || 0}
-            href="/dashboard/addresses"
+            href="/dashboard/address"
           />
         </div>
       </header>
 
-      {/* Saved Items */}
+      {/* Saved Items (Fetching from Wishlist Store) */}
       <section className="mt-4 bg-white py-5">
         <div className="flex items-center justify-between px-4 mb-4">
           <h2 className="font-semibold text-gray-900">
@@ -90,9 +98,9 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
           </Link>
         </div>
 
-        {savedItems.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto px-4 pb-2">
-            {savedItems.map((item: any) => (
+        {wishlistItems.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar">
+            {wishlistItems.map((item: any) => (
               <SavedItemCard key={item.id} item={item} />
             ))}
           </div>
@@ -103,7 +111,7 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
         )}
       </section>
 
-      {/* Recent Orders */}
+      {/* Recent Orders (Fetching Real Order Images) */}
       <section className="mt-4 bg-white px-4 py-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-900">
@@ -132,17 +140,24 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
       </section>
 
       {/* Account Menu */}
-      <section className="mt-4 bg-white px-4 py-5">
+      <section className="mt-4 bg-white px-4 py-5 space-y-1">
         <MenuItem
           label="Profile"
           icon={<User size={18} />}
-          href="/dashboard/settings"
+          href="/dashboard/profile" // Redirects to Dashboard Profile
         />
 
         <MenuItem
           label="Support"
           icon={<MessageSquare size={18} />}
           href="/dashboard/support"
+        />
+
+        {/* Added Security before Logout */}
+        <MenuItem
+          label="Security"
+          icon={<Shield size={18} />}
+          href="/dashboard/security"
         />
 
         <button
@@ -165,14 +180,9 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
   );
 }
 
-/* Components */
+/* Helper Components */
 
-function QuickCard({
-  icon,
-  title,
-  value,
-  href,
-}: any) {
+function QuickCard({ icon, title, value, href }: any) {
   return (
     <Link
       href={href}
@@ -182,7 +192,6 @@ function QuickCard({
         {icon}
         <span className="text-sm">{title}</span>
       </div>
-
       <p className="text-lg font-semibold text-gray-900">
         {value}
       </p>
@@ -191,52 +200,53 @@ function QuickCard({
 }
 
 function SavedItemCard({ item }: any) {
+  // Use the image from the wishlist store item
+  const displayImage = item.image || item.imageUrl || (item.images && item.images[0]?.imageUrl);
+
   return (
-    <Link
-      href={`/product/${item.id}`}
-      className="min-w-[140px] max-w-[140px]"
-    >
-      <div className="h-32 rounded-xl bg-gray-100 overflow-hidden relative">
-        {item.image ? (
+    <Link href={`/product/${item.id}`} className="min-w-[140px] max-w-[140px]">
+      <div className="h-32 rounded-xl bg-gray-100 overflow-hidden relative border border-gray-100">
+        {displayImage ? (
           <Image
-            src={item.image}
+            src={displayImage}
             alt={item.title}
             fill
             className="object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ShoppingBag size={20} />
+            <ShoppingBag size={20} className="text-gray-300" />
           </div>
         )}
       </div>
-
       <div className="mt-2">
-        <p className="text-sm text-gray-900 line-clamp-1">
-          {item.title}
-        </p>
-
-        <p className="text-sm font-semibold text-gray-900">
-          ₦{item.price?.toLocaleString()}
-        </p>
+        <p className="text-sm text-gray-900 line-clamp-1">{item.title}</p>
+        <p className="text-sm font-semibold text-gray-900">₦{item.price?.toLocaleString()}</p>
       </div>
     </Link>
   );
 }
 
 function OrderRow({ order }: any) {
+  // Fetch image from the first product in the order if available
+  const orderImage = order.items?.[0]?.product?.images?.[0]?.imageUrl;
+
   return (
     <div className="flex items-center justify-between border-b border-gray-100 pb-3">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-          <ShoppingBag size={18} />
+        <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100">
+          {orderImage ? (
+            <Image src={orderImage} alt="order" width={48} height={48} className="object-cover h-full w-full" />
+          ) : (
+            <ShoppingBag size={18} className="text-gray-400" />
+          )}
         </div>
 
         <div>
           <p className="font-medium text-sm text-gray-900">
-            {order.artifact || `Order #${order.id.slice(-6)}`}
+            {order.orderNumber || `Order #${order.id.slice(-6).toUpperCase()}`}
           </p>
-          <p className="text-xs text-green-600">
+          <p className={`text-xs ${order.status === 'DELIVERED' ? 'text-green-600' : 'text-amber-500'}`}>
             {order.status}
           </p>
         </div>
@@ -249,23 +259,13 @@ function OrderRow({ order }: any) {
   );
 }
 
-function MenuItem({
-  label,
-  icon,
-  href,
-}: any) {
+function MenuItem({ label, icon, href }: any) {
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-between py-4 border-b border-gray-100"
-    >
+    <Link href={href} className="flex items-center justify-between py-4 border-b border-gray-100">
       <div className="flex items-center gap-3">
-        {icon}
-        <span className="text-sm text-gray-900">
-          {label}
-        </span>
+        <div className="text-gray-600">{icon}</div>
+        <span className="text-sm text-gray-900 font-medium">{label}</span>
       </div>
-
       <ChevronRight size={16} className="text-gray-300" />
     </Link>
   );
