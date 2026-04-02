@@ -134,14 +134,11 @@ const payload = {
   items: checkoutItems.map(i => ({
     productId: i.id,
     quantity: i.quantity,
-    price: i.price
+    price: Number(i.price)
   })),
   addressId: address.id,
   paymentMethod: selectedPayment,
-  appliedCampaigns: couponData?.appliedCampaigns || [],
-  subtotal,
-  discount,
-  totalAmount: total
+  appliedCampaigns: couponData?.appliedCampaigns || []
 };
       const res = await api.post('/orders/create', payload);
       toast.success("Order authorized");
