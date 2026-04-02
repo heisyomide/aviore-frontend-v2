@@ -20,7 +20,8 @@ interface CartState {
   subtotal: number;
   lastAddedItem: CartItem | null;
   showToast: boolean;
-  _hasHydrated: boolean; // 🚀 New: Hydration tracker
+  _hasHydrated: boolean;
+  isSyncing: boolean; // 🔒 New: Sync Lock
   setHasHydrated: (state: boolean) => void;
   setShowToast: (open: boolean) => void;
   syncWithBackend: () => Promise<void>;
@@ -42,24 +43,31 @@ export const useCartStore = create<CartState>()(
       lastAddedItem: null,
       showToast: false,
       _hasHydrated: false,
+      isSyncing: false,
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
       setShowToast: (open) => set({ showToast: open }),
 
+      /**
+       * 🔄 FIRM BACKEND SYNC
+       * Only fetch from backend; let frontend calculate totals to stay fast.
+       */
       syncWithBackend: async () => {
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token || get().isSyncing) return;
+
+        set({ isSyncing: true });
         try {
           const { data } = await api.get('/cart');
           if (!data?.items) return;
 
           const mappedItems: CartItem[] = data.items.map((item: any) => ({
             id: item.productId,
-            name: item.product.name,
-            price: item.product.price,
-            image: item.product.image || '/placeholder.jpg',
+            name: item.product.title, // Mapping title to name
+            price: Number(item.product.price),
+            image: item.product.images?.[0]?.imageUrl || '/placeholder.jpg',
             vendorId: item.product.vendorId,
-            stock: item.product.stock || 99,
+            stock: item.product.stock || 0,
             quantity: item.quantity,
             selected: true,
             isOutOfStock: (item.product.stock || 0) <= 0
@@ -68,7 +76,9 @@ export const useCartStore = create<CartState>()(
           set({ items: mappedItems });
           get().calculateTotals();
         } catch (err) {
-          console.error("REGISTRY_SYNC_FAILURE", err);
+          console.error("CART_SYNC_ERROR", err);
+        } finally {
+          set({ isSyncing: false });
         }
       },
 
@@ -80,24 +90,24 @@ export const useCartStore = create<CartState>()(
         set({ subtotal, totalItems: count });
       },
 
+      /**
+       * ➕ ATOMIC ADD ITEM
+       * Updates UI first, then tells the backend.
+       */
       addItem: async (incomingItem) => {
         const { items } = get();
         const token = localStorage.getItem('token');
 
-        // 🚨 FIX: Strict Item Identification
         const existingItemIndex = items.findIndex((i) => i.id === incomingItem.id);
         let updatedItems = [...items];
         let targetItem: CartItem;
 
         if (existingItemIndex > -1) {
-          // Item exists: Update quantity only
           const existingItem = items[existingItemIndex];
           const newQty = Math.min(existingItem.quantity + incomingItem.quantity, existingItem.stock);
-          
           targetItem = { ...existingItem, quantity: newQty };
           updatedItems[existingItemIndex] = targetItem;
         } else {
-          // New item: Initialize properties
           targetItem = { 
             ...incomingItem, 
             selected: true, 
@@ -106,19 +116,21 @@ export const useCartStore = create<CartState>()(
           updatedItems.push(targetItem);
         }
 
-        // 🚀 Optimistic UI Update
+        // 🚀 Firm UI Update
         set({ items: updatedItems, lastAddedItem: targetItem, showToast: true });
         get().calculateTotals();
 
-        // Backend sync (Async background)
+        // Background POST to Backend
         if (token) {
           try {
             await api.post('/cart/add', { 
               productId: incomingItem.id, 
               quantity: incomingItem.quantity 
             });
+            // Optional: Re-sync to ensure stock and prices are accurate
+            // get().syncWithBackend(); 
           } catch (e) {
-            console.error("INGESTION_ERROR: Backend out of sync");
+            console.error("BACKEND_INGESTION_FAILED");
           }
         }
       },
@@ -137,19 +149,24 @@ export const useCartStore = create<CartState>()(
         if (token) {
           try {
             await api.patch(`/cart/item/${id}`, { quantity });
-          } catch (e) { console.error("QTY_SYNC_FAILURE"); }
+          } catch (e) { console.error("QUANTITY_SYNC_FAILED"); }
         }
       },
 
       removeItem: async (id) => {
+        const { items } = get();
         const token = localStorage.getItem('token');
-        set({ items: get().items.filter((i) => i.id !== id) });
+        
+        // Optimistic Remove
+        set({ items: items.filter((i) => i.id !== id) });
         get().calculateTotals();
 
         if (token) {
           try {
+            // Finding the cartItem ID (which might be different from productId)
+            // If your backend delete needs the CartItem ID, ensure you map it in syncWithBackend
             await api.delete(`/cart/item/${id}`);
-          } catch (e) { console.error("REMOVAL_SYNC_FAILURE"); }
+          } catch (e) { console.error("REMOVAL_SYNC_FAILED"); }
         }
       },
 
@@ -176,7 +193,6 @@ export const useCartStore = create<CartState>()(
     }),
     { 
       name: 'aviorè-registry-v1',
-      // Ensure specific UI states aren't saved to localStorage
       partialize: (state) => ({
         items: state.items,
         totalItems: state.totalItems,
