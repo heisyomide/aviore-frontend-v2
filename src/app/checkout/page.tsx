@@ -130,17 +130,19 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      const payload = {
-        items: checkoutItems.map(i => ({
-          productId: i.id,
-          quantity: i.quantity,
-          price: i.price
-        })),
-        addressId: address.id,
-        paymentMethod: selectedPayment,
-        appliedCampaigns: couponData?.appliedCampaigns || [], 
-        totalAmount: total
-      };
+const payload = {
+  items: checkoutItems.map(i => ({
+    productId: i.id,
+    quantity: i.quantity,
+    price: i.price
+  })),
+  addressId: address.id,
+  paymentMethod: selectedPayment,
+  appliedCampaigns: couponData?.appliedCampaigns || [],
+  subtotal,
+  discount,
+  totalAmount: total
+};
       const res = await api.post('/orders/create', payload);
       toast.success("Order authorized");
       
