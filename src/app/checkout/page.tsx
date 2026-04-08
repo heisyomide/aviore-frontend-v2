@@ -140,11 +140,20 @@ const payload = {
   paymentMethod: selectedPayment,
   appliedCampaigns: couponData?.appliedCampaigns || []
 };
-      const res = await api.post('/orders/create', payload);
-      toast.success("Order authorized");
-      
-      clearCart();
-      router.push(`/dashboard/orders/${res.data.id}`);
+const res = await api.post('/orders/create', payload);
+
+toast.success("Redirecting to payment...");
+
+const paymentLink = res.data?.data?.paymentLink;
+
+if (paymentLink) {
+  clearCart();
+  window.location.href = paymentLink;
+  return;
+}
+
+toast.error("Payment link unavailable");
+
     } catch (err: any) {
       toast.error("Order Failed", { description: err.response?.data?.message });
     } finally {
@@ -183,7 +192,7 @@ const payload = {
                 <p className="text-[10px] text-[#A4143D] font-bold mt-4 tracking-widest uppercase">{address.phoneNumber}</p>
               </div>
             ) : (
-              <Link href="/dashboard/addresses" className="block p-10 border-2 border-dashed border-gray-100 rounded-[1.5rem] text-center hover:border-[#A4143D] transition-all group">
+              <Link href="/dashboard/addresses" className="block p-10 border-2 border-dashed border-gray-100 rounded-3xl text-center hover:border-[#A4143D] transition-all group">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-[#A4143D]">Add a new shipping address</p>
               </Link>
             )}
@@ -196,7 +205,7 @@ const payload = {
             </h3>
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
               {checkoutItems.map(item => (
-                <div key={item.id} className="aspect-square bg-gray-50 rounded-[1.5rem] overflow-hidden border border-gray-50 group shadow-sm">
+                <div key={item.id} className="aspect-square bg-gray-50 rounded-3xl overflow-hidden border border-gray-50 group shadow-sm">
                   {/* 🚀 FIXED: Added fallback for alt property to resolve console error */}
                   <Image 
                     src={item.image} 
