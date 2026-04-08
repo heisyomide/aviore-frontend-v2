@@ -125,41 +125,44 @@ export default function CheckoutPage() {
   };
 
   /* ---------------- ORDER PLACEMENT ---------------- */
-  const handlePlaceOrder = async () => {
-    if (!address) return toast.error("Please add a shipping address");
+const handlePlaceOrder = async () => {
+  if (!address) {
+    return toast.error("Please add a shipping address");
+  }
 
-    setIsProcessing(true);
-    try {
-const payload = {
-  items: checkoutItems.map(i => ({
-    productId: i.id,
-    quantity: i.quantity,
-    price: Number(i.price)
-  })),
-  addressId: address.id,
-  paymentMethod: selectedPayment,
-  appliedCampaigns: couponData?.appliedCampaigns || []
-};
-const res = await api.post('/orders/create', payload);
+  setIsProcessing(true);
 
-toast.success("Redirecting to payment...");
+  try {
+    const payload = {
+      items: checkoutItems.map(i => ({
+        productId: i.id,
+        quantity: i.quantity,
+        price: Number(i.price)
+      })),
+      addressId: address.id,
+      paymentMethod: selectedPayment,
+      appliedCampaigns: couponData?.appliedCampaigns || []
+    };
 
-const paymentLink = res.data?.data?.paymentLink;
+    const res = await api.post('/orders/create', payload);
 
-if (paymentLink) {
-  clearCart();
-  window.location.href = paymentLink;
-  return;
-}
+    const paymentLink = res.data?.data?.paymentLink;
 
-toast.error("Payment link unavailable");
-
-    } catch (err: any) {
-      toast.error("Order Failed", { description: err.response?.data?.message });
-    } finally {
-      setIsProcessing(false);
+    if (!paymentLink) {
+      throw new Error("Payment link not generated");
     }
-  };
+
+    clearCart();
+
+    window.location.href = paymentLink;
+  } catch (err: any) {
+    toast.error(
+      err.response?.data?.message || "Payment initialization failed"
+    );
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   return (
     <div className="bg-[#FDFCFB] min-h-screen pb-20">
