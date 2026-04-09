@@ -63,7 +63,7 @@ export default function VendorOrdersPage() {
     // If the status is COMPLETED, we hit the special settlement endpoint
     const endpoint = newStatus === 'COMPLETED' 
       ? `${process.env.NEXT_PUBLIC_API_URL}/vendor/${orderId}/complete`
-      : `${process.env.NEXT_PUBLIC_API_URL}/vendor/${orderId}/status`;
+      : `${process.env.NEXT_PUBLIC_API_URL}/order/${orderId}/status`;
 
     const method = newStatus === 'COMPLETED' ? 'PATCH' : 'PATCH';
 
