@@ -124,7 +124,7 @@ export default function CheckoutPage() {
     }
   };
 
-  /* ---------------- ORDER PLACEMENT ---------------- */
+ /* ---------------- ORDER PLACEMENT ---------------- */
 const handlePlaceOrder = async () => {
   if (!address) {
     return toast.error("Please add a shipping address");
@@ -144,23 +144,36 @@ const handlePlaceOrder = async () => {
       appliedCampaigns: couponData?.appliedCampaigns || []
     };
 
+    // 1. Create the Order (Backend now clears DB cart inside this call)
     const res = await api.post('/orders/create', payload);
-
     const paymentLink = res.data?.data?.paymentLink;
 
     if (!paymentLink) {
       throw new Error("Payment link not generated");
     }
 
+    // 🛡️ 2. FORCE STORAGE WIPE
+    // We clear Zustand first
     clearCart();
 
-    window.location.href = paymentLink;
+    // 🛡️ 3. FORCE DISK WIPE
+    // Explicitly kill the localStorage key to prevent "Ghosting"
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cart-storage'); // Use your actual Zustand name here
+    }
+
+    // 🛡️ 4. THE BREATHER
+    // Give the browser 150ms to ensure the disk write is 100% committed
+    // before we navigate away to a different domain.
+    setTimeout(() => {
+      window.location.href = paymentLink;
+    }, 150);
+
   } catch (err: any) {
     toast.error(
       err.response?.data?.message || "Payment initialization failed"
     );
-  } finally {
-    setIsProcessing(false);
+    setIsProcessing(false); // Reset only on error
   }
 };
 
