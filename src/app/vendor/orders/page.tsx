@@ -10,8 +10,10 @@ import {
   ChevronUp, 
   Truck,
   ExternalLink,
-  ClipboardList
+  ClipboardList,
+  CheckCircle2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const STATUS_OPTIONS = ['ALL', 'PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 
@@ -34,10 +36,10 @@ export default function VendorOrdersPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      // Logic: Backend now returns order items belonging only to this vendor
       setOrders(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('REGISTRY_SYNC_ERROR:', error);
+      toast.error("Registry Sync Failed", { description: "Could not reach logistics node." });
     } finally {
       setLoading(false);
     }
@@ -56,10 +58,19 @@ export default function VendorOrdersPage() {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, tracking?: typeof trackingData) => {
     setUpdatingId(orderId);
+    
+    // 🛡️ PROFESSIONAL_SETTLEMENT_LOGIC
+    // If the status is COMPLETED, we hit the special settlement endpoint
+    const endpoint = newStatus === 'COMPLETED' 
+      ? `${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/complete`
+      : `${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/status`;
+
+    const method = newStatus === 'COMPLETED' ? 'PATCH' : 'PATCH';
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/status`, {
-        method: 'PATCH',
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -68,13 +79,24 @@ export default function VendorOrdersPage() {
       });
 
       if (response.ok) {
-        // Optimized State Update
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, ...tracking } : o));
         setShowTrackingModal(null);
         setTrackingData({ trackingNumber: '', carrier: '' });
+        
+        if (newStatus === 'COMPLETED') {
+          toast.success("Liquidity Released", { 
+            description: "Funds have moved from Escrow to your Available Balance.",
+            icon: <CheckCircle2 className="text-green-500" size={16} />
+          });
+        } else {
+          toast.success(`Protocol Updated: ${newStatus}`);
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Update failed");
       }
-    } catch (error) {
-      alert('NODE_COMMUNICATION_FAILURE: Status update failed.');
+    } catch (error: any) {
+      toast.error("Protocol Error", { description: error.message });
     } finally {
       setUpdatingId(null);
     }
@@ -87,21 +109,21 @@ export default function VendorOrdersPage() {
       
       {/* 1. EXECUTIVE HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
- <div>
+        <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
             Orders
           </h1>
-          <div className="h-1 w-12 bg-blue-600 mt-2 rounded-full" />
+          <div className="h-1 w-12 bg-[#A4143D] mt-2 rounded-full" />
         </div>
         
         <div className="relative w-full md:w-72 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-600 transition-colors" size={14} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#A4143D] transition-colors" size={14} />
           <input 
             type="text" 
             placeholder="FILTER BY REGISTRY ID..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest w-full outline-none shadow-sm focus:ring-4 focus:ring-orange-500/5 transition-all" 
+            className="pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest w-full outline-none shadow-sm focus:ring-4 focus:ring-[#A4143D]/5 transition-all" 
           />
         </div>
       </div>
@@ -113,11 +135,11 @@ export default function VendorOrdersPage() {
             key={s} 
             onClick={() => setActiveTab(s)}
             className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap relative ${
-              activeTab === s ? 'text-orange-600' : 'text-slate-300 hover:text-slate-600'
+              activeTab === s ? 'text-[#A4143D]' : 'text-slate-300 hover:text-slate-600'
             }`}
           >
             {s}
-            {activeTab === s && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-600 animate-in slide-in-from-left duration-300" />}
+            {activeTab === s && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#A4143D] animate-in slide-in-from-left duration-300" />}
           </button>
         ))}
       </div>
@@ -170,44 +192,47 @@ export default function VendorOrdersPage() {
                   <td className="p-6 text-right">
                     <button 
                       onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
-                      className="inline-flex items-center gap-2 text-[9px] font-black uppercase text-slate-400 hover:text-orange-600 transition-colors bg-slate-50 px-3 py-1.5 rounded-lg"
+                      className="inline-flex items-center gap-2 text-[9px] font-black uppercase text-slate-400 hover:text-[#A4143D] transition-colors bg-slate-50 px-3 py-1.5 rounded-lg"
                     >
                       {expandedOrderId === order.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                       Manifest
                     </button>
                   </td>
                   <td className="p-6 text-right relative">
-                    <select 
-                      disabled={updatingId === order.id || order.status === 'COMPLETED'}
-                      value={order.status}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === 'SHIPPED') setShowTrackingModal(order.id);
-                        else handleUpdateStatus(order.id, val);
-                      }}
-                      className="appearance-none bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-xl px-4 py-2.5 outline-none cursor-pointer hover:bg-orange-600 transition-all disabled:opacity-30"
-                    >
-                      {STATUS_OPTIONS.filter(opt => opt !== 'ALL').map(opt => (
-                        <option key={opt} value={opt} className="bg-white text-slate-900">{opt}</option>
-                      ))}
-                    </select>
+                    <div className="flex items-center justify-end gap-2">
+                       {updatingId === order.id && <Loader2 size={12} className="animate-spin text-[#A4143D]" />}
+                       <select 
+                        disabled={updatingId === order.id || order.status === 'COMPLETED'}
+                        value={order.status}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'SHIPPED') setShowTrackingModal(order.id);
+                          else handleUpdateStatus(order.id, val);
+                        }}
+                        className="appearance-none bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-xl px-4 py-2.5 outline-none cursor-pointer hover:bg-[#A4143D] transition-all disabled:opacity-30"
+                      >
+                        {STATUS_OPTIONS.filter(opt => opt !== 'ALL').map(opt => (
+                          <option key={opt} value={opt} className="bg-white text-slate-900">{opt}</option>
+                        ))}
+                      </select>
+                    </div>
 
                     {/* TRACKING POPOVER */}
                     {showTrackingModal === order.id && (
                         <div className="absolute right-6 top-16 z-30 bg-white border border-slate-100 shadow-2xl p-6 rounded-[2rem] w-72 text-left animate-in zoom-in-95 duration-200">
                             <div className="flex items-center gap-2 mb-4">
-                                <Truck size={16} className="text-orange-600" />
+                                <Truck size={16} className="text-[#A4143D]" />
                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-900">Shipment Protocol</p>
                             </div>
                             <div className="space-y-3">
                                 <input 
-                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-orange-500/10 transition-all"
+                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-[#A4143D]/10 transition-all"
                                     placeholder="Carrier (e.g. DHL, GIGM)"
                                     value={trackingData.carrier}
                                     onChange={(e) => setTrackingData({...trackingData, carrier: e.target.value})}
                                 />
                                 <input 
-                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-orange-500/10 transition-all"
+                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-[#A4143D]/10 transition-all"
                                     placeholder="Tracking Ref Number"
                                     value={trackingData.trackingNumber}
                                     onChange={(e) => setTrackingData({...trackingData, trackingNumber: e.target.value})}
@@ -215,7 +240,7 @@ export default function VendorOrdersPage() {
                                 <div className="flex gap-2 pt-2">
                                     <button 
                                         onClick={() => handleUpdateStatus(order.id, 'SHIPPED', trackingData)}
-                                        className="flex-1 bg-orange-600 text-white text-[9px] font-black uppercase tracking-widest py-3 rounded-xl hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/20"
+                                        className="flex-1 bg-[#A4143D] text-white text-[9px] font-black uppercase tracking-widest py-3 rounded-xl hover:bg-[#8e1134] transition-colors shadow-lg shadow-[#A4143D]/20"
                                     >
                                         Authorize
                                     </button>
@@ -262,7 +287,7 @@ function OrderItemsList({ items }: { items: any[] }) {
         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-3">
           <ClipboardList size={14} /> Manifest Nodes ({items.length})
         </h4>
-        <button className="text-[9px] font-black text-orange-600 uppercase flex items-center gap-1 hover:underline">
+        <button className="text-[9px] font-black text-[#A4143D] uppercase flex items-center gap-1 hover:underline">
            <ExternalLink size={12} /> Print Packing Slip
         </button>
       </div>
@@ -272,9 +297,10 @@ function OrderItemsList({ items }: { items: any[] }) {
           <div key={item.id} className="flex items-center gap-6 bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm group hover:shadow-md transition-all">
             <div className="w-16 h-16 bg-slate-50 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-50 relative">
               <img 
+                // 🛡️ Logic: Registry Image Fallback
                 src={item.product?.images?.[0]?.imageUrl || 'https://via.placeholder.com/100'} 
                 alt="Artifact" 
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" 
               />
               <div className="absolute top-1 right-1 bg-slate-900 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">
                 x{item.quantity}
@@ -286,7 +312,7 @@ function OrderItemsList({ items }: { items: any[] }) {
             </div>
             <div className="text-right">
               <p className="text-xs font-black text-slate-900 italic">₦{Number(item.priceAtPurchase).toLocaleString()}</p>
-              <p className={`text-[8px] font-black uppercase mt-1 ${item.payoutStatus === 'AVAILABLE' ? 'text-green-500' : 'text-orange-500'}`}>
+              <p className={`text-[8px] font-black uppercase mt-1 ${item.payoutStatus === 'PAID' ? 'text-green-500' : 'text-orange-500'}`}>
                 {item.payoutStatus || 'LOCKED'}
               </p>
             </div>
@@ -318,7 +344,7 @@ function LoadingState() {
   return (
     <div className="h-[70vh] flex flex-col items-center justify-center gap-6">
       <div className="relative">
-        <Loader2 className="animate-spin text-orange-600" size={48} />
+        <Loader2 className="animate-spin text-[#A4143D]" size={48} />
         <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-2 h-2 bg-slate-900 rounded-full animate-ping" />
         </div>
