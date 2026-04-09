@@ -62,8 +62,8 @@ export default function VendorOrdersPage() {
     // 🛡️ PROFESSIONAL_SETTLEMENT_LOGIC
     // If the status is COMPLETED, we hit the special settlement endpoint
     const endpoint = newStatus === 'COMPLETED' 
-      ? `${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/complete`
-      : `${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/status`;
+      ? `${process.env.NEXT_PUBLIC_API_URL}/vendor/${orderId}/complete`
+      : `${process.env.NEXT_PUBLIC_API_URL}/vendor/${orderId}/status`;
 
     const method = newStatus === 'COMPLETED' ? 'PATCH' : 'PATCH';
 
@@ -150,8 +150,8 @@ export default function VendorOrdersPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                <th className="p-6">Registry Node</th>
-                <th className="p-6">Customer Node</th>
+                <th className="p-6">Product </th>
+                <th className="p-6">Customer </th>
                 <th className="p-6 text-right">Settlement</th>
                 <th className="p-6">Fulfillment</th>
                 <th className="p-6 text-right">Manifest</th>
