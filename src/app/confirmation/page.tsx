@@ -1,67 +1,110 @@
-'use client';
+// src/app/orders/confirmation/page.tsx
 
-import { useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { CheckCircle2, Package, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { useCartStore } from '@/src/store/useCartStore';
+import { CheckCircle2, Package, ArrowRight, ShieldCheck } from 'lucide-react';
 
-export default function OrderConfirmationPage() {
-  const searchParams = useSearchParams();
-  const clearCart = useCartStore((state) => state.clearCart);
-  
-  const status = searchParams.get('status');
-  const txRef = searchParams.get('tx_ref');
-  const transactionId = searchParams.get('transaction_id');
+interface ConfirmationPageProps {
+  searchParams: Promise<{
+    status?: string;
+    tx_ref?: string;
+    transaction_id?: string;
+  }>;
+}
 
-  useEffect(() => {
-    // 🛡️ If the payment was successful, clear the local cart registry
-    if (status === 'successful' || status === 'completed') {
-      clearCart();
-    }
-  }, [status, clearCart]);
+export default async function OrderConfirmationPage({
+  searchParams,
+}: ConfirmationPageProps) {
+  const params = await searchParams;
+
+  const status = params.status;
+  const txRef = params.tx_ref;
+  const transactionId = params.transaction_id;
+
+  const isSuccessful =
+    status === 'successful' || status === 'completed';
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-[2.5rem] p-10 shadow-xl border border-gray-50 text-center space-y-6">
-        <div className="flex justify-center">
-          <div className="bg-green-50 p-4 rounded-full">
-            <CheckCircle2 size={48} className="text-green-500" />
+    <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-xl bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-10 md:p-12">
+        {/* SUCCESS ICON */}
+        <div className="flex justify-center mb-8">
+          <div className="h-24 w-24 rounded-full bg-green-50 flex items-center justify-center border border-green-100">
+            <CheckCircle2
+              size={54}
+              className="text-green-500"
+            />
           </div>
         </div>
 
-        <h1 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900">
-          Payment Confirmed
-        </h1>
-        
-        <p className="text-gray-500 text-sm font-medium leading-relaxed">
-          Your transaction was successful. Our vendors have been notified and your artifacts are being prepared for fulfillment.
-        </p>
+        {/* TITLE */}
+        <div className="text-center space-y-3">
+          <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter text-gray-900 uppercase">
+            {isSuccessful
+              ? 'Payment Successful'
+              : 'Payment Processing'}
+          </h1>
 
-        <div className="bg-gray-50 rounded-2xl p-4 text-left space-y-2">
-          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
-            <span>Reference</span>
-            <span className="text-gray-900">{txRef?.split('-')[1]}</span>
+          <p className="text-sm md:text-base text-gray-500 leading-relaxed max-w-md mx-auto">
+            {isSuccessful
+              ? 'Your payment has been confirmed successfully. Your order has now entered our fulfillment pipeline and our vendors have been notified.'
+              : 'Your transaction is currently being processed. Please allow a few moments for confirmation.'}
+          </p>
+        </div>
+
+        {/* TRANSACTION CARD */}
+        <div className="mt-8 rounded-3xl bg-gray-50 border border-gray-100 p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+              Payment Status
+            </span>
+            <span className="text-[11px] font-black uppercase text-green-600">
+              {status || 'UNKNOWN'}
+            </span>
           </div>
-          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
-            <span>Network ID</span>
-            <span className="text-gray-900">{transactionId}</span>
+
+          <div className="flex justify-between items-center">
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+              Reference
+            </span>
+            <span className="text-[11px] font-black text-gray-900 break-all">
+              {txRef || 'N/A'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+              Transaction ID
+            </span>
+            <span className="text-[11px] font-black text-gray-900">
+              {transactionId || 'N/A'}
+            </span>
           </div>
         </div>
 
-        <div className="pt-4 space-y-3">
-          <Link 
-            href="/dashboard/orders" 
-            className="w-full h-14 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-[#A4143D] transition-all"
+        {/* SECURITY NOTICE */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-gray-400">
+          <ShieldCheck size={14} />
+          <span className="text-[10px] font-black uppercase tracking-[0.25em]">
+            Secure Transaction Verified
+          </span>
+        </div>
+
+        {/* ACTION BUTTONS */}
+        <div className="mt-8 grid gap-3">
+          <Link
+            href="/dashboard/orders"
+            className="h-14 rounded-2xl bg-[#A4143D] text-white flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest hover:shadow-xl hover:shadow-[#A4143D]/20 transition-all"
           >
-            Track My Orders <Package size={16} />
+            Track My Orders
+            <Package size={16} />
           </Link>
-          
-          <Link 
-            href="/" 
-            className="w-full h-14 bg-white border border-gray-100 text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:text-gray-900 transition-all"
+
+          <Link
+            href="/"
+            className="h-14 rounded-2xl border border-gray-100 bg-white text-gray-500 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest hover:text-gray-900 transition-all"
           >
-            Back to Home <ArrowRight size={16} />
+            Continue Shopping
+            <ArrowRight size={16} />
           </Link>
         </div>
       </div>
