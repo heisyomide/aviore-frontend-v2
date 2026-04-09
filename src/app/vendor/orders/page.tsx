@@ -358,7 +358,7 @@ function EmptyState() {
   return (
     <div className="p-32 text-center text-slate-200 flex flex-col items-center gap-4">
       <PackageCheck size={80} strokeWidth={0.5} className="opacity-10" />
-      <p className="font-black uppercase text-[10px] tracking-[0.3em] text-slate-300">No active requisitions found in node</p>
+      <p className="font-black uppercase text-[10px] tracking-[0.3em] text-slate-300">No active requisitions found </p>
     </div>
   );
 }
