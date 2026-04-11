@@ -61,7 +61,7 @@ export default function OrderCard({
             <span className="text-[8px] text-slate-300">•</span>
             <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">{date}</p>
           </div>
-          <h3 className="font-black italic text-slate-900 text-lg md:text-xl uppercase tracking-tight">Purchase_Node</h3>
+          <h3 className="font-black italic text-slate-900 text-lg md:text-xl uppercase tracking-tight">Purchase Product</h3>
         </div>
         <span className={`text-[8px] px-3 py-1.5 rounded-lg font-black border uppercase tracking-widest ${statusStyles[status]}`}>
           {status}
