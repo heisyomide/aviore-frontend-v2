@@ -3,8 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { ProductCard } from '../product/ProductCard';
 import { Section } from '../layout/Section';
-import { Flame, Activity, ChevronRight } from 'lucide-react';
-
+import { Flame, ChevronRight, ShieldCheck } from 'lucide-react';
 /**
  * 🚀 TOP DEALS SECTION (Organism)
  * Rule 4: Urgency System
@@ -50,7 +49,7 @@ export function TopDealsSection({ initialDeals = [] }: { initialDeals: any[] }) 
           </div>
         ))}
         
-        <ActivityPulseCard />
+        <DealSpotlightCard />
       </div>
     </Section>
   );
@@ -108,29 +107,56 @@ function InventoryMeter({ stock }: { stock: number }) {
 /** * 💓 ACTIVITY PULSE (Molecule)
  * Rule 8: Interaction / Social Proof
  */
-function ActivityPulseCard() {
+
+
+function DealSpotlightCard() {
   return (
     <div className="col-span-2 md:col-span-1 bg-[#111] p-6 rounded-[2rem] text-white flex flex-col justify-between relative overflow-hidden min-h-[350px] shadow-2xl border border-white/5">
+      {/* Background glow */}
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#A4143D_0.5px,transparent_0.5px)] [background-size:12px_12px]" />
-      
+
       <div className="relative z-10 space-y-6">
         <div className="flex items-center gap-2">
-          <Activity size={14} className="text-[#A4143D] animate-bounce" />
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Live_Pulse</span>
+          <Flame size={14} className="text-[#A4143D] animate-pulse" />
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">
+            Deal_Of_The_Hour
+          </span>
         </div>
-        <h3 className="text-2xl font-black italic uppercase tracking-tighter leading-tight">
-          Registry <br/> <span className="text-[#A4143D]">Activity</span>
-        </h3>
-        <div className="space-y-4">
-          <ActivityLine user="USR_992" action="purchased" item="Core_V2" />
-          <ActivityLine user="COL_ALPHA" action="followed" item="Neo_Tech" />
-          <ActivityLine user="USR_104" action="purchased" item="Unit_09" />
+
+        <div>
+          <p className="text-[10px] uppercase text-gray-400 font-black tracking-widest mb-2">
+            Biggest Save
+          </p>
+
+          <h3 className="text-4xl font-black italic leading-none text-[#A4143D]">
+            ₦45K
+          </h3>
+
+          <p className="text-xl font-black uppercase mt-2 tracking-tight">
+            Off Today
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex justify-between text-[10px] uppercase font-black">
+            <span className="text-gray-500">Stock Left</span>
+            <span className="text-[#A4143D]">3 Units</span>
+          </div>
+
+          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+            <div className="bg-[#A4143D] h-full w-[85%]" />
+          </div>
+
+          <div className="flex items-center gap-2 text-[9px] text-gray-400 uppercase font-black">
+            <ShieldCheck size={12} />
+            <span>94% Buyer Satisfaction</span>
+          </div>
         </div>
       </div>
 
-      <button className="relative z-10 w-full group bg-white/5 border border-white/10 hover:border-[#A4143D] py-3.5 rounded-xl transition-all backdrop-blur-sm">
-        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-white flex items-center justify-center gap-2">
-          Explore_Pulse <ChevronRight size={12} />
+      <button className="relative z-10 w-full group bg-[#A4143D] hover:scale-[1.02] py-3.5 rounded-xl transition-all shadow-lg">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center justify-center gap-2">
+          Grab_Deal <ChevronRight size={12} />
         </span>
       </button>
     </div>
