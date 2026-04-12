@@ -3,9 +3,15 @@
 import { useMemo, MouseEvent } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Zap, ImageOff, Heart } from 'lucide-react';
+import {
+  ShoppingCart,
+  Zap,
+  ImageOff,
+  Heart,
+} from 'lucide-react';
 import { Rating } from '../ui/Rating';
 import { useCartStore } from '../../store/useCartStore';
+import { useWishlistStore } from '../../store/useWishlistStore';
 
 type ProductImage =
   | string
@@ -44,34 +50,40 @@ export function ProductCard({
     (state) => state.addItem
   );
 
+  const {
+    addToWishlist,
+    removeFromWishlist,
+    isWishlisted,
+  } = useWishlistStore();
+
   const apiBase =
     process.env.NEXT_PUBLIC_API_URL ||
     'http://localhost:5000';
 
-const resolvedImage = useMemo(() => {
-  const firstImage = product.images?.[0];
+  const resolvedImage = useMemo(() => {
+    const firstImage = product.images?.[0];
 
-  let rawImage: string | undefined;
+    let rawImage: string | undefined;
 
-  if (typeof firstImage === 'string') {
-    rawImage = firstImage;
-  } else {
-    rawImage =
-      firstImage?.imageUrl ||
-      firstImage?.url;
-  }
+    if (typeof firstImage === 'string') {
+      rawImage = firstImage;
+    } else {
+      rawImage =
+        firstImage?.imageUrl ||
+        firstImage?.url;
+    }
 
-  rawImage = rawImage || product.image;
+    rawImage = rawImage || product.image;
 
-  if (!rawImage) return null;
+    if (!rawImage) return null;
 
-  return rawImage.startsWith('http')
-    ? rawImage
-    : `${apiBase}/uploads/${rawImage.replace(
-        /^\//,
-        ''
-      )}`;
-}, [product.images, product.image, apiBase]);
+    return rawImage.startsWith('http')
+      ? rawImage
+      : `${apiBase}/uploads/${rawImage.replace(
+          /^\//,
+          ''
+        )}`;
+  }, [product.images, product.image, apiBase]);
 
   const productName =
     product.title ||
@@ -95,12 +107,12 @@ const resolvedImage = useMemo(() => {
     ? product.reviews.length
     : product.reviewCount || 0;
 
+  const wishlistActive =
+    isWishlisted(product.id);
+
   const handleNavigate = () => {
     if (!product.id) return;
-
-    router.push(
-      `/product/${product.id}`
-    );
+    router.push(`/product/${product.id}`);
   };
 
   const handleQuickAdd = (
@@ -127,6 +139,26 @@ const resolvedImage = useMemo(() => {
     });
   };
 
+  const handleWishlist = (
+    e: MouseEvent<HTMLButtonElement>
+  ) => {
+    e.stopPropagation();
+
+    if (wishlistActive) {
+      removeFromWishlist(product.id);
+      return;
+    }
+
+    addToWishlist({
+      id: product.id,
+      name: productName,
+      price,
+      image:
+        resolvedImage ||
+        '/placeholder.png',
+    });
+  };
+
   return (
     <div
       onClick={handleNavigate}
@@ -137,6 +169,8 @@ const resolvedImage = useMemo(() => {
         name={productName}
         discount={product.discount}
         onQuickAdd={handleQuickAdd}
+        onWishlist={handleWishlist}
+        wishlisted={wishlistActive}
       />
 
       <div className="space-y-3 px-1">
@@ -187,6 +221,8 @@ function ProductImageSection({
   name,
   discount,
   onQuickAdd,
+  onWishlist,
+  wishlisted,
 }: {
   image: string | null;
   name: string;
@@ -194,6 +230,10 @@ function ProductImageSection({
   onQuickAdd: (
     e: MouseEvent<HTMLButtonElement>
   ) => void;
+  onWishlist: (
+    e: MouseEvent<HTMLButtonElement>
+  ) => void;
+  wishlisted: boolean;
 }) {
   return (
     <div className="relative mb-4 aspect-square overflow-hidden rounded-xl border border-gray-50 bg-gray-50">
@@ -219,6 +259,24 @@ function ProductImageSection({
           -{discount}%
         </div>
       ) : null}
+
+      <button
+        onClick={onWishlist}
+        className={`absolute top-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-all duration-300 hover:scale-110 ${
+          wishlisted
+            ? 'bg-[#A4143D] text-white'
+            : 'bg-white/95 text-black'
+        }`}
+      >
+        <Heart
+          size={16}
+          fill={
+            wishlisted
+              ? 'currentColor'
+              : 'none'
+          }
+        />
+      </button>
 
       <div className="absolute inset-x-0 bottom-0 hidden translate-y-full bg-linear-to-t from-black/40 to-transparent p-3 transition-transform duration-500 group-hover:translate-y-0 md:block">
         <button
