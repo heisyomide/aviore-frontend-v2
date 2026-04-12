@@ -7,10 +7,12 @@ import { ShoppingCart, Zap, ImageOff, Heart } from 'lucide-react';
 import { Rating } from '../ui/Rating';
 import { useCartStore } from '../../store/useCartStore';
 
-type ProductImage = {
-  imageUrl?: string;
-  url?: string;
-};
+type ProductImage =
+  | string
+  | {
+      imageUrl?: string;
+      url?: string;
+    };
 
 type Product = {
   id: string;
@@ -46,29 +48,30 @@ export function ProductCard({
     process.env.NEXT_PUBLIC_API_URL ||
     'http://localhost:5000';
 
-  const resolvedImage = useMemo(() => {
-    const firstImage =
-      product.images?.[0];
+const resolvedImage = useMemo(() => {
+  const firstImage = product.images?.[0];
 
-    const rawImage =
+  let rawImage: string | undefined;
+
+  if (typeof firstImage === 'string') {
+    rawImage = firstImage;
+  } else {
+    rawImage =
       firstImage?.imageUrl ||
-      firstImage?.url ||
-      product.image;
+      firstImage?.url;
+  }
 
-    if (
-      !rawImage ||
-      typeof rawImage !== 'string'
-    ) {
-      return null;
-    }
+  rawImage = rawImage || product.image;
 
-    return rawImage.startsWith('http')
-      ? rawImage
-      : `${apiBase}/uploads/${rawImage.replace(
-          /^\//,
-          ''
-        )}`;
-  }, [product.images, product.image, apiBase]);
+  if (!rawImage) return null;
+
+  return rawImage.startsWith('http')
+    ? rawImage
+    : `${apiBase}/uploads/${rawImage.replace(
+        /^\//,
+        ''
+      )}`;
+}, [product.images, product.image, apiBase]);
 
   const productName =
     product.title ||
