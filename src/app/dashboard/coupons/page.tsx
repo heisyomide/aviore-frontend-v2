@@ -84,7 +84,7 @@ export default function CouponsPage() {
               activeTab === tab ? 'text-[#A4143D]' : 'text-zinc-300 hover:text-zinc-600'
             }`}
           >
-            {tab}_Incentives
+            {tab}_Coupons
             {activeTab === tab && (
               <div className="absolute bottom-0 left-0 w-full h-1 bg-[#A4143D] rounded-full animate-in fade-in zoom-in duration-300" />
             )}
@@ -104,7 +104,7 @@ export default function CouponsPage() {
             >
               {/* Floating Validity Badge */}
               <div className="absolute top-8 right-8 text-[8px] font-black text-zinc-300 uppercase italic tracking-widest bg-zinc-50 px-3 py-1 rounded-full">
-                Expiry: {coupon.endDate ? new Date(coupon.endDate).toLocaleDateString().toUpperCase() : 'INFINITE_NODE'}
+                Expiry: {coupon.endDate ? new Date(coupon.endDate).toLocaleDateString().toUpperCase() : 'INFINITE'}
               </div>
 
               <div className="flex justify-between items-start mb-8">
@@ -174,7 +174,7 @@ export default function CouponsPage() {
         <div className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 rounded-[4rem] text-center bg-zinc-50/20">
             <ShoppingBag size={48} className="text-zinc-100 mb-6" />
             <p className="text-[11px] font-black uppercase tracking-[0.5em] text-zinc-300">Reward_Registry_Empty</p>
-            <p className="text-[9px] uppercase tracking-widest text-zinc-400 mt-2 italic">Awaiting new incentive nodes...</p>
+            <p className="text-[9px] uppercase tracking-widest text-zinc-400 mt-2 italic">Awaiting new Coupons...</p>
         </div>
       )}
     </div>

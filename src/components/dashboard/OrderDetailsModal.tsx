@@ -45,7 +45,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                 <Store size={20} />
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Origin_Node</p>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Vendor</p>
                 <p className="text-sm font-black text-gray-900 uppercase italic leading-tight truncate">
                   {order.vendor?.storeName || "Aviore Registry"}
                 </p>
@@ -73,7 +73,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <Package size={16} className="text-[#A4143D]" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Inventory_Nodes</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Inventory</span>
               <div className="h-px flex-1 bg-gray-100" />
             </div>
             
@@ -119,7 +119,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                           "{userReview.reply}"
                         </p>
                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-3 text-right">
-                          Verified Official Node
+                          Verified Official 
                         </p>
                       </div>
                     )}
@@ -133,7 +133,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                <MapPin size={14} className="text-[#A4143D]" /> Destination Node
+                <MapPin size={14} className="text-[#A4143D]" /> Destination Address
               </div>
               <div className="text-[11px] font-bold text-gray-500 leading-relaxed bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
                 <p className="text-gray-900 uppercase font-black mb-2">{order.address?.fullName || 'Registered User'}</p>
@@ -152,7 +152,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                   {order.payment?.provider || 'Secure_Gateway'}
                 </p>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] text-gray-400 font-black uppercase">Reference_Node</span>
+                  <span className="text-[9px] text-gray-400 font-black uppercase">Reference</span>
                   <p className="text-[10px] font-bold text-gray-700 truncate">{order.payment?.reference || 'pending_sync'}</p>
                 </div>
               </div>

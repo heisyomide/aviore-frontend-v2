@@ -189,7 +189,7 @@ const userInitials = useMemo(() => {
       {/* Nav Menu */}
       <section className="mt-4 bg-white px-4 py-2 mb-10 divide-y divide-gray-50">
         <MenuItem label="Profile" icon={<User size={18} />} href="/dashboard/profile" />
-        <MenuItem label="Address" icon={<MapPin size={18} />} href="/dashboard/address" />
+        <MenuItem label="Address" icon={<MapPin size={18} />} href="/dashboard/addresses" />
         <MenuItem label="Support" icon={<MessageSquare size={18} />} href="/dashboard/support" />
         <MenuItem label="Security" icon={<Shield size={18} />} href="/dashboard/security" />
 

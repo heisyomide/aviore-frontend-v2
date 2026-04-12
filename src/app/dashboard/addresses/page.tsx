@@ -99,7 +99,7 @@ export default function AddressesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Terminate this address node?")) return;
+    if (!confirm("Terminate this address ?")) return;
     try {
       await api.delete(`/user/addresses/${id}`);
       setAddresses(prev => prev.filter(a => a.id !== id));
@@ -113,7 +113,7 @@ export default function AddressesPage() {
     try {
       await api.patch(`/user/addresses/${id}/default`);
       await loadPageData();
-      toast.success("Primary_Node_Updated");
+      toast.success("Primary_Address_Updated");
     } catch (err) {
       toast.error("Sync failed.");
     }
@@ -141,7 +141,7 @@ export default function AddressesPage() {
           className="group relative overflow-hidden bg-black px-8 py-4 rounded-xl transition-all active:scale-95 shadow-xl shadow-zinc-200"
         >
           <span className="relative z-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-white">
-            Register New Node <Home size={14} />
+            Register New Address <Home size={14} />
           </span>
           <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
         </button>
@@ -181,7 +181,7 @@ export default function AddressesPage() {
 
               <div className="mt-8 flex items-center justify-between pt-6 border-t border-zinc-50">
                 {!addr.isDefault ? (
-                  <button onClick={() => handleSetDefault(addr.id)} className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#A4143D] transition-colors">Set as Primary Node</button>
+                  <button onClick={() => handleSetDefault(addr.id)} className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#A4143D] transition-colors">Set as Primary Address</button>
                 ) : (
                   <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-600"><CheckCircle size={12} /> Sync_Active</span>
                 )}
