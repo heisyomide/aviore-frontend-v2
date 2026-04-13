@@ -52,7 +52,7 @@ export default function OrderCard({
   // 🛡️ DIRECT CHAT GATEWAY
   // Clicking the card body will ALWAYS take the user to the chat for this order.
   const navigateToChat = () => {
-    router.push(`/chat/${fullId}?vendorId=${vendorId}`);
+    router.push(`/dashboard/chat/${fullId}?vendorId=${vendorId}`);
   };
 
   return (

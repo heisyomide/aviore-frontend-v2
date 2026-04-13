@@ -189,7 +189,7 @@ function LoaderComponent() {
   return (
     <div className="h-screen flex flex-col items-center justify-center gap-4 bg-gray-50">
       <Loader2 className="animate-spin text-[#f26522]" size={32} />
-      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Restoring Node...</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Restoring Chat...</p>
     </div>
   );
 }
