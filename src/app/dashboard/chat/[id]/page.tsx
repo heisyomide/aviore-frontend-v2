@@ -40,10 +40,11 @@ export default function OrderChatPage() {
         }
 
         // 2. Socket Handshake
-        const socket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
-          auth: { token: localStorage.getItem('token') },
-          transports: ['websocket'],
-        });
+const socket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
+  auth: { token: localStorage.getItem('token') },
+  transports: ['polling', 'websocket'], // 🔄 Added polling as fallback
+  withCredentials: true,
+});
 
         socketRef.current = socket;
 
@@ -167,20 +168,25 @@ export default function OrderChatPage() {
         <div ref={scrollRef} />
       </div>
 
-      <footer className="p-8 bg-white border-t border-gray-50">
-        <form onSubmit={sendMessage} className="flex gap-4 items-center bg-gray-50 p-2 rounded-[2.2rem] border border-gray-100 focus-within:border-[#f26522] transition-all">
-          <input 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={isOnline ? "Communicate with merchant..." : "Syncing Registry..."}
-            disabled={!isOnline}
-            className="flex-1 bg-transparent p-4 outline-none font-bold text-xs uppercase text-gray-700 disabled:opacity-50"
-          />
-          <button type="submit" disabled={!isOnline || !input.trim()} className="p-4 bg-gray-900 text-white rounded-full hover:bg-[#f26522] shadow-xl disabled:opacity-20 transition-all">
-            <Send size={20} className="-rotate-12" />
-          </button>
-        </form>
-      </footer>
+     <footer className="p-8 bg-white border-t border-gray-50">
+  <form onSubmit={sendMessage} className="flex gap-4 items-center bg-gray-50 p-2 rounded-[2.2rem] border border-gray-100 focus-within:border-[#f26522] transition-all">
+    <input 
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      // 🛡️ Remove the disabled={!isOnline} so users can always type
+      placeholder="Communicate with merchant..." 
+      className="flex-1 bg-transparent p-4 outline-none font-bold text-xs uppercase text-gray-700"
+    />
+    <button 
+      type="submit" 
+      // 🛡️ Only disable if there is no text
+      disabled={!input.trim()} 
+      className="p-4 bg-gray-900 text-white rounded-full hover:bg-[#f26522] shadow-xl disabled:opacity-20 transition-all"
+    >
+      <Send size={20} className="-rotate-12" />
+    </button>
+  </form>
+</footer>
     </div>
   );
 }
