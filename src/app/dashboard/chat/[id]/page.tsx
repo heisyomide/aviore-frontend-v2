@@ -83,15 +83,22 @@ export default function OrderChatPage() {
         /**
          * SOCKET INIT
          */
-        const socket = io(
-          `${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`,
-          {
-            auth: {
-              token: localStorage.getItem('token'),
-            },
-            transports: ['websocket'],
-          },
-        );
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+  path: '/socket.io', // Default path for NestJS WsGateway
+  auth: {
+    token: localStorage.getItem('token'),
+  },
+  // Use the namespace property if you are using a specific gateway namespace
+  // or simply append it to the URL if not using a custom path
+  transports: ['polling', 'websocket'], 
+  withCredentials: true,
+});
+
+// If your Gateway is namespaced @WebSocketGateway({ namespace: 'chat' })
+const chatSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
+  auth: { token: localStorage.getItem('token') },
+  transports: ['polling', 'websocket'],
+});
 
         socketRef.current = socket;
 
