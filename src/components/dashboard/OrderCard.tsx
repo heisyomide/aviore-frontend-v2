@@ -117,7 +117,7 @@ export default function OrderCard({
           {/* Contextual Intent Buttons (Chat/Return/Rate) */}
           {intent === 'chat' && (
             <button 
-              onClick={() => router.push(`/dashboard/chat/${fullId}?vendorId=${vendorId}`)}
+              onClick={() => router.push(`/chat/${fullId}?vendorId=${vendorId}`)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest px-6 py-3.5 bg-[#A4143D] text-white rounded-xl shadow-md transition-all"
             >
               <MessageCircle size={14} /> Chat
