@@ -292,7 +292,7 @@ export default function OrderChatPage() {
             className="text-emerald-600"
           />
           <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest leading-none">
-            Avenue Secure Node
+            Avenue Secure Chat
           </span>
         </div>
       </header>
