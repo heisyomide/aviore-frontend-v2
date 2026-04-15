@@ -6,9 +6,15 @@ import { Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Navbar } from '@/src/components/navbar/Navbar';
+import { useEffect } from 'react';
 
 export default function WishlistPage() {
-  const { items } = useWishlistStore();
+ const { items, fetchWishlist } =
+  useWishlistStore();
+
+useEffect(() => {
+  fetchWishlist();
+}, []);
 
   if (items.length === 0) {
     return (

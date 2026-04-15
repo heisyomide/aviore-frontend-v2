@@ -1,8 +1,10 @@
+'use client';
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import axios from 'axios'; // Or your custom api instance
+import { api } from '@/src/lib/axios';
 
-interface WishlistItem {
+export interface WishlistItem {
   id: string;
   name: string;
   price: number;
@@ -11,68 +13,183 @@ interface WishlistItem {
 
 interface WishlistStore {
   items: WishlistItem[];
-  isLoading: boolean;
-  // Actions
+  loading: boolean;
+
   fetchWishlist: () => Promise<void>;
-  toggleWishlist: (item: WishlistItem) => Promise<void>;
-  isWishlisted: (id: string) => boolean;
+
+  addToWishlist: (
+    item: WishlistItem,
+  ) => Promise<void>;
+
+  removeFromWishlist: (
+    id: string,
+  ) => Promise<void>;
+
+  toggleWishlist: (
+    item: WishlistItem,
+  ) => Promise<void>;
+
+  isWishlisted: (
+    id: string,
+  ) => boolean;
+
+  clearWishlist: () => void;
 }
 
-export const useWishlistStore = create<WishlistStore>()(
-  persist(
-    (set, get) => ({
-      items: [],
-      isLoading: false,
+export const useWishlistStore =
+  create<WishlistStore>()(
+    persist(
+      (set, get) => ({
+        items: [],
+        loading: false,
 
-      // 1. Fetch from Backend on Login/App Load
-      fetchWishlist: async () => {
-        set({ isLoading: true });
-        try {
-          const response = await axios.get('/wishlist');
-          // Assuming your backend returns { productId: string, product: WishlistItem }[]
-          const formattedItems = response.data.map((entry: any) => entry.product);
-          set({ items: formattedItems, isLoading: false });
-        } catch (error) {
-          console.error("Failed to sync wishlist", error);
-          set({ isLoading: false });
-        }
-      },
+        /**
+         * FETCH FROM BACKEND
+         */
+        fetchWishlist: async () => {
+          try {
+            set({ loading: true });
 
-      // 2. Toggle (Add/Remove) with Backend Sync
-      toggleWishlist: async (item) => {
-        const { items } = get();
-        const exists = items.some((p) => p.id === item.id);
+            const res =
+              await api.get('/wishlist');
 
-        // Optimistic UI Update (Update UI immediately)
-        if (exists) {
-          set({ items: items.filter((p) => p.id !== item.id) });
-        } else {
-          set({ items: [...items, item] });
-        }
+            const items =
+              res.data || [];
 
-        try {
-          if (exists) {
-            // Call your DELETE :productId controller
-            await axios.delete(`/wishlist/${item.id}`);
-          } else {
-            // Call your POST :productId controller
-            await axios.post(`/wishlist/${item.id}`);
+            set({
+              items,
+              loading: false,
+            });
+          } catch (error) {
+            console.error(
+              'Wishlist fetch failed',
+              error,
+            );
+
+            set({
+              loading: false,
+            });
           }
-        } catch (error) {
-          // Revert UI if the backend call fails
-          console.error("Backend sync failed, reverting UI");
-          set({ items }); 
-        }
-      },
+        },
 
-      isWishlisted: (id) => {
-        return get().items.some((p) => p.id === id);
+        /**
+         * ADD
+         */
+        addToWishlist: async (
+          item,
+        ) => {
+          const exists =
+            get().items.some(
+              (p) =>
+                p.id === item.id,
+            );
+
+          if (exists) return;
+
+          /**
+           * OPTIMISTIC UI
+           */
+          set({
+            items: [
+              ...get().items,
+              item,
+            ],
+          });
+
+          try {
+            await api.post(
+              `/wishlist/${item.id}`,
+            );
+          } catch (error) {
+            console.error(
+              'Add wishlist failed',
+              error,
+            );
+
+            /**
+             * ROLLBACK
+             */
+            set({
+              items:
+                get().items.filter(
+                  (p) =>
+                    p.id !==
+                    item.id,
+                ),
+            });
+          }
+        },
+
+        /**
+         * REMOVE
+         */
+        removeFromWishlist:
+          async (id) => {
+            const previous =
+              get().items;
+
+            set({
+              items:
+                previous.filter(
+                  (p) =>
+                    p.id !== id,
+                ),
+            });
+
+            try {
+              await api.delete(
+                `/wishlist/${id}`,
+              );
+            } catch (error) {
+              console.error(
+                'Remove wishlist failed',
+                error,
+              );
+
+              /**
+               * ROLLBACK
+               */
+              set({
+                items: previous,
+              });
+            }
+          },
+
+        /**
+         * TOGGLE
+         */
+        toggleWishlist:
+          async (item) => {
+            const exists =
+              get().isWishlisted(
+                item.id,
+              );
+
+            if (exists) {
+              await get().removeFromWishlist(
+                item.id,
+              );
+            } else {
+              await get().addToWishlist(
+                item,
+              );
+            }
+          },
+
+        /**
+         * CHECK
+         */
+        isWishlisted: (id) => {
+          return get().items.some(
+            (p) => p.id === id,
+          );
+        },
+
+        clearWishlist: () =>
+          set({ items: [] }),
+      }),
+      {
+        name: 'aviore-wishlist',
       },
-    }),
-    {
-      name: 'aviore-wishlist',
-      // We still use persist so the items show up instantly 
-      // even before the fetchWishlist finishes.
-    }
-  )
-);
+    ),
+  );
