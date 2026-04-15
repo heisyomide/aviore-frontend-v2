@@ -69,7 +69,7 @@ export default function ProductsPage() {
             onClick={() => setIsModalOpen(true)}
             className="w-full lg:w-auto bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-blue-700 flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20 transition-all active:scale-95"
           >
-            <Plus size={18} /> Initialize New Node
+            <Plus size={18} /> Initialize New Product
           </button>
         </div>
 
