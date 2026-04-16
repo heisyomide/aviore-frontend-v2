@@ -1,15 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container } from '../layout/Container';
-import {
-  Zap,
-  Star,
-  ArrowUpRight,
-  ArrowRight,
-} from 'lucide-react';
+import { Zap, Star, ArrowRight, ArrowUpRight } from 'lucide-react';
 
 type Slide = {
   id: string;
@@ -27,31 +22,42 @@ export function Hero() {
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
+    let mounted = true;
+
     const fetchSlides = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/admin/banners/active`
-        );
+        const res = await fetch(`${apiUrl}/admin/banners/active`);
 
         if (!res.ok) {
           throw new Error('Failed to fetch banners');
         }
 
         const data: Slide[] = await res.json();
-        setSlides(data);
+
+        if (mounted) {
+          setSlides(data);
+        }
       } catch (error) {
         console.error('Banner fetch failed:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchSlides();
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [apiUrl]);
 
   useEffect(() => {
-    if (!slides.length) return;
+    if (slides.length <= 1) return;
 
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
@@ -60,13 +66,16 @@ export function Hero() {
     return () => clearInterval(timer);
   }, [slides]);
 
-  const activeSlide = slides[current];
+  const activeSlide = useMemo(
+    () => slides[current],
+    [slides, current]
+  );
 
   if (loading) {
     return (
-      <section className="py-20">
+      <section className="py-8 md:py-10">
         <Container>
-          <div className="h-[520px] rounded-[2.5rem] bg-gray-100 animate-pulse" />
+          <div className="h-[480px] rounded-[2.5rem] bg-gray-100 animate-pulse" />
         </Container>
       </section>
     );
@@ -77,7 +86,7 @@ export function Hero() {
   return (
     <section className="bg-[#f8f8f8] py-4 md:py-10 overflow-hidden">
       <Container>
-        <div className="flex lg:grid lg:grid-cols-12 gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory scrollbar-hide pb-4 lg:pb-0 lg:h-[520px]">
+        <div className="flex lg:grid lg:grid-cols-12 gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory scrollbar-hide pb-4 lg:h-[520px]">
           <MainHeroSlide
             slide={activeSlide}
             current={current}
@@ -121,7 +130,7 @@ function MainHeroSlide({
   total: number;
 }) {
   return (
-   <div className="min-w-[90vw] lg:min-w-0 lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 h-[480px] lg:h-full snap-center">
+    <div className="min-w-[92vw] lg:min-w-0 lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 h-[480px] lg:h-full snap-center">
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
@@ -182,7 +191,7 @@ function HeroContent({
         {slide.discount || slide.subtitle}
       </motion.p>
 
-      <button className="w-fit flex items-center gap-4 bg-slate-900 text-white pl-8 pr-3 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl">
+     <button className="w-fit flex items-center gap-4 bg-slate-900 hover:bg-slate-800 transition-colors text-white pl-8 pr-3 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl">
         Shop Collection
         <div className="bg-white/10 p-2 rounded-lg">
           <ArrowRight size={18} />
@@ -198,7 +207,7 @@ function HeroImage({
   slide: Slide;
 }) {
   return (
-    <div className="hidden md:block w-1/2 relative h-full">
+    <div className="w-1/2 relative h-full hidden sm:block">
       <div className="absolute inset-0 z-10 flex items-center justify-center">
         <div className="relative w-4/5 h-4/5">
           <Image
@@ -264,10 +273,10 @@ function PromoCard({
   secondary?: boolean;
 }) {
   return (
-    <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      className={`relative rounded-[2rem] overflow-hidden shadow-xl border p-8 flex flex-col justify-between min-h-[240px] ${className}`}
-    >
+<motion.div
+  whileHover={{ y: -8, scale: 1.02 }}
+  className={`min-w-[82vw] lg:min-w-0 relative rounded-[2rem] overflow-hidden shadow-xl border p-8 flex flex-col justify-between h-[480px] lg:min-h-[240px] snap-center ${className}`}
+>
       <div>
         <div className="flex items-center gap-2 mb-3 font-black text-[11px] uppercase tracking-widest">
           {icon} {tag}
