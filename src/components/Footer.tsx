@@ -10,16 +10,6 @@ export function Footer() {
 
   return (
     <footer className="bg-[#09090b] text-zinc-400 border-t border-white/5">
-      
-      {/* 🚀 TOP SECTION: TRUST HUD - Rule 15 (Performance & Trust) */}
-      <div className="bg-zinc-900/30 border-b border-white/5">
-        <Container className="py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <TrustBadge icon={<ShieldCheck size={20} className="text-[#A4143D]" />} title="Secure_Registry" desc="End-to-end encryption" />
-          <TrustBadge icon={<Zap size={20} className="text-amber-400" />} title="Flash_Delivery" desc="Record breaking speed" />
-          <TrustBadge icon={<PhoneCall size={20} className="text-zinc-400" />} title="24/7_Support" desc="Expert concierge live" />
-          <TrustBadge icon={<MapPin size={20} className="text-zinc-400" />} title="Global_Network" desc="Sourcing 50+ countries" />
-        </Container>
-      </div>
 
       {/* 🏛️ MAIN FOOTER ENGINE - Rule 14 (Modular Blocks) */}
       <Container className="py-20">
