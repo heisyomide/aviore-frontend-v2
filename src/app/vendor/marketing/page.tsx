@@ -86,7 +86,7 @@ export default function VendorMarketingHub() {
         <div className="hidden lg:grid grid-cols-3 gap-6">
           <StatCard icon={<Banknote size={18} />} label="Protocol Revenue" value={`₦${stats.totalRevenue.toLocaleString()}`} sub="Attributed via promo codes" />
           <StatCard icon={<MousePointerClick size={18} />} label="Engagement Count" value={stats.totalUses} sub="Total redemptions logged" />
-          <StatCard icon={<Activity size={18} />} label="Active Triggers" value={stats.activeCoupons} sub="Live marketing nodes" />
+          <StatCard icon={<Activity size={18} />} label="Active Triggers" value={stats.activeCoupons} sub="Live marketing coupons" />
         </div>
 
         {/* 📱 MOBILE ACTION BUTTON */}
@@ -127,7 +127,7 @@ export default function VendorMarketingHub() {
             <div className="space-y-2">
               <h3 className="text-2xl lg:text-3xl font-black text-white uppercase italic tracking-tight">Platform Protocols</h3>
               <p className="text-[10px] lg:text-[11px] text-slate-400 max-w-md leading-relaxed font-medium uppercase tracking-wider italic">
-                Synchronize your store with global events like <strong>Registry Clearances</strong>. Inject artifacts into trending nodes.
+                Synchronize your store with global events like <strong>Registry Clearances</strong>. Inject products into trending campaigns.
               </p>
             </div>
           </div>

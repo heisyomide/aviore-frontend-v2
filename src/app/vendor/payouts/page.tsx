@@ -135,7 +135,7 @@ export default function PayoutsPage() {
                    {t.type === 'SALE' ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black text-slate-900 uppercase italic truncate">Node {t.reference.slice(-8).toUpperCase()}</p>
+                  <p className="text-xs font-black text-slate-900 uppercase italic truncate">Product {t.reference.slice(-8).toUpperCase()}</p>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(t.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">

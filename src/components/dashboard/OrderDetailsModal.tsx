@@ -11,11 +11,14 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
   if (!order) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-500">
-      <div className="bg-[#FDFCFB] w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] shadow-2xl border border-white/20 animate-in zoom-in-95 slide-in-from-bottom-10 duration-500 scrollbar-hide">
+    // Fixed: Changed items-center to items-start + py-8 for better mobile clearance
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 bg-gray-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-500">
+      
+      {/* Modal Container: Added margin-top to prevent "too close to top" feel */}
+      <div className="bg-[#FDFCFB] w-full max-w-2xl my-8 relative rounded-[3rem] shadow-2xl border border-white/20 animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
         
-        {/* HEADER: Registry Context */}
-        <div className="sticky top-0 bg-white/80 backdrop-blur-xl p-8 border-b border-gray-100 flex justify-between items-center z-10">
+        {/* HEADER: Made purely sticky with consistent height */}
+        <div className="sticky top-0 bg-white/90 backdrop-blur-xl p-8 rounded-t-[3rem] border-b border-gray-100 flex justify-between items-center z-30">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#A4143D]">
               <Sparkles size={12} className="animate-pulse" />
@@ -25,7 +28,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
               Order Summary
             </h2>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              ID: {order.orderNumber || order.id.slice(-12).toUpperCase()}
+              ID: {order.orderNumber || order.id?.slice(-12).toUpperCase()}
             </p>
           </div>
           <button 
@@ -36,7 +39,8 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
           </button>
         </div>
 
-        <div className="p-10 space-y-10">
+        {/* CONTENT BODY: Ensuring vertical spacing is generous */}
+        <div className="p-8 md:p-10 space-y-10 pb-20">
           
           {/* 1. ORIGIN & LOGISTICS HUB */}
           <div className="grid md:grid-cols-2 gap-4">
@@ -78,8 +82,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
             </div>
             
             <div className="grid gap-6">
-              {order.items.map((item: any) => {
-                // Logic: Find the review for this product by this user
+              {order.items?.map((item: any) => {
                 const userReview = item.product?.reviews?.find((r: any) => r.userId === order.userId);
                 const hasReply = userReview && userReview.reply;
 
@@ -88,13 +91,13 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                     <div className="flex items-center gap-5 p-5 bg-white rounded-[2rem] border border-gray-100 group transition-all duration-500">
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0">
                         <img 
-                          src={item.product?.images?.[0]?.imageUrl || '/api/placeholder/150/150'} 
+                          src={item.product?.images?.[0]?.imageUrl || item.product?.image || '/api/placeholder/150/150'} 
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                           alt="Artifact"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-black text-gray-900 uppercase italic truncate tracking-tight">{item.product?.title}</p>
+                        <p className="text-xs font-black text-gray-900 uppercase italic truncate tracking-tight">{item.product?.title || item.product?.name}</p>
                         <p className="text-[10px] text-gray-400 font-black uppercase mt-1 tracking-widest">
                           Quantity: {item.quantity}
                         </p>
@@ -106,7 +109,6 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                       </div>
                     </div>
 
-                    {/* VENDOR REPLY NODE */}
                     {hasReply && (
                       <div className="ml-8 p-6 bg-[#A4143D]/5 rounded-[2rem] border-l-4 border-[#A4143D] relative animate-in slide-in-from-left-4 duration-700">
                         <div className="flex items-center gap-2 mb-2">
@@ -117,9 +119,6 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                         </div>
                         <p className="text-xs font-medium text-gray-700 leading-relaxed italic">
                           "{userReview.reply}"
-                        </p>
-                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-3 text-right">
-                          Verified Official 
                         </p>
                       </div>
                     )}
@@ -135,10 +134,10 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                 <MapPin size={14} className="text-[#A4143D]" /> Destination Address
               </div>
-              <div className="text-[11px] font-bold text-gray-500 leading-relaxed bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="text-[11px] font-bold text-gray-500 leading-relaxed bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[120px]">
                 <p className="text-gray-900 uppercase font-black mb-2">{order.address?.fullName || 'Registered User'}</p>
-                {order.address?.street}<br />
-                {order.address?.city}, {order.address?.state}<br />
+                <p>{order.address?.street}</p>
+                <p>{order.address?.city}, {order.address?.state}</p>
                 <span className="text-[#A4143D] block mt-2 font-black">{order.address?.phone || order.address?.phoneNumber}</span>
               </div>
             </div>
@@ -147,7 +146,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                 <CreditCard size={14} className="text-[#A4143D]" /> Settlement
               </div>
-              <div className="bg-[#A4143D]/5 p-6 rounded-[2rem] border border-[#A4143D]/10 space-y-3">
+              <div className="bg-[#A4143D]/5 p-6 rounded-[2rem] border border-[#A4143D]/10 space-y-3 min-h-[120px]">
                 <p className="text-[10px] font-black text-[#A4143D] uppercase tracking-widest leading-none">
                   {order.payment?.provider || 'Secure_Gateway'}
                 </p>
@@ -175,7 +174,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
             </div>
           </section>
 
-          <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-[0.5em] pb-4">
+          <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-[0.5em] pt-4">
             Aviore_Registry_Protocol_v3.0
           </p>
         </div>

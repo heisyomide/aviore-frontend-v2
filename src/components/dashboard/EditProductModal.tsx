@@ -124,7 +124,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
       onRefresh();
       onClose();
     } catch (error) {
-      alert("Node_Update_Failure");
+      alert("Product_Update_Failure");
     } finally { setLoading(false); }
   };
 
@@ -144,7 +144,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
           <div>
             <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Update Registry</h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
-              <Zap size={12} className="text-orange-500" /> Modifying Node: {product.id.slice(-8).toUpperCase()}
+              <Zap size={12} className="text-orange-500" /> Modifying Product: {product.id.slice(-8).toUpperCase()}
             </p>
           </div>
           <button onClick={onClose} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full transition-all text-slate-900"><X size={20} /></button>
@@ -187,7 +187,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
               
               <div className="space-y-5">
                 <div>
-                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Registry Level 01</label>
+                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Department</label>
                   <select required value={mainCatId} className={darkSelectClasses} onChange={e => handleMainChange(e.target.value)}>
                     <option value="" className="text-slate-900">Select Department</option>
                     {mainCategories.map((c: any) => <option key={c.id} value={c.id} className="text-slate-900 font-bold">{c.name}</option>)}
@@ -195,7 +195,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Registry Level 02</label>
+                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Category</label>
                   <select required disabled={!secondaryCategories.length} value={secondaryCatId} className={darkSelectClasses + " disabled:opacity-20"} onChange={e => handleSecondaryChange(e.target.value)}>
                     <option value="" className="text-slate-900">Select Category</option>
                     {secondaryCategories.map((s: any) => <option key={s.id} value={s.id} className="text-slate-900 font-bold">{s.name}</option>)}
@@ -203,7 +203,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Final Discovery Node</label>
+                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Sub-Category</label>
                   <select 
                     required 
                     disabled={!tertiaryCategories.length}

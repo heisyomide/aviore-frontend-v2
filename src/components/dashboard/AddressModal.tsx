@@ -56,7 +56,7 @@ export default function AddressModal({
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#A4143D]">
               <Fingerprint size={14} />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Logistics_Node</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Logistics</span>
             </div>
             <h2 className="text-2xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">
               {editingId ? 'Modify Address' : 'New Address'}
@@ -123,7 +123,7 @@ export default function AddressModal({
               disabled={isPending}
               className="flex-1 py-4 rounded-xl bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#A4143D] transition-all flex items-center justify-center gap-2"
             >
-              {isPending ? <Loader2 size={14} className="animate-spin" /> : (editingId ? 'Update Node' : 'Save Node')}
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : (editingId ? 'Update Address' : 'Save Address')}
             </button>
           </footer>
         </form>

@@ -75,7 +75,7 @@ export default function CustomersPage() {
                 <Users size={20} />
               </div>
               <p className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-100 mb-1.5">Total Registry</p>
-              <h2 className="text-xl font-black text-white italic tracking-tighter">{customers.length} Nodes</h2>
+              <h2 className="text-xl font-black text-white italic tracking-tighter">{customers.length} Customers</h2>
            </div>
 
            <div className="p-6 rounded-[2.2rem] bg-white/5 border border-white/10 active:scale-95 transition-all">
@@ -117,7 +117,7 @@ export default function CustomersPage() {
                       <p className="text-sm font-black text-white italic">{c.ordersCount}</p>
                    </div>
                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
-                      <p className="text-[7px] font-black text-slate-500 uppercase mb-1 tracking-widest">Last Node</p>
+                      <p className="text-[7px] font-black text-slate-500 uppercase mb-1 tracking-widest">Last order</p>
                       <p className="text-[9px] font-black text-blue-400 uppercase">{c.lastOrderDate}</p>
                    </div>
                 </div>
@@ -194,7 +194,7 @@ function EmptyState() {
   return (
     <div className="py-24 text-center text-slate-600 flex flex-col items-center gap-4 border-2 border-dashed border-white/5 rounded-[2.5rem]">
       <Inbox size={64} strokeWidth={1} className="opacity-20" />
-      <p className="font-black uppercase text-[10px] tracking-[0.3em]">No client nodes found in registry</p>
+      <p className="font-black uppercase text-[10px] tracking-[0.3em]">No client found in registry</p>
     </div>
   );
 }
