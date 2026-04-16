@@ -77,14 +77,14 @@ export function Hero() {
   return (
     <section className="bg-[#f8f8f8] py-4 md:py-10 overflow-hidden">
       <Container>
-        <div className="grid lg:grid-cols-12 gap-6 lg:h-[520px]">
+        <div className="flex lg:grid lg:grid-cols-12 gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory scrollbar-hide pb-4 lg:pb-0 lg:h-[520px]">
           <MainHeroSlide
             slide={activeSlide}
             current={current}
             total={slides.length}
           />
 
-          <div className="grid gap-6 lg:col-span-4">
+          <div className="flex lg:grid gap-6 lg:col-span-4">
             <PromoCard
               title="70% OFF"
               subtitle="Ends in 04:59:59"
@@ -121,7 +121,7 @@ function MainHeroSlide({
   total: number;
 }) {
   return (
-    <div className="lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 h-[480px] lg:h-full">
+   <div className="min-w-[90vw] lg:min-w-0 lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 h-[480px] lg:h-full snap-center">
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
