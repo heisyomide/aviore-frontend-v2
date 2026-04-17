@@ -293,6 +293,15 @@ const fetchAllData = async () => {
           </div>
         </div>
 
+        <div className="mt-6 space-y-3">
+  <h3 className="text-sm font-bold uppercase text-zinc-400">
+    Product Description
+  </h3>
+  <p className="text-sm text-zinc-600 leading-relaxed">
+    {product.description}
+  </p>
+</div>
+
         {/* 🚀 DYNAMIC REVIEWS SECTION (Using User First/Last Name) */}
         <section className="mt-16 bg-white p-8 md:p-12 rounded-[3rem] border border-gray-100">
            <h2 className="text-3xl font-black text-gray-900 uppercase italic mb-8 border-b border-gray-100 pb-8 tracking-tighter">Customer Reviews</h2>
