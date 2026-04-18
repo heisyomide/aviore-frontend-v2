@@ -29,6 +29,8 @@ export default function ProductDetailsPage() {
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+const [selectedSize, setSelectedSize] = useState<string>('');
 
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems } = useWishlistStore();
@@ -108,42 +110,91 @@ const fetchAllData = async () => {
     recordView();
   }, [productId]);
 
+  useEffect(() => {
+  if (product?.variants?.length) {
+    setSelectedVariant(product.variants[0]);
+  }
+}, [product]);
+
 
   useEffect(() => {
     fetchAllData();
   }, [id]);
 
-  const resolvedImages = useMemo(() => {
-    if (!product?.images || product.images.length === 0) return ["/placeholder.jpg"];
-    return product.images.map((img: any) => {
-      const path = img.imageUrl || img.image || img;
-      // Handle absolute vs relative paths for NestJS uploads
-      return path.startsWith('http') ? path : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
-    });
-  }, [product, apiBase]);
+const resolvedImages = useMemo(() => {
+  if (selectedVariant?.images?.length) {
+    return selectedVariant.images;
+  }
+
+  if (!product?.images || product.images.length === 0) {
+    return ["/placeholder.jpg"];
+  }
+
+  return product.images.map((img: any) => {
+    const path = img.imageUrl || img.image || img;
+    return path.startsWith('http')
+      ? path
+      : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+  });
+}, [product, selectedVariant, apiBase]);
 
   // 🚀 AUTH_INTERCEPT: Add to Cart
-  const handleAddToCart = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error("AUTH_REQUIRED: Please sign in to modify your cart.");
-      router.push('/login');
-      return;
-    }
-    addItem({ ...product, quantity: qty, image: resolvedImages[0] });
-    toast.success("ITEM_INDEXED: Added to cart");
-  };
+const handleAddToCart = () => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    toast.error("AUTH_REQUIRED: Please sign in.");
+    router.push('/login');
+    return;
+  }
+
+  if (product.variants?.length && !selectedVariant) {
+    return toast.error("Select a variant");
+  }
+
+  if (selectedVariant?.sizes?.length && !selectedSize) {
+    return toast.error("Select a size");
+  }
+
+  addItem({
+    ...product,
+    quantity: qty,
+    image: resolvedImages[0],
+    variant: selectedVariant,
+    size: selectedSize
+  });
+
+  toast.success("Added to cart");
+};
 
   // 🚀 AUTH_INTERCEPT: Buy Now
-  const handleBuyNow = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    addItem({ ...product, quantity: qty, image: resolvedImages[0] });
-    router.push('/checkout');
-  };
+const handleBuyNow = () => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    router.push('/login');
+    return;
+  }
+
+  if (product.variants?.length && !selectedVariant) {
+    return toast.error("Select a variant");
+  }
+
+  if (selectedVariant?.sizes?.length && !selectedSize) {
+    return toast.error("Select a size");
+  }
+
+  addItem({
+    ...product,
+    quantity: qty,
+    image: resolvedImages[0],
+    variant: selectedVariant,
+    size: selectedSize
+  });
+
+  router.push('/checkout');
+};
+
 
   // 🚀 AUTH_INTERCEPT: Follow Toggle
   const handleFollowToggle = async () => {
@@ -251,6 +302,60 @@ const fetchAllData = async () => {
                 {product.discount > 0 && <div className="ml-auto bg-emerald-50 text-emerald-600 text-[11px] font-black px-3 py-1 rounded-xl border border-emerald-100 uppercase">-{product.discount}% Off</div>}
               </div>
             </div>
+            {/* VARIANTS */}
+{product?.variants?.length > 0 && (
+  <div className="space-y-6">
+
+    {/* COLORS */}
+    <div>
+      <p className="text-[10px] font-black uppercase mb-2">Select Color</p>
+      <div className="flex gap-2 flex-wrap">
+        {product.variants.map((v: any, i: number) => (
+          <button
+            key={i}
+            onClick={() => {
+              setSelectedVariant(v);
+              setSelectedSize('');
+              setActiveImg(0);
+            }}
+            className={`px-4 py-2 rounded-full border text-xs font-bold uppercase
+              ${selectedVariant === v
+                ? 'bg-black text-white border-black'
+                : 'bg-white border-zinc-300'
+              }`}
+          >
+            {v.color}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* SIZES */}
+    {selectedVariant?.sizes?.length > 0 && (
+      <div>
+        <p className="text-[10px] font-black uppercase mb-2">Select Size</p>
+        <div className="flex gap-2 flex-wrap">
+          {selectedVariant.sizes.map((size: string, i: number) => (
+            <button
+              key={i}
+              onClick={() => setSelectedSize(size)}
+              className={`w-12 h-12 rounded-xl border font-bold
+                ${selectedSize === size
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white border-zinc-300'
+                }`}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+
+  </div>
+)}
+
+
 
             <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-xl space-y-8">
               <div className="flex justify-between items-center bg-orange-50 border border-orange-100 p-4 rounded-2xl">
@@ -294,7 +399,7 @@ const fetchAllData = async () => {
         </div>
 
         <div className="mt-6 space-y-3">
-  <h3 className="text-sm font-bold uppercase text-zinc-400">
+  <h3 className="text-sm text-gray-900 font-bold uppercase">
     Product Description
   </h3>
   <p className="text-sm text-zinc-600 leading-relaxed">

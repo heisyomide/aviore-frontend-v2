@@ -1,223 +1,333 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { X, Loader2, Plus, Trash2, Image as ImageIcon, Box, Tag, Info, Zap } from 'lucide-react';
+import { X } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { uploadToCloudinary } from '@/src/lib/cloudinary';
 
-export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) {
+/* ---------------- TYPES ---------------- */
+
+type Category = {
+  id: string;
+  name: string;
+  children?: Category[];
+};
+
+type Variant = {
+  color: string;
+  sizes: string;
+  images: string[];
+};
+
+type FormData = {
+  title: string;
+  description: string;
+  price: string;
+  stock: string;
+  categoryId: string;
+};
+
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  onRefresh: () => void;
+};
+
+/* ---------------- COMPONENT ---------------- */
+
+export default function CreateProductModal({
+  isOpen,
+  onClose,
+  onRefresh
+}: Props) {
   const [loading, setLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
   const [images, setImages] = useState<string[]>([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
 
-  // Category State Levels
-  const [mainCategories, setMainCategories] = useState<any[]>([]); 
-  const [secondaryCategories, setSecondaryCategories] = useState<any[]>([]);
-  const [tertiaryCategories, setTertiaryCategories] = useState<any[]>([]);
+  const [mainCategories, setMainCategories] = useState<Category[]>([]);
+  const [secondaryCategories, setSecondaryCategories] = useState<Category[]>([]);
+  const [tertiaryCategories, setTertiaryCategories] = useState<Category[]>([]);
 
-  // Selection IDs
   const [mainCatId, setMainCatId] = useState('');
   const [secondaryCatId, setSecondaryCatId] = useState('');
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     price: '',
     stock: '',
-    categoryId: '' 
+    categoryId: ''
   });
+
+  /* ---------------- FETCH ---------------- */
 
   useEffect(() => {
     if (isOpen) fetchCategories();
   }, [isOpen]);
 
   const fetchCategories = async () => {
-    try {
-      const res = await api.get('/categories');
-      setMainCategories(res.data);
-    } catch (e) { console.error("Registry_Fetch_Failure"); }
+    const res = await api.get('/categories');
+    setMainCategories(res.data);
   };
 
+  /* ---------------- CATEGORY HANDLERS ---------------- */
+
   const handleMainChange = (id: string) => {
-    setMainCatId(id);
     const selected = mainCategories.find(c => c.id === id);
+
+    setMainCatId(id);
     setSecondaryCategories(selected?.children || []);
     setSecondaryCatId('');
     setTertiaryCategories([]);
+
     setFormData(prev => ({ ...prev, categoryId: '' }));
   };
 
   const handleSecondaryChange = (id: string) => {
-    setSecondaryCatId(id);
     const selected = secondaryCategories.find(c => c.id === id);
     const children = selected?.children || [];
+
+    setSecondaryCatId(id);
     setTertiaryCategories(children);
-    setFormData(prev => ({ 
-      ...prev, 
-      categoryId: children.length === 0 ? id : '' 
+
+    setFormData(prev => ({
+      ...prev,
+      categoryId: children.length ? '' : id
     }));
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    setIsUploading(true);
+  /* ---------------- UPLOAD UTILS ---------------- */
+
+  const uploadFiles = async (files: FileList | null): Promise<string[]> => {
+    if (!files) return [];
+
+    setUploading(true);
     try {
-      const uploadPromises = Array.from(files).map(file => uploadToCloudinary(file));
-      const urls = await Promise.all(uploadPromises);
-      setImages(prev => [...prev, ...urls].slice(0, 4));
-    } catch (err) {
-      alert("Network_Upload_Interrupted");
-    } finally { setIsUploading(false); }
+      const fileArray = Array.from(files);
+
+      const validFiles = fileArray.filter(
+        (file): file is File => file instanceof File
+      );
+
+      return await Promise.all(
+        validFiles.map(file => uploadToCloudinary(file))
+      );
+    } finally {
+      setUploading(false);
+    }
   };
+
+  /* ---------------- IMAGE HANDLERS ---------------- */
+
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const urls = await uploadFiles(e.target.files);
+    setImages(prev => [...prev, ...urls].slice(0, 4));
+  };
+
+  const handleVariantImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const urls = await uploadFiles(e.target.files);
+
+    setVariants(prev =>
+      prev.map((v, i) =>
+        i === index
+          ? { ...v, images: [...v.images, ...urls].slice(0, 4) }
+          : v
+      )
+    );
+  };
+
+  /* ---------------- VARIANT HANDLERS ---------------- */
+
+  const addVariant = () => {
+    setVariants(prev => [...prev, { color: '', sizes: '', images: [] }]);
+  };
+
+  const removeVariant = (index: number) => {
+    setVariants(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateVariant = (
+    index: number,
+    field: keyof Variant,
+    value: string
+  ) => {
+    setVariants(prev =>
+      prev.map((v, i) =>
+        i === index ? { ...v, [field]: value } : v
+      )
+    );
+  };
+
+  /* ---------------- SUBMIT ---------------- */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.categoryId) return alert("Validation Error: Please select the target Sub-Category node");
-    
+
+    if (!formData.categoryId) {
+      return alert('Select category');
+    }
+
     setLoading(true);
+
     try {
       await api.post('/products', {
         ...formData,
         price: Number(formData.price),
         stock: Number(formData.stock),
-        images: images 
+
+        images: variants.length ? [] : images,
+
+        variants: variants.map(v => ({
+          color: v.color,
+          sizes: v.sizes.split(',').map(s => s.trim()),
+          images: v.images
+        }))
       });
+
       onRefresh();
       onClose();
       resetForm();
-    } catch (error) {
-      alert("Protocol_Error: Failed to initialize product node");
-    } finally { setLoading(false); }
+    } catch {
+      alert('Failed to create product');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
     setImages([]);
-    setFormData({ title: '', description: '', price: '', stock: '', categoryId: '' });
-    setMainCatId('');
-    setSecondaryCatId('');
-    setSecondaryCategories([]);
-    setTertiaryCategories([]);
+    setVariants([]);
+    setFormData({
+      title: '',
+      description: '',
+      price: '',
+      stock: '',
+      categoryId: ''
+    });
   };
 
   if (!isOpen) return null;
 
-  // Shared Styles
-  const inputClasses = "w-full p-4 lg:p-5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 outline-none focus:border-blue-600 transition-all placeholder:text-slate-400 shadow-sm";
-  const darkSelectClasses = "w-full p-4 lg:p-5 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white outline-none focus:border-orange-500 transition-all";
-  const labelClasses = "text-[10px] font-black uppercase text-slate-500 mb-2 block ml-1 tracking-widest";
+  const input = 'w-full p-4 border rounded-xl';
+
+  /* ---------------- UI ---------------- */
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-end lg:items-center justify-center bg-[#0F172A]/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-[#F4F7FE] w-full max-w-5xl lg:rounded-4xl rounded-t-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 lg:slide-in-from-bottom-0 duration-500 max-h-[95vh] lg:max-h-[90vh] flex flex-col">
-        
-        {/* HEADER PROTOCOL */}
-        <div className="p-6 lg:p-8 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
-          <div>
-            <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Listing Protocol</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
-              <Zap size={12} className="text-blue-600" /> Initializing Hardware Node
-            </p>
-          </div>
-          <button onClick={onClose} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full transition-all text-slate-900"><X size={20} /></button>
+    <div className="fixed inset-0 z-50 bg-black/70 flex justify-center items-center">
+      <div className="bg-white w-full max-w-4xl p-6 rounded-xl max-h-[90vh] overflow-y-auto">
+
+        {/* HEADER */}
+        <div className="flex justify-between mb-6">
+          <h2 className="font-bold text-lg">Create Product</h2>
+          <button onClick={onClose}><X /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 overflow-y-auto no-scrollbar">
-          
-          {/* LEFT: MEDIA & CATEGORIES */}
-          <div className="space-y-8">
-            {/* Image Registry */}
-            <div className="space-y-4">
-               <label className={labelClasses}>Media Manifest (Max 4)</label>
-               <div className="grid grid-cols-2 gap-3 lg:gap-4">
-                {images.map((url, i) => (
-                  <div key={i} className="group relative aspect-square rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-                    <img src={url} className="w-full h-full object-cover" alt="" />
-                    <button type="button" onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-red-600/90 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-black uppercase text-[10px]">Remove Node</button>
-                  </div>
-                ))}
-                {images.length < 4 && (
-                  <label className="aspect-square rounded-3xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-all text-slate-400 group">
-                    {isUploading ? <Loader2 size={24} className="animate-spin text-blue-600" /> : <Plus size={32} strokeWidth={3} className="group-hover:text-blue-500" />}
-                    <span className="text-[8px] font-black uppercase mt-2 group-hover:text-blue-500">Inject Frame</span>
-                    <input type="file" multiple hidden onChange={handleImageUpload} accept="image/*" />
-                  </label>
-                )}
-               </div>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Category Node Matrix */}
-            <div className="bg-[#1E293B] p-6 lg:p-8 rounded-[2rem] shadow-xl border border-slate-800">
-              <h3 className="text-[10px] font-black uppercase text-orange-500 mb-6 tracking-widest flex items-center gap-2 italic">
-                <Tag size={12} /> CATEGORIZATION
-              </h3>
-              
-              <div className="space-y-5">
-                <div>
-                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">DEPARTMENT</label>
-                  <select required value={mainCatId} className={darkSelectClasses} onChange={e => handleMainChange(e.target.value)}>
-                    <option value="" className="text-slate-900">Select Department</option>
-                    {mainCategories.map((c: any) => <option key={c.id} value={c.id} className="text-slate-900 font-bold">{c.name}</option>)}
-                  </select>
-                </div>
+          <input
+            className={input}
+            placeholder="Title"
+            value={formData.title}
+            onChange={e => setFormData({ ...formData, title: e.target.value })}
+          />
 
-                <div>
-                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">CATEGORY</label>
-                  <select required disabled={!secondaryCategories.length} value={secondaryCatId} className={darkSelectClasses + " disabled:opacity-20"} onChange={e => handleSecondaryChange(e.target.value)}>
-                    <option value="" className="text-slate-900">Select Category</option>
-                    {secondaryCategories.map((s: any) => <option key={s.id} value={s.id} className="text-slate-900 font-bold">{s.name}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">SUB-CATEGORY</label>
-                  <select 
-                    required 
-                    disabled={!tertiaryCategories.length}
-                    className={darkSelectClasses + " border-orange-900/30 disabled:opacity-20"} 
-                    onChange={e => setFormData({...formData, categoryId: e.target.value})}
-                    value={formData.categoryId}
-                  >
-                    <option value="" className="text-slate-900">Select Sub-Category</option>
-                    {tertiaryCategories.map((t: any) => <option key={t.id} value={t.id} className="text-slate-900 font-bold">{t.name}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              className={input}
+              type="number"
+              placeholder="Price"
+              value={formData.price}
+              onChange={e => setFormData({ ...formData, price: e.target.value })}
+            />
+            <input
+              className={input}
+              type="number"
+              placeholder="Stock"
+              value={formData.stock}
+              onChange={e => setFormData({ ...formData, stock: e.target.value })}
+            />
           </div>
 
-          {/* RIGHT: DATA SPECIFICATIONS */}
-          <div className="space-y-6">
-            <div>
-              <label className={labelClasses}>PRODUCT TITLE</label>
-              <input required placeholder="Registry Name..." className={inputClasses} onChange={e => setFormData({...formData, title: e.target.value})} />
-            </div>
+          <textarea
+            className={input}
+            placeholder="Description"
+            value={formData.description}
+            onChange={e =>
+              setFormData({ ...formData, description: e.target.value })
+            }
+          />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex-1">
-                <label className={labelClasses}>PRICE (₦)</label>
-                <input type="number" required placeholder="0.00" className={inputClasses} onChange={e => setFormData({...formData, price: e.target.value})} />
+          {/* NORMAL IMAGES */}
+          {variants.length === 0 && (
+            <input type="file" multiple onChange={handleImageUpload} />
+          )}
+
+          {/* VARIANTS */}
+          <div>
+            <h3 className="font-bold mb-3">Variants</h3>
+
+            {variants.map((v, i) => (
+              <div key={i} className="border p-4 mb-4 rounded-xl space-y-3">
+
+                <input
+                  className={input}
+                  placeholder="Color"
+                  value={v.color}
+                  onChange={e => updateVariant(i, 'color', e.target.value)}
+                />
+
+                <input
+                  className={input}
+                  placeholder="Sizes (S,M,L)"
+                  value={v.sizes}
+                  onChange={e => updateVariant(i, 'sizes', e.target.value)}
+                />
+
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => handleVariantImageUpload(e, i)}
+                />
+
+                <div className="flex gap-2">
+                  {v.images.map((img, idx) => (
+                    <img key={idx} src={img} className="w-16 h-16 object-cover" />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeVariant(i)}
+                  className="text-red-500"
+                >
+                  Remove
+                </button>
               </div>
-              <div className="flex-1">
-                <label className={labelClasses}>STOCK UNIT</label>
-                <input type="number" required placeholder="QTY" className={inputClasses} onChange={e => setFormData({...formData, stock: e.target.value})} />
-              </div>
-            </div>
+            ))}
 
-            <div>
-              <label className={labelClasses}>PRODUCT DESCRIPTION</label>
-              <textarea required placeholder="Describe the item features, condition, and specs...." className={inputClasses + " h-[160px] lg:h-[200px] resize-none"} onChange={e => setFormData({...formData, description: e.target.value})} />
-            </div>
-
-            <div className="pt-4 pb-10 lg:pb-0 shrink-0">
-               <button 
-                type="submit" 
-                disabled={loading || isUploading} 
-                className="w-full bg-[#1E293B] text-white py-5 lg:py-7 rounded-3xl font-black uppercase tracking-[0.2em] text-xs lg:text-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-4 shadow-xl shadow-blue-900/20 active:scale-95 disabled:bg-slate-300"
-              >
-                {loading ? <Loader2 size={24} className="animate-spin" /> : <><Box size={18} /> CONFIRM & PUBLISH</>}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={addVariant}
+              className="bg-black text-white px-4 py-2 rounded"
+            >
+              + Add Variant
+            </button>
           </div>
+
+          <button
+            type="submit"
+            disabled={loading || uploading}
+            className="w-full bg-black text-white py-3 rounded"
+          >
+            {loading ? 'Creating...' : 'Create Product'}
+          </button>
+
         </form>
       </div>
     </div>
