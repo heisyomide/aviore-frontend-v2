@@ -13,7 +13,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
-  const [images, setImages] = useState<string[]>([]);
+ 
   const [variants, setVariants] = useState<Variant[]>([]);
 
   const [mainCategories, setMainCategories] = useState<Category[]>([]); 
@@ -67,10 +67,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
     } finally { setIsUploading(false); }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const urls = await uploadFiles(e.target.files);
-    setImages(prev => [...prev, ...urls].slice(0, 4));
-  };
+
 
   const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const urls = await uploadFiles(e.target.files);
@@ -95,7 +92,6 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
         ...formData,
         price: Number(formData.price),
         stock: Number(formData.stock),
-        images: variants.length ? [] : images,
         variants: variants.map(v => ({
           color: v.color,
           sizes: v.sizes.split(',').map(s => s.trim()),
@@ -104,18 +100,12 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
       });
       onRefresh();
       onClose();
-      resetForm();
     } catch (error) {
       alert("Protocol_Error: Failed to initialize product node");
     } finally { setLoading(false); }
   };
 
-  const resetForm = () => {
-    setImages([]); setVariants([]);
-    setFormData({ title: '', description: '', price: '', stock: '', categoryId: '' });
-    setMainCatId(''); setSecondaryCatId('');
-    setSecondaryCategories([]); setTertiaryCategories([]);
-  };
+
 
   if (!isOpen) return null;
 
@@ -144,26 +134,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
           {/* LEFT: MEDIA & CATEGORIES */}
           <div className="space-y-8">
             {/* Image Registry - Only visible if no variants exist */}
-            {variants.length === 0 && (
-              <div className="space-y-4">
-                <label className={labelClasses}>Primary Media (Max 4)</label>
-                <div className="grid grid-cols-2 gap-3 lg:gap-4">
-                  {images.map((url, i) => (
-                    <div key={i} className="group relative aspect-square rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-                      <img src={url} className="w-full h-full object-cover" alt="" />
-                      <button type="button" onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-red-600/90 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-black uppercase text-[10px]">Remove Node</button>
-                    </div>
-                  ))}
-                  {images.length < 4 && (
-                    <label className="aspect-square rounded-3xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-all text-slate-400 group">
-                      {isUploading ? <Loader2 size={24} className="animate-spin text-blue-600" /> : <Plus size={32} strokeWidth={3} className="group-hover:text-blue-500" />}
-                      <span className="text-[8px] font-black uppercase mt-2 group-hover:text-blue-500">Inject Frame</span>
-                      <input type="file" multiple hidden onChange={handleImageUpload} accept="image/*" />
-                    </label>
-                  )}
-                </div>
-              </div>
-            )}
+
 
             {/* Category Node Matrix */}
             <div className="bg-[#1E293B] p-6 lg:p-8 rounded-[2rem] shadow-xl border border-slate-800">
@@ -239,7 +210,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
                         <ImageIcon size={14} className="text-slate-400" />
                         <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
                       </label>
-                      {v.images.map((img, idx) => (
+                      {v.images.map((img: string, idx: number) => (
                         <img key={idx} src={img} className="w-12 h-12 rounded-lg object-cover border border-slate-200" alt="" />
                       ))}
                     </div>

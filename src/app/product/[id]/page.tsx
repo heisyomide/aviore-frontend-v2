@@ -15,6 +15,7 @@ import { useWishlistStore } from '@/src/store/useWishlistStore';
 import { ProductCard } from '@/src/components/product/ProductCard';
 import { Container } from '@/src/components/layout/Container';
 import { Navbar } from '@/src/components/navbar/Navbar';
+import { ProductSkeleton } from '@/src/components/product/ProductSkeleton';
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -123,7 +124,13 @@ const fetchAllData = async () => {
 
 const resolvedImages = useMemo(() => {
   if (selectedVariant?.images?.length) {
-    return selectedVariant.images;
+    return selectedVariant.images.map((img: any) => {
+      const path = img.imageUrl;
+
+      return path.startsWith('http')
+        ? path
+        : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+    });
   }
 
   if (!product?.images || product.images.length === 0) {
@@ -131,12 +138,17 @@ const resolvedImages = useMemo(() => {
   }
 
   return product.images.map((img: any) => {
-    const path = img.imageUrl || img.image || img;
+    const path =
+      typeof img === 'string'
+        ? img
+        : img.imageUrl;
+
     return path.startsWith('http')
       ? path
       : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
   });
-}, [product, selectedVariant, apiBase]);
+
+}, [selectedVariant, product, apiBase]);
 
   // 🚀 AUTH_INTERCEPT: Add to Cart
 const handleAddToCart = () => {
@@ -450,6 +462,4 @@ const handleBuyNow = () => {
   )
 }
 
-function ProductSkeleton() {
-  return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="animate-spin text-[#A4143D]" size={40} /></div>
-}
+

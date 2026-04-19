@@ -29,6 +29,16 @@ type Product = {
   discount?: number;
   image?: string;
   images?: ProductImage[];
+  variants?: {
+
+    images: {
+
+      imageUrl: string;
+      url?: string;
+
+    }[];
+
+  }[];
   vendorId?: string;
   stock?: number;
   averageRating?: number;
@@ -59,30 +69,29 @@ const {
     process.env.NEXT_PUBLIC_API_URL ||
     'http://localhost:5000';
 
-  const resolvedImage = useMemo(() => {
-    const firstImage = product.images?.[0];
+const resolvedImage = useMemo(() => {
+  const firstImage = product.variants?.[0]?.images?.[0];
 
-    let rawImage: string | undefined;
+  let rawImage: string | undefined;
 
-    if (typeof firstImage === 'string') {
-      rawImage = firstImage;
-    } else {
-      rawImage =
-        firstImage?.imageUrl ||
-        firstImage?.url;
-    }
+  if (typeof firstImage === 'string') {
+    rawImage = firstImage;
+  } else {
+    rawImage =
+      firstImage?.imageUrl ||
+      firstImage?.url;
+  }
 
-    rawImage = rawImage || product.image;
+  rawImage = rawImage || product.image;
 
-    if (!rawImage) return null;
+  if (!rawImage) return null;
 
-    return rawImage.startsWith('http')
-      ? rawImage
-      : `${apiBase}/uploads/${rawImage.replace(
-          /^\//,
-          ''
-        )}`;
-  }, [product.images, product.image, apiBase]);
+  return rawImage.startsWith('http')
+    ? rawImage
+    : `${apiBase}/uploads/${rawImage.replace(/^\//, '')}`;
+}, [product.variants, product.image, apiBase]);
+
+
 
   const productName =
     product.title ||
