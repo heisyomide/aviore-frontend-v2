@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Package, Edit2, Trash2, Loader2, AlertCircle, X, ChevronRight, Filter } from 'lucide-react';
+import { Plus, Search, Package, Edit2, Trash2, Loader2, AlertCircle} from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import CreateProductModal from '@/src/components/dashboard/CreateProductModal';
 import EditProductModal from '@/src/components/dashboard/EditProductModal';
@@ -14,11 +14,29 @@ export default function ProductsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
+
+  const resolveImage = (p: any) => {
+  const img = p.images?.[0];
+
+  if (!img) return '/placeholder.png';
+
+  const path =
+    typeof img === 'string'
+      ? img
+      : img.imageUrl;
+
+  if (!path) return '/placeholder.png';
+
+  return path.startsWith('http')
+    ? path
+    : `${process.env.NEXT_PUBLIC_API_URL}/uploads/${path.replace(/^\//, '')}`;
+};
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const response = await api.get('/products/my-products');
-      setProducts(response.data);
+      setProducts(response.data?.data || response.data || []);
     } catch (error) {
       console.error('Inventory_Sync_Error:', error);
     } finally {
@@ -28,12 +46,17 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchProducts(); }, []);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => 
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchQuery.toLowerCase())
+const filteredProducts = useMemo(() => {
+  return products.filter((p) => {
+    const title = p.title?.toLowerCase() || '';
+    const id = p.id?.toLowerCase() || '';
+
+    return (
+      title.includes(searchQuery.toLowerCase()) ||
+      id.includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery, products]);
+  });
+}, [searchQuery, products]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Abort Registry Node? This action removes the product from the public discovery loop.')) return;
@@ -91,7 +114,7 @@ export default function ProductsPage() {
             <div key={p.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 animate-in fade-in duration-500">
               <div className="flex gap-4 mb-6">
                 <div className="w-20 h-20 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 shrink-0">
-                   <img src={p.images?.[0]?.imageUrl || '/api/placeholder/80/80'} className="w-full h-full object-cover" alt="" />
+                  <img src={resolveImage(p)} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
@@ -117,12 +140,16 @@ export default function ProductsPage() {
                 >
                   <Edit2 size={14} /> Edit Node
                 </button>
-                <button 
-                  onClick={() => handleDelete(p.id)}
-                  className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center border border-red-100"
-                >
-                  {isDeleting === p.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                </button>
+<button
+  onClick={() => handleDelete(p.id)}
+  className="p-2.5 bg-slate-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-100"
+>
+  {isDeleting === p.id ? (
+    <Loader2 size={16} className="animate-spin" />
+  ) : (
+    <Trash2 size={16} />
+  )}
+</button>
               </div>
             </div>
           ))}
@@ -147,7 +174,7 @@ export default function ProductsPage() {
                   <td className="p-6">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shrink-0">
-                        <img src={p.images?.[0]?.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt="" />
+                       <img src={resolveImage(p)} className="w-full h-full object-cover" />
                       </div>
                       <div>
                         <p className="font-black text-slate-800 text-sm uppercase italic leading-none">{p.title}</p>
@@ -171,7 +198,13 @@ export default function ProductsPage() {
           </table>
         </div>
 
-        {filteredProducts.length === 0 && <EmptyState />}
+       {products.length === 0 ? (
+  <EmptyState />
+) : filteredProducts.length === 0 ? (
+  <p className="text-center text-sm text-slate-400 font-bold uppercase">
+    No matching products found
+  </p>
+) : null}
       </div>
 
       <CreateProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onRefresh={fetchProducts} />
