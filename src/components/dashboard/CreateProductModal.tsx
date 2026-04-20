@@ -7,8 +7,16 @@ import { uploadToCloudinary } from '@/src/lib/cloudinary';
 /* ---------------- TYPES ---------------- */
 type Category = { id: string; name: string; children?: Category[]; };
 type Variant = { color: string; sizes: string; images: string[]; };
-type FormData = { title: string; description: string; price: string; stock: string; categoryId: string; };
-
+type FormData = {
+  title: string;
+  description: string;
+  price: string;
+  stock: string;
+  categoryId: string;
+  origin: 'LOCAL' | 'INTERNATIONAL';
+  deliveryMin: string;
+  deliveryMax: string;
+};
 export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) {
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -23,9 +31,16 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
   const [mainCatId, setMainCatId] = useState('');
   const [secondaryCatId, setSecondaryCatId] = useState('');
 
-  const [formData, setFormData] = useState<FormData>({
-    title: '', description: '', price: '', stock: '', categoryId: '' 
-  });
+const [formData, setFormData] = useState<FormData>({
+  title: '',
+  description: '',
+  price: '',
+  stock: '',
+  categoryId: '',
+  origin: 'LOCAL',
+  deliveryMin: '',
+  deliveryMax: '',
+});
 
   useEffect(() => { if (isOpen) fetchCategories(); }, [isOpen]);
 
@@ -88,16 +103,18 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
     
     setLoading(true);
     try {
-      await api.post('/products', {
-        ...formData,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-        variants: variants.map(v => ({
-          color: v.color,
-          sizes: v.sizes.split(',').map(s => s.trim()),
-          images: v.images
-        }))
-      });
+ await api.post('/products', {
+  ...formData,
+  price: Number(formData.price),
+  stock: Number(formData.stock),
+  deliveryMin: formData.deliveryMin ? Number(formData.deliveryMin) : undefined,
+  deliveryMax: formData.deliveryMax ? Number(formData.deliveryMax) : undefined,
+  variants: variants.map(v => ({
+    color: v.color,
+    sizes: v.sizes.split(',').map(s => s.trim()),
+    images: v.images
+  }))
+});
       onRefresh();
       onClose();
     } catch (error) {
@@ -115,7 +132,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
   const labelClasses = "text-[10px] font-black uppercase text-slate-500 mb-2 block ml-1 tracking-widest";
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-end lg:items-center justify-center bg-[#0F172A]/80 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-300 flex items-end lg:items-center justify-center bg-[#0F172A]/80 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-[#F4F7FE] w-full max-w-6xl lg:rounded-4xl rounded-t-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 lg:slide-in-from-bottom-0 duration-500 max-h-[95vh] lg:max-h-[90vh] flex flex-col">
         
         {/* HEADER PROTOCOL */}
@@ -137,7 +154,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
 
 
             {/* Category Node Matrix */}
-            <div className="bg-[#1E293B] p-6 lg:p-8 rounded-[2rem] shadow-xl border border-slate-800">
+            <div className="bg-[#1E293B] p-6 lg:p-8 rounded-4xl shadow-xl border border-slate-800">
               <h3 className="text-[10px] font-black uppercase text-orange-500 mb-6 tracking-widest flex items-center gap-2 italic"><Tag size={12} /> CATEGORIZATION</h3>
               <div className="space-y-5">
                 <div>
@@ -183,6 +200,53 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
               </div>
             </div>
 
+                        <div className="grid grid-cols-2 gap-4">
+  <div>
+    <label className={labelClasses}>Origin</label>
+    <select
+      className={inputClasses}
+      value={formData.origin}
+onChange={(e) =>
+  setFormData({
+    ...formData,
+    origin: e.target.value as 'LOCAL' | 'INTERNATIONAL',
+  })
+}
+    >
+      <option value="LOCAL">Local</option>
+      <option value="INTERNATIONAL">International</option>
+    </select>
+  </div>
+
+  {formData.origin === 'INTERNATIONAL' && (
+    <>
+      <div>
+        <label className={labelClasses}>Delivery Min (days)</label>
+        <input
+          type="number"
+          className={inputClasses}
+          value={formData.deliveryMin}
+          onChange={(e) =>
+            setFormData({ ...formData, deliveryMin: e.target.value })
+          }
+        />
+      </div>
+
+      <div>
+        <label className={labelClasses}>Delivery Max (days)</label>
+        <input
+          type="number"
+          className={inputClasses}
+          value={formData.deliveryMax}
+          onChange={(e) =>
+            setFormData({ ...formData, deliveryMax: e.target.value })
+          }
+        />
+      </div>
+    </>
+  )}
+</div>
+
             {/* VARIANT SYSTEM */}
             <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm space-y-4">
               <div className="flex justify-between items-center">
@@ -221,7 +285,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
 
             <div>
               <label className={labelClasses}>PRODUCT DESCRIPTION</label>
-              <textarea required placeholder="Describe features..." className={inputClasses + " h-[120px] resize-none"} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+              <textarea required placeholder="Describe features..." className={inputClasses + " h-30 resize-none"} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
             </div>
 
             <button type="submit" disabled={loading || isUploading} className="w-full bg-[#1E293B] text-white py-6 lg:py-7 rounded-3xl font-black uppercase tracking-[0.2em] text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-4 shadow-xl active:scale-95 disabled:bg-slate-300">

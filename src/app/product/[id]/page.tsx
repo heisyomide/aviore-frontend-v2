@@ -237,6 +237,26 @@ const handleBuyNow = () => {
   if (loading) return <ProductSkeleton />;
   if (!product) return <div className="py-40 text-center font-black uppercase tracking-widest text-zinc-400">Registry_Entry_Not_Found</div>;
 
+
+  const deliveryText = useMemo(() => {
+  if (!product) return '';
+
+  if (product.origin === 'LOCAL') {
+    return 'Delivery within 1–3 days';
+  }
+
+  if (product.origin === 'INTERNATIONAL') {
+    if (product.deliveryMin && product.deliveryMax) {
+      return `Delivery in ${product.deliveryMin}–${product.deliveryMax} days`;
+    }
+
+    return 'International delivery';
+  }
+
+  return '';
+}, [product]);
+
+
   return (
     <div className="min-h-screen bg-white pb-24 md:pb-12">
        <Navbar />
@@ -257,10 +277,11 @@ const handleBuyNow = () => {
           
           {/* 🖼️ VISUALS */}
           <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-24">
-            <div className="relative aspect-[4/5] bg-gray-50 rounded-3xl overflow-hidden border border-gray-100 group">
+            <div className="relative aspect-4/5 bg-gray-50 rounded-3xl overflow-hidden border border-gray-100 group">
               <Image src={resolvedImages[activeImg]} alt={product.title} fill className="object-cover" priority />
               <button className="absolute top-4 right-4 p-3 bg-white shadow-xl rounded-full hover:text-[#A4143D] transition-all"><Share2 size={18}/></button>
             </div>
+
             <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
               {resolvedImages.map((img: string, idx: number) => (
                 <button key={idx} onClick={() => setActiveImg(idx)} className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 shrink-0 ${activeImg === idx ? "border-[#A4143D]" : "border-transparent opacity-50"}`}>
@@ -314,6 +335,20 @@ const handleBuyNow = () => {
                 {product.discount > 0 && <div className="ml-auto bg-emerald-50 text-emerald-600 text-[11px] font-black px-3 py-1 rounded-xl border border-emerald-100 uppercase">-{product.discount}% Off</div>}
               </div>
             </div>
+
+            <div className="flex items-center gap-2 mt-3 text-[11px] font-black uppercase text-zinc-500">
+  <Truck size={14} className="text-blue-500" />
+  {deliveryText}
+</div>
+<div className="flex items-center gap-2">
+  <span className={`text-[9px] font-black px-2 py-1 rounded uppercase
+    ${product.origin === 'LOCAL' 
+      ? 'bg-emerald-100 text-emerald-600' 
+      : 'bg-purple-100 text-purple-600'}
+  `}>
+    {product.origin}
+  </span>
+</div>
             {/* VARIANTS */}
 {product?.variants?.length > 0 && (
   <div className="space-y-6">

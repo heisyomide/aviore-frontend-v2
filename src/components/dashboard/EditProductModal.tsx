@@ -8,9 +8,17 @@ import { uploadToCloudinary } from '@/src/lib/cloudinary';
 interface Category { id: string; name: string; children?: Category[]; }
 interface Variant { color: string; sizes: string[]; images: string[]; }
 interface Product {
-  id: string; title: string; description: string; price: number;
-  stock: number; categoryId: string; images: { imageUrl: string }[];
-  variants?: any[]; // Coming from backend
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  stock: number;
+  categoryId: string;
+  origin: 'LOCAL' | 'INTERNATIONAL';
+  deliveryMin?: number;
+  deliveryMax?: number;
+  images: { imageUrl: string }[];
+  variants?: any[];
 }
 
 export default function EditProductModal({ isOpen, onClose, onRefresh, product }: any) {
@@ -27,9 +35,16 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
   const [mainCatId, setMainCatId] = useState('');
   const [secondaryCatId, setSecondaryCatId] = useState('');
 
-  const [formData, setFormData] = useState({
-    title: '', description: '', price: '', stock: '', categoryId: ''
-  });
+const [formData, setFormData] = useState({
+  title: '',
+  description: '',
+  price: '',
+  stock: '',
+  categoryId: '',
+  origin: 'LOCAL',
+  deliveryMin: '',
+  deliveryMax: '',
+});
 
   /* ================= HYDRATION LOGIC ================= */
   useEffect(() => {
@@ -56,7 +71,10 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
             description: product.description,
             price: String(product.price),
             stock: String(product.stock),
-            categoryId: product.categoryId
+            categoryId: product.categoryId,
+            origin: product.origin || 'LOCAL',
+deliveryMin: product.deliveryMin ? String(product.deliveryMin) : '',
+deliveryMax: product.deliveryMax ? String(product.deliveryMax) : '',
           });
 
           setImages(product.images?.map((img: any) => img.imageUrl) || []);
@@ -123,13 +141,15 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
     if (!formData.categoryId) return alert("Select final taxonomy node.");
     setLoading(true);
     try {
-      await api.patch(`/products/${product.id}`, {
-        ...formData,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-        images,
-        variants
-      });
+await api.patch(`/products/${product.id}`, {
+  ...formData,
+  price: Number(formData.price),
+  stock: Number(formData.stock),
+  deliveryMin: formData.deliveryMin ? Number(formData.deliveryMin) : undefined,
+  deliveryMax: formData.deliveryMax ? Number(formData.deliveryMax) : undefined,
+  images,
+  variants
+});
       onRefresh(); onClose();
     } catch { alert("Product_Update_Failure"); } finally { setLoading(false); }
   };
@@ -142,7 +162,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
   const labelClasses = "text-[10px] font-black uppercase text-slate-500 mb-2 block ml-1 tracking-widest";
 
   return (
-    <div className="fixed inset-0 z-[310] flex items-end lg:items-center justify-center bg-[#0F172A]/80 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-310 flex items-end lg:items-center justify-center bg-[#0F172A]/80 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-[#F4F7FE] w-full max-w-5xl lg:rounded-4xl rounded-t-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 lg:slide-in-from-bottom-0 duration-500 max-h-[95vh] lg:max-h-[90vh] flex flex-col">
         
         {/* HEADER */}
@@ -181,7 +201,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
               </div>
             </div>
 
-            <div className="bg-[#1E293B] p-6 lg:p-8 rounded-[2rem] shadow-xl border border-slate-800">
+            <div className="bg-[#1E293B] p-6 lg:p-8 rounded-4xl shadow-xl border border-slate-800">
               <h3 className="text-[10px] font-black uppercase text-orange-500 mb-6 tracking-widest flex items-center gap-2 italic"><Tag size={12} /> Re-Classification Matrix</h3>
               <div className="space-y-5">
                 <select value={mainCatId} className={darkSelectClasses} onChange={e => handleMainChange(e.target.value)}>
@@ -217,6 +237,53 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
                 <input type="number" required value={formData.stock} className={`${inputClasses} ${Number(formData.stock) < 5 ? 'border-red-500 bg-red-50' : ''}`} onChange={e => setFormData({...formData, stock: e.target.value})} />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+  <div>
+    <label className={labelClasses}>Origin</label>
+    <select
+      className={inputClasses}
+      value={formData.origin}
+onChange={(e) =>
+  setFormData({
+    ...formData,
+    origin: e.target.value as 'LOCAL' | 'INTERNATIONAL',
+  })
+}
+    >
+      <option value="LOCAL">Local</option>
+      <option value="INTERNATIONAL">International</option>
+    </select>
+  </div>
+
+  {formData.origin === 'INTERNATIONAL' && (
+    <>
+      <div>
+        <label className={labelClasses}>Delivery Min (days)</label>
+        <input
+          type="number"
+          className={inputClasses}
+          value={formData.deliveryMin}
+          onChange={(e) =>
+            setFormData({ ...formData, deliveryMin: e.target.value })
+          }
+        />
+      </div>
+
+      <div>
+        <label className={labelClasses}>Delivery Max (days)</label>
+        <input
+          type="number"
+          className={inputClasses}
+          value={formData.deliveryMax}
+          onChange={(e) =>
+            setFormData({ ...formData, deliveryMax: e.target.value })
+          }
+        />
+      </div>
+    </>
+  )}
+</div>
 
             {/* VARIANT SYSTEM - Integrated Design */}
             <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm space-y-4">
@@ -257,7 +324,7 @@ export default function EditProductModal({ isOpen, onClose, onRefresh, product }
 
             <div className="flex gap-4 pt-4">
                <button type="button" onClick={onClose} className="flex-1 bg-white border border-slate-200 text-slate-500 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">Abort</button>
-               <button type="submit" disabled={loading || isUploading} className="flex-[2] bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95 disabled:bg-slate-300">
+               <button type="submit" disabled={loading || isUploading} className="flex-2 bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95 disabled:bg-slate-300">
                 {loading ? <Loader2 className="animate-spin" /> : <><Save size={18} /> Push Updates</>}
               </button>
             </div>

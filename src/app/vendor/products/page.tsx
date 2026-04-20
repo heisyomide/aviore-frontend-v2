@@ -104,7 +104,7 @@ const filteredProducts = useMemo(() => {
             placeholder="SEARCH REGISTRY BY TITLE OR ID..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-14 pr-12 py-5 bg-white border border-slate-100 rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-sm outline-none focus:ring-4 focus:ring-blue-500/5 transition-all" 
+            className="w-full pl-14 pr-12 py-5 bg-white border border-slate-100 rounded-4xl text-[11px] font-black uppercase tracking-widest shadow-sm outline-none focus:ring-4 focus:ring-blue-500/5 transition-all" 
           />
         </div>
 

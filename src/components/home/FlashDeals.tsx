@@ -24,7 +24,7 @@ export function FlashDeals({ products }: { products: any[] }) {
   const time = formatTime(timeLeft);
 
   return (
-    <Section bg className="!py-8">
+    <Section bg className="py-8!">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-orange-600 bg-orange-100 px-3 py-1 rounded-full">

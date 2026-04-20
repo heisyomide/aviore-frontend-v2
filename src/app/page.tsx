@@ -96,7 +96,7 @@ export default function HomePage() {
       
       {/* WRAPPER: This div grows to fill all available space, 
           ensuring the footer stack below it is always at the bottom. */}
-      <div className="flex-grow">
+      <div className="grow">
         <Hero />
 
         {/* 3. URGENCY ZONE */}

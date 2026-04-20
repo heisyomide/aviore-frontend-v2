@@ -16,7 +16,7 @@ export function Pagination({ current, total, onPageChange }: any) {
 
       <div className="flex items-center gap-4">
         <span className="text-xl font-black text-white italic tracking-tighter">0{current}</span>
-        <div className="w-12 h-[1px] bg-zinc-800" />
+        <div className="w-12 h-px bg-zinc-800" />
         <span className="text-xs font-bold text-zinc-600 tracking-widest uppercase">Registry_Limit: 0{total}</span>
       </div>
 
