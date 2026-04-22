@@ -155,7 +155,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div
       onClick={handleNavigate}
-      className="group relative cursor-pointer rounded-xl bg-white p-2 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl"
+      className="group relative cursor-pointer rounded-2xl bg-white p-3 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl"
     >
       <ProductImageSection
         image={resolvedImage}
@@ -166,15 +166,15 @@ export function ProductCard({ product }: ProductCardProps) {
         wishlisted={wishlisted}
       />
 
-      <div className="space-y-2 px-0.5">
-        <h3 className="line-clamp-2 h-7 text-[10px] leading-tight font-black uppercase tracking-tight text-gray-500 group-hover:text-black">
+      <div className="space-y-3 px-1">
+        <h3 className="line-clamp-2 h-8 text-[11px] font-black uppercase tracking-tight text-gray-500 group-hover:text-black">
           {name}
         </h3>
 
         {/* 💰 PRICE */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black italic text-[#A4143D]">
+            <span className="text-base font-black italic text-[#A4143D]">
               ₦{price.toLocaleString()}
             </span>
 
@@ -185,21 +185,19 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-<button
-  onClick={handleQuickAdd}
-  className="flex h-8 w-8 items-center justify-center 
-  rounded-full bg-[#A4143D] text-white 
-  active:scale-90 md:hidden"
->
-  <ShoppingCart size={14} />
-</button>
+          <button
+            onClick={handleQuickAdd}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 active:scale-90 md:hidden"
+          >
+            <ShoppingCart size={14} />
+          </button>
         </div>
 
         {/* 🚚 DELIVERY */}
         <DeliveryBadge product={product} />
 
         {/* ⭐ RATING + STOCK */}
-        <div className="flex items-center justify-between border-t border-gray-50 pt-2">
+        <div className="flex items-center justify-between border-t border-gray-50 pt-3">
           <Rating rate={rating} count={reviewCount} />
           <StockBadge stock={stock} />
         </div>
@@ -247,7 +245,7 @@ function ProductImageSection({
   wishlisted: boolean;
 }) {
   return (
-    <div className="relative mb-2 aspect-[4/5] overflow-hidden rounded-lg bg-gray-50">
+    <div className="relative mb-4 aspect-square overflow-hidden rounded-xl bg-gray-50">
       {image ? (
         <Image
           src={image}
@@ -269,11 +267,11 @@ function ProductImageSection({
 
       <button
         onClick={onWishlist}
-className={`absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full transition
-  ${wishlisted 
-    ? 'bg-[#A4143D] text-white' 
-    : 'bg-white text-gray-600 hover:text-[#A4143D]'
-  }`}
+        className={`absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full ${
+          wishlisted
+            ? 'bg-[#A4143D] text-white'
+            : 'bg-white'
+        }`}
       >
         <Heart
           size={16}
@@ -284,7 +282,7 @@ className={`absolute right-2 top-2 flex h-9 w-9 items-center justify-center roun
       <div className="absolute inset-x-0 bottom-0 hidden translate-y-full p-3 transition group-hover:translate-y-0 md:block">
         <button
           onClick={onQuickAdd}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-2 text-[9px] font-black uppercase"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-[10px] font-black uppercase"
         >
           <Zap size={12} />
           Quick Add
