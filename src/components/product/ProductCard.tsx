@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, MouseEvent } from 'react';
+import { useMemo, MouseEvent, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -14,6 +14,11 @@ import { Rating } from '../ui/Rating';
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 
+
+
+
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
 /* ================= TYPES ================= */
 
 type ProductImage =
@@ -71,28 +76,32 @@ export function ProductCard({ product }: ProductCardProps) {
 
   /* ================= DERIVED ================= */
 
-  const resolvedImage = useMemo(() => {
-    const firstVariantImage =
-      product.variants?.[0]?.images?.[0];
+const resolvedImage = useMemo(() => {
+  // 1. Try to get the first image from the first variant safely
+  const firstVariant = product.variants?.[0];
+  const variantImgObj = firstVariant?.images?.[0];
+  
+  let raw: string | undefined;
 
-    let raw: string | undefined;
+  if (variantImgObj) {
+    raw = typeof variantImgObj === 'string' ? variantImgObj : (variantImgObj.imageUrl || variantImgObj.url);
+  }
 
-    if (typeof firstVariantImage === 'string') {
-      raw = firstVariantImage;
-    } else {
-      raw =
-        firstVariantImage?.imageUrl ||
-        firstVariantImage?.url;
-    }
+  // 2. Fallback to product.image or the first item in product.images array
+  if (!raw) {
+    const mainImages = product.images as any[];
+    const firstMainImg = mainImages?.[0];
+    
+    raw = product.image || 
+          (typeof firstMainImg === 'string' ? firstMainImg : firstMainImg?.imageUrl);
+  }
 
-    raw = raw || product.image;
+  if (!raw) return '/placeholder.png';
 
-    if (!raw) return null;
-
-    return raw.startsWith('http')
-      ? raw
-      : `${apiBase}/uploads/${raw.replace(/^\//, '')}`;
-  }, [product, apiBase]);
+  return raw.startsWith('http')
+    ? raw
+    : `${apiBase}/uploads/${raw.replace(/^\//, '')}`;
+}, [product, apiBase]);
 
   const name =
     product.title ||
