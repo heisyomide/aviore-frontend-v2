@@ -18,10 +18,11 @@ import { Navbar } from '@/src/components/navbar/Navbar';
 import { ProductSkeleton } from '@/src/components/product/ProductSkeleton';
 
 export default function ProductDetailsPage() {
-  const { id } = useParams();
-  const router = useRouter();
-    const params = useParams();
-  const productId = params?.id as string;
+const params = useParams();
+const productId = useMemo(() => {
+  if (!params?.id) return null;
+  return Array.isArray(params.id) ? params.id[0] : params.id;
+}, [params]);
   
   const [product, setProduct] = useState<any>(null);
   const [vendorData, setVendorData] = useState<any>(null);
@@ -35,81 +36,84 @@ const [selectedSize, setSelectedSize] = useState<string>('');
 
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems } = useWishlistStore();
+
+  const router = useRouter();
   
   // 🛡️ Ensure apiBase matches your deployed NestJS URL in production
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
-const fetchAllData = async () => {
-  if (!id) return;
-
+const fetchAllData = async (id: string) => {
   try {
     setLoading(true);
 
-    // 🚀 STEP 1: Core Product Fetch (Required for everything else)
+    // STEP 1: Product
     const { data: productData } = await api.get(`/products/${id}`);
     setProduct(productData);
 
-    // 🚀 STEP 2: Parallel Discovery (Vendor, Recommendations, & Auth Status)
-    if (productData.vendorId) {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!productData.vendorId) return;
 
-      // Execute these three independent requests simultaneously
-      const [vendorRes, recsRes, followRes] = await Promise.allSettled([
-        // A. Public Vendor Stats & Slug
-        api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
-        
-        // B. Contextual Recommendations
-        api.get('/products', { 
-          params: { 
-            category: productData.category?.slug, 
-            limit: 10 
-          } 
-        }),
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('token')
+        : null;
 
-        // C. Auth-dependent Following Status
-        token ? api.get('/vendors/followed') : Promise.reject('GUEST_SESSION')
-      ]);
+    // STEP 2: Parallel requests
+    const results = await Promise.allSettled([
+      api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
+      api.get('/products', {
+        params: {
+          category: productData.category?.slug,
+          limit: 10,
+        },
+      }),
+      token ? api.get('/vendor/followed') : null,
+    ]);
 
-      // --- Handle Vendor Results ---
-      if (vendorRes.status === 'fulfilled') {
-        setVendorData(vendorRes.value.data);
-      } else {
-        console.warn("VENDOR_REGISTRY_OFFLINE", vendorRes.reason);
-      }
+    const [vendorRes, recsRes, followRes] = results;
 
-      // --- Handle Recommendations ---
-      if (recsRes.status === 'fulfilled') {
-        const recData = recsRes.value.data.data || [];
-        setRecommended(recData.filter((p: any) => p.id !== id));
-      }
-
-      // --- Handle Following Status ---
-      if (followRes.status === 'fulfilled') {
-        const followedArray = followRes.value.data || [];
-        setIsFollowing(followedArray.some((v: any) => v.id === productData.vendorId));
-      }
+    // Vendor
+    if (vendorRes.status === 'fulfilled') {
+      setVendorData(vendorRes.value.data);
     }
+
+    // Recommendations
+    if (recsRes.status === 'fulfilled') {
+      const recData = recsRes.value.data.data || [];
+      setRecommended(recData.filter((p: any) => p.id !== id));
+    }
+
+    // Following
+if (
+  followRes &&
+  followRes.status === 'fulfilled' &&
+  followRes.value
+) {
+  const followed = followRes.value.data || [];
+  setIsFollowing(
+    followed.some((v: any) => v.id === productData.vendorId)
+  );
+}
   } catch (err) {
-    console.error("REGISTRY_CRITICAL_SYNC_ERROR", err);
-    // Optional: toast.error("Failed to sync item data")
+    console.error('FETCH_ERROR:', err);
   } finally {
     setLoading(false);
   }
 };
 
- useEffect(() => {
-    if (!productId) return;
+useEffect(() => {
+  if (!productId) return;
 
-    const recordView = async () => {
-      try {
-        await api.post(`/user/history/${productId}`);
-      } catch (error) {
-        console.error('History record failed:', error);
-      }
-    };
+  const recordView = async () => {
+    try {
+      await api.post(`/user/history/${productId}`);
+    } catch (err) {
+      console.warn('History failed:', err);
+    }
+  };
 
-    recordView();
-  }, [productId]);
+  recordView();
+}, [productId]);
+
 
   useEffect(() => {
   if (product?.variants?.length) {
@@ -118,9 +122,12 @@ const fetchAllData = async () => {
 }, [product]);
 
 
-  useEffect(() => {
-    fetchAllData();
-  }, [id]);
+useEffect(() => {
+  if (!productId) return;
+
+  fetchAllData(productId);
+}, [productId]);
+
 
 const resolvedImages = useMemo(() => {
   if (selectedVariant?.images?.length) {
@@ -228,7 +235,6 @@ const handleBuyNow = () => {
         setIsFollowing(true);
         toast.success("CONNECTION_ESTABLISHED: Following store");
       }
-      fetchAllData(); 
     } catch (err: any) {
       toast.error("PROTOCOL_ERROR: Action rejected.");
     }
