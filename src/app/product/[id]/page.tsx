@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo , useCallback } from 'react';
 import Image from 'next/image';
 import { 
   Star, Minus, Plus, Heart, ShoppingBag, 
@@ -18,13 +18,10 @@ import { Navbar } from '@/src/components/navbar/Navbar';
 import { ProductSkeleton } from '@/src/components/product/ProductSkeleton';
 
 export default function ProductDetailsPage() {
-  const params = useParams();
-  const router = useRouter(); // Moved up for better scope accessibility
   
-  const productId = useMemo(() => {
-    if (!params?.id) return null;
-    return Array.isArray(params.id) ? params.id[0] : params.id;
-  }, [params]);
+  const router = useRouter();
+    const params = useParams();
+  const productId = params?.id as string;
   
   const [product, setProduct] = useState<any>(null);
   const [vendorData, setVendorData] = useState<any>(null);
@@ -34,124 +31,188 @@ export default function ProductDetailsPage() {
   const [activeImg, setActiveImg] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
-  const [selectedSize, setSelectedSize] = useState<string>('');
+const [selectedSize, setSelectedSize] = useState<string>('');
 
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems } = useWishlistStore();
-
+  
+  // 🛡️ Ensure apiBase matches your deployed NestJS URL in production
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
-  const fetchAllData = async (id: string) => {
-    try {
-      setLoading(true);
+const fetchAllData = async () => {
+  if (!productId) return;
 
-      const { data: productData } = await api.get(`/products/${id}`);
-      setProduct(productData);
+  try {
+    setLoading(true);
 
-      if (!productData.vendorId) return;
+    // 🚀 STEP 1: Core Product Fetch (Required for everything else)
+    const { data: productData } = await api.get(`/products/${productId}`);
+    setProduct(productData);
 
+    // 🚀 STEP 2: Parallel Discovery (Vendor, Recommendations, & Auth Status)
+    if (productData.vendorId) {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-      const results = await Promise.allSettled([
+      // Execute these three independent requests simultaneously
+      const [vendorRes, recsRes, followRes] = await Promise.allSettled([
+        // A. Public Vendor Stats & Slug
         api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
-        api.get('/products', {
-          params: { category: productData.category?.slug, limit: 10 },
+        
+        // B. Contextual Recommendations
+        api.get('/products', { 
+          params: { 
+            category: productData.category?.slug, 
+            limit: 10 
+          } 
         }),
-        token ? api.get('/vendor/followed') : Promise.resolve(null), // Clean fallback
+
+        // C. Auth-dependent Following Status
+        token ? api.get('/vendors/followed') : Promise.reject('GUEST_SESSION')
       ]);
 
-      const [vendorRes, recsRes, followRes] = results;
-
+      // --- Handle Vendor Results ---
       if (vendorRes.status === 'fulfilled') {
         setVendorData(vendorRes.value.data);
+      } else {
+        console.warn("VENDOR_REGISTRY_OFFLINE", vendorRes.reason);
       }
 
+      // --- Handle Recommendations ---
       if (recsRes.status === 'fulfilled') {
         const recData = recsRes.value.data.data || [];
-        setRecommended(recData.filter((p: any) => p.id !== id));
+        setRecommended(recData.filter((p: any) => p.id !== productId));
       }
 
-      // 🛡️ FIXED: Checked for fulfilled status AND safely accessed .value
-      if (followRes.status === 'fulfilled' && followRes.value) {
-        const followed = followRes.value.data || [];
-        setIsFollowing(followed.some((v: any) => v.id === productData.vendorId));
+      // --- Handle Following Status ---
+      if (followRes.status === 'fulfilled') {
+        const followedArray = followRes.value.data || [];
+        setIsFollowing(followedArray.some((v: any) => v.id === productData.vendorId));
       }
-    } catch (err) {
-      console.error('FETCH_ERROR:', err);
-    } finally {
-      setLoading(false);
+    }
+  } catch (err) {
+    console.error("REGISTRY_CRITICAL_SYNC_ERROR", err);
+    // Optional: toast.error("Failed to sync item data")
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  if (!productId) return;
+
+  const token = localStorage.getItem('token');
+  if (!token) return; // ✅ STOP HERE IF NOT LOGGED IN
+
+  const recordView = async () => {
+    try {
+      await api.post(`/user/history/${productId}`);
+    } catch (error) {
+      console.error('History record failed:', error);
     }
   };
+
+  recordView();
+}, [productId]);
+
+  useEffect(() => {
+  if (product?.variants?.length) {
+    setSelectedVariant(product.variants[0]);
+  }
+}, [product]);
+
 
   useEffect(() => {
     if (!productId) return;
-    const recordView = async () => {
-      try { await api.post(`/user/history/${productId}`); } 
-      catch (err) { console.warn('History failed:', err); }
-    };
-    recordView();
-    fetchAllData(productId); // 🛡️ FIXED: Added the missing ID argument
+    fetchAllData();
   }, [productId]);
 
-  useEffect(() => {
-    if (product?.variants?.length) {
-      setSelectedVariant(product.variants[0]);
-    }
-  }, [product]);
+const resolvedImages = useMemo(() => {
+  if (selectedVariant?.images?.length) {
+    return selectedVariant.images.map((img: any) => {
+      const path = img.imageUrl;
 
-  const resolvedImages = useMemo(() => {
-    if (selectedVariant?.images?.length) {
-      return selectedVariant.images.map((img: any) => {
-        const path = img.imageUrl;
-        return path.startsWith('http') ? path : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
-      });
-    }
-    if (!product?.images || product.images.length === 0) return ["/placeholder.jpg"];
-    return product.images.map((img: any) => {
-      const path = typeof img === 'string' ? img : img.imageUrl;
-      return path.startsWith('http') ? path : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+      return path.startsWith('http')
+        ? path
+        : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
     });
-  }, [selectedVariant, product, apiBase]);
+  }
 
-  const handleAddToCart = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error("AUTH_REQUIRED: Please sign in.");
-      router.push('/login');
-      return;
-    }
-    if (product.variants?.length && !selectedVariant) return toast.error("Select a variant");
-    if (selectedVariant?.sizes?.length && !selectedSize) return toast.error("Select a size");
+  if (!product?.images || product.images.length === 0) {
+    return ["/placeholder.jpg"];
+  }
 
-    addItem({
-      ...product,
-      quantity: qty,
-      image: resolvedImages[0],
-      variant: selectedVariant,
-      size: selectedSize
-    });
-    toast.success("Added to cart");
-  };
+  return product.images.map((img: any) => {
+    const path =
+      typeof img === 'string'
+        ? img
+        : img.imageUrl;
 
-  const handleBuyNow = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    if (product.variants?.length && !selectedVariant) return toast.error("Select a variant");
-    if (selectedVariant?.sizes?.length && !selectedSize) return toast.error("Select a size");
+    return path.startsWith('http')
+      ? path
+      : `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+  });
 
-    addItem({
-      ...product,
-      quantity: qty,
-      image: resolvedImages[0],
-      variant: selectedVariant,
-      size: selectedSize
-    });
-    router.push('/checkout');
-  };
+}, [selectedVariant, product, apiBase]);
 
+  // 🚀 AUTH_INTERCEPT: Add to Cart
+const handleAddToCart = () => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    toast.error("AUTH_REQUIRED: Please sign in.");
+    router.push('/login');
+    return;
+  }
+
+  if (product.variants?.length && !selectedVariant) {
+    return toast.error("Select a variant");
+  }
+
+  if (selectedVariant?.sizes?.length && !selectedSize) {
+    return toast.error("Select a size");
+  }
+
+  addItem({
+    ...product,
+    quantity: qty,
+    image: resolvedImages[0],
+    variant: selectedVariant,
+    size: selectedSize
+  });
+
+  toast.success("Added to cart");
+};
+
+  // 🚀 AUTH_INTERCEPT: Buy Now
+const handleBuyNow = () => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    router.push('/login');
+    return;
+  }
+
+  if (product.variants?.length && !selectedVariant) {
+    return toast.error("Select a variant");
+  }
+
+  if (selectedVariant?.sizes?.length && !selectedSize) {
+    return toast.error("Select a size");
+  }
+
+  addItem({
+    ...product,
+    quantity: qty,
+    image: resolvedImages[0],
+    variant: selectedVariant,
+    size: selectedSize
+  });
+
+  router.push('/checkout');
+};
+
+
+  // 🚀 AUTH_INTERCEPT: Follow Toggle
   const handleFollowToggle = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -160,6 +221,7 @@ export default function ProductDetailsPage() {
       return;
     }
     if (!product?.vendorId) return;
+
     try {
       if (isFollowing) {
         await api.delete(`/vendors/${product.vendorId}/unfollow`);
@@ -170,12 +232,11 @@ export default function ProductDetailsPage() {
         setIsFollowing(true);
         toast.success("CONNECTION_ESTABLISHED: Following store");
       }
+      fetchAllData(); 
     } catch (err: any) {
       toast.error("PROTOCOL_ERROR: Action rejected.");
     }
   };
-
-
 
   if (loading) return <ProductSkeleton />;
   if (!product) return <div className="py-40 text-center font-black uppercase tracking-widest text-zinc-400">Registry_Entry_Not_Found</div>;
@@ -221,7 +282,10 @@ export default function ProductDetailsPage() {
           {/* 🖼️ VISUALS */}
           <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-24">
             <div className="relative aspect-4/5 bg-gray-50 rounded-3xl overflow-hidden border border-gray-100 group">
-              <Image src={resolvedImages[activeImg]} alt={product.title} fill className="object-cover" priority />
+              <Image src={resolvedImages[activeImg]} 
+              alt={product.title} 
+              fill 
+              className="object-cover" priority />
               <button className="absolute top-4 right-4 p-3 bg-white shadow-xl rounded-full hover:text-[#A4143D] transition-all"><Share2 size={18}/></button>
             </div>
 
@@ -242,7 +306,16 @@ export default function ProductDetailsPage() {
                <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-white border border-zinc-200 flex items-center justify-center relative overflow-hidden">
                     <Store size={24} className="text-zinc-200" />
-                    {vendorData?.logo && <Image src={vendorData.logo} fill alt="logo" className="object-cover" />}
+                    {vendorData?.logo && (
+  <Image 
+    src={vendorData.logo.startsWith('http') 
+      ? vendorData.logo 
+      : `${apiBase}/uploads/${vendorData.logo}`}
+    fill 
+    alt="logo" 
+    className="object-cover" 
+  />
+)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -439,5 +512,3 @@ export default function ProductDetailsPage() {
     </div>
   )
 }
-
-
