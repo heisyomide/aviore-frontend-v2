@@ -12,6 +12,8 @@ export interface CartItem {
   quantity: number;
   selected: boolean;
   isOutOfStock: boolean;
+  variant?: any; 
+  size?: string;
 }
 
 interface CartState {
