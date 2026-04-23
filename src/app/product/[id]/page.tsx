@@ -27,7 +27,11 @@ export default function ProductDetailsPage() {
   const { id: productId } = useParams();
   const router = useRouter();
   
-  // 1. Data Fetching
+  // 1. Hydration Guard: Prevents the "Server vs Client" disagreement
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  // 2. Data Fetching
   const { 
     product, vendor, recommended, loading, 
     selectedVariant, setSelectedVariant,
@@ -35,11 +39,24 @@ export default function ProductDetailsPage() {
     qty, setQty 
   } = useProductData(productId as string);
 
-  // 2. Local State for Interaction (Fixes Hydration/UI Lag)
   const [isFollowing, setIsFollowing] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
-  // 3. Handlers
+  // 3. Price Logic: Normalized for string-to-number safety
+  const priceData = useMemo(() => {
+    // If product.price is "5000", parseFloat makes it a real number
+    const basePrice = typeof product?.price === 'string' 
+      ? parseFloat(product.price) 
+      : (product?.price || 0);
+
+    return {
+      current: basePrice,
+      original: basePrice * 1.2,
+      discount: 20
+    };
+  }, [product?.price]);
+
+  // 4. Handlers
   const handleAddToCart = async () => {
     if (!product) return;
     
@@ -48,44 +65,36 @@ export default function ProductDetailsPage() {
       return;
     }
 
-    await addItem({
-      id: product.id,
-      name: product.title,
-      price: product.price,
-      image: selectedVariant?.images?.[0]?.imageUrl || product.images?.[0] || '/placeholder.jpg',
-      vendorId: product.vendorId,
-      stock: product.stock,
-      quantity: qty,
-      size: selectedSize,
-      variant: selectedVariant
-    });
-  };
+    // Pass the numeric price calculated in useMemo
+ // Inside your handleAddToCart function in page.tsx
+
+await addItem({
+  id: product.id,
+  name: product.title,
+  price: priceData.current, 
+  image: selectedVariant?.images?.[0]?.imageUrl || product.images?.[0] || '/placeholder.jpg',
+  vendorId: product.vendorId,
+  stock: product.stock,
+  quantity: qty,
+  size: selectedSize,
+  // FIX: Change 'variantId' to 'variant' as per the TS error suggestion
+  variant: selectedVariant // This passes the whole object, which is usually safer
+});
 
   const handleBuyNow = async () => {
     await handleAddToCart();
     router.push('/cart');
   };
 
-  // satisfies type () => Promise<void>
   const handleFollow = async () => {
-    // Logic for following vendor
     setIsFollowing(!isFollowing);
-    // await api.post(`/vendors/${vendor?.id}/follow`);
   };
 
-  // 4. Price Logic (Guarded against null product)
-  const priceData = useMemo(() => {
-    const basePrice = product?.price || 0;
-    return {
-      current: basePrice,
-      original: basePrice * 1.2,
-      discount: 20
-    };
-  }, [product?.price]);
-
-  // 5. Early Returns (Critical for preventing null-pointer exceptions)
-  if (loading) return <ProductSkeleton />;
+  // 5. Defensive Returns
+  // If we aren't mounted or are still loading, show the Skeleton.
+  if (!mounted || loading) return <ProductSkeleton />;
   
+  // If loading finished but no product exists, show 404 state.
   if (!product) {
     return (
       <div className="min-h-screen bg-white">
@@ -104,10 +113,10 @@ export default function ProductDetailsPage() {
       <Container className="py-12 lg:py-24">
         <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
           
-          {/* VISUALS COLUMN */}
           <div className="lg:col-span-7 space-y-12">
+            {/* FIX: Ensure we pass a flat array of image strings to the gallery */}
             <ProductGallery 
-              images={selectedVariant?.images || product.images || []} 
+              images={selectedVariant?.images?.map((img: any) => img.imageUrl) || product.images || []} 
               title={product.title} 
             />
             <div className="hidden lg:block pt-12 border-t border-zinc-100">
@@ -115,7 +124,6 @@ export default function ProductDetailsPage() {
             </div>
           </div>
 
-          {/* PURCHASE COLUMN */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
             <ProductInfo 
               title={product.title}
@@ -145,7 +153,6 @@ export default function ProductDetailsPage() {
               />
             </div>
 
-            {/* Guarded VendorCard */}
             {vendor && (
               <VendorCard 
                 vendor={vendor} 
@@ -166,4 +173,5 @@ export default function ProductDetailsPage() {
       </Container>
     </div>
   );
+}
 }
