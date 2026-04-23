@@ -65,12 +65,15 @@ const priceData = useMemo(() => {
 }, [product]);
 
 const safeImage =
-  selectedVariant?.images?.[0]?.imageUrl ||
-  (typeof product.images?.[0] === 'string'
-    ? product.images[0]
-    : product.images?.[0]?.imageUrl) ||
-  '/placeholder.jpg';
+  Array.isArray(selectedVariant?.images) && selectedVariant.images.length > 0
+    ? selectedVariant.images[0]?.imageUrl
+    : Array.isArray(product?.images)
+    ? typeof product.images[0] === 'string'
+      ? product.images[0]
+      : product.images[0]?.imageUrl
+    : '/placeholder.jpg';
 
+    
   // 4. Handlers
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
@@ -139,7 +142,13 @@ const safeImage =
           {/* GALLERY SECTION */}
           <div className="lg:col-span-7 space-y-12">
             <ProductGallery 
-              images={selectedVariant?.images?.map((img: any) => img.imageUrl) || product.images || []} 
+              images={
+  Array.isArray(selectedVariant?.images)
+    ? selectedVariant.images.map((img: any) => img?.imageUrl || img)
+    : Array.isArray(product?.images)
+    ? product.images
+    : []
+}
               title={product.title} 
             />
             <div className="hidden lg:block pt-12 border-t border-zinc-100">
