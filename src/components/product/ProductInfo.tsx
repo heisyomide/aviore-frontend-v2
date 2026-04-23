@@ -3,9 +3,9 @@
 import { Star } from 'lucide-react';
 
 interface ProductInfoProps {
-  title: string;
+  title?: string;
   subTitle?: string;
-  price: number;
+  price?: number;
   originalPrice?: number;
   discount?: number;
   rating?: number;
@@ -48,7 +48,7 @@ export function ProductInfo({
       {/* 3. Price Display */}
       <div className="flex items-baseline gap-4 pt-2">
         <span className="text-4xl font-bold text-[#A4143D] tracking-tighter">
-          ₦{price.toLocaleString()}
+          ₦{Number(price || 0).toLocaleString()}
         </span>
         {originalPrice && (
           <div className="flex flex-col">
@@ -56,7 +56,7 @@ export function ProductInfo({
               ₦{originalPrice.toLocaleString()}
             </span>
             <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-tighter">
-              You save ₦{(originalPrice - price).toLocaleString()} ({discount}%)
+              You save ₦{Number((originalPrice || 0) - (price || 0)).toLocaleString()} ({discount || 0}%)
             </span>
           </div>
         )}

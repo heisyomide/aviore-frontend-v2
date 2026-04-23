@@ -45,19 +45,31 @@ export default function ProductDetailsPage() {
   const addItem = useCartStore((state) => state.addItem);
 
   // 3. Defensive Price Logic
-  const priceData = useMemo(() => {
-    // Fallback values prevent '.toString()' or '.toFixed()' crashes downstream
-    if (!product) return { current: 0, original: 0, discount: 0 };
-    
-    const rawPrice = product.price;
-    const basePrice = typeof rawPrice === 'string' ? parseFloat(rawPrice) : (rawPrice || 0);
+const priceData = useMemo(() => {
+  if (!product) return { current: 0, original: 0, discount: 0 };
 
-    return {
-      current: basePrice,
-      original: basePrice * 1.2,
-      discount: 20
-    };
-  }, [product]);
+  const basePrice =
+    typeof product.price === 'number'
+      ? product.price
+      : typeof product.price === 'string'
+      ? parseFloat(product.price)
+      : 0;
+
+  const safePrice = isNaN(basePrice) ? 0 : basePrice;
+
+  return {
+    current: safePrice,
+    original: safePrice * 1.2,
+    discount: safePrice ? 20 : 0
+  };
+}, [product]);
+
+const safeImage =
+  selectedVariant?.images?.[0]?.imageUrl ||
+  (typeof product.images?.[0] === 'string'
+    ? product.images[0]
+    : product.images?.[0]?.imageUrl) ||
+  '/placeholder.jpg';
 
   // 4. Handlers
   const handleAddToCart = useCallback(async () => {
@@ -72,7 +84,7 @@ export default function ProductDetailsPage() {
       id: product.id,
       name: product.title,
       price: priceData.current, 
-      image: selectedVariant?.images?.[0]?.imageUrl || product.images?.[0] || '/placeholder.jpg',
+      image: safeImage,
       vendorId: product.vendorId,
       stock: product.stock,
       quantity: qty,
@@ -173,7 +185,11 @@ export default function ProductDetailsPage() {
               />
             )}
             
-            <DeliveryInfo />
+            <DeliveryInfo 
+  origin={product.origin}
+  min={product.deliveryMin}
+  max={product.deliveryMax}
+/>
 
             <div className="lg:hidden pt-10 border-t border-zinc-100">
               <ProductDescription description={product.description} />
