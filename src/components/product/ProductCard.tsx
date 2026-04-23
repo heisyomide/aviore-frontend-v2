@@ -17,8 +17,7 @@ import { useWishlistStore } from '../../store/useWishlistStore';
 
 
 
-const [mounted, setMounted] = useState(false);
-useEffect(() => setMounted(true), []);
+
 /* ================= TYPES ================= */
 
 type ProductImage =
@@ -66,6 +65,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
 
   const addItem = useCartStore((s) => s.addItem);
   const { toggleWishlist, isWishlisted } = useWishlistStore();
@@ -120,7 +121,7 @@ const resolvedImage = useMemo(() => {
     ? product.reviews.length
     : product.reviewCount || 0;
 
-  const wishlisted = isWishlisted(product.id);
+  const wishlisted = mounted ? isWishlisted(product.id) : false;
 
   /* ================= ACTIONS ================= */
 
