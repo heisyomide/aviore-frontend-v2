@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 // Hooks & Store
@@ -27,11 +27,10 @@ export default function ProductDetailsPage() {
   const { id: productId } = useParams();
   const router = useRouter();
   
-  // 1. Hydration Guard
+  // 1. Hydration & Mount State
   const [mounted, setMounted] = useState(false);
   useEffect(() => { 
     setMounted(true); 
-    console.log("AVIORE_DEBUG: Page Mounted");
   }, []);
 
   // 2. Data Fetching
@@ -45,12 +44,13 @@ export default function ProductDetailsPage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
-  // 3. Price Logic
+  // 3. Defensive Price Logic
   const priceData = useMemo(() => {
+    // Fallback values prevent '.toString()' or '.toFixed()' crashes downstream
     if (!product) return { current: 0, original: 0, discount: 0 };
-    const basePrice = typeof product.price === 'string' 
-      ? parseFloat(product.price) 
-      : (product.price || 0);
+    
+    const rawPrice = product.price;
+    const basePrice = typeof rawPrice === 'string' ? parseFloat(rawPrice) : (rawPrice || 0);
 
     return {
       current: basePrice,
@@ -60,7 +60,7 @@ export default function ProductDetailsPage() {
   }, [product]);
 
   // 4. Handlers
-  const handleAddToCart = async () => {
+  const handleAddToCart = useCallback(async () => {
     if (!product) return;
     
     if (product.variants?.length > 0 && !selectedSize) {
@@ -77,34 +77,42 @@ export default function ProductDetailsPage() {
       stock: product.stock,
       quantity: qty,
       size: selectedSize,
-      variant: selectedVariant // Passed as 'variant' to match your store
+      variant: selectedVariant 
     });
-  };
+  }, [product, selectedSize, selectedVariant, priceData, qty, addItem]);
 
   const handleBuyNow = async () => {
-    handleAddToCart();
+    await handleAddToCart();
     router.push('/cart');
   };
 
-// Inside ProductDetailsPage component
-const handleFollow = async () => {
-  setIsFollowing(!isFollowing);
-  // In the future, you'll add your API call here:
-  // await api.post(`/vendors/${vendor?.id}/follow`);
-};
+  const handleFollow = async () => {
+    setIsFollowing(prev => !prev);
+    // Future API call: await toggleFollow(vendor?.id);
+  };
 
-  // 5. Early Returns
-  if (!mounted || loading) {
-    return <ProductSkeleton />;
-  }
+  // 5. High-Priority Guard Rails
+  // Prevents UI flicker and crashes if data is missing during a timeout
+  if (!mounted || loading) return <ProductSkeleton />;
   
-  if (!product) {
+  if (!product || !product.id) {
     return (
       <div className="min-h-screen bg-white">
         <Navbar />
-        <div className="py-40 text-center font-bold text-zinc-400 uppercase tracking-widest">
-          Product Not Found
-        </div>
+        <Container className="py-40 text-center">
+          <h1 className="text-sm font-bold text-zinc-400 uppercase tracking-[0.3em] mb-4">
+            Product Not Found
+          </h1>
+          <p className="text-zinc-500 mb-8 max-w-xs mx-auto">
+            The item you are looking for may have been moved or is currently unavailable.
+          </p>
+          <button 
+            onClick={() => router.push('/shop')}
+            className="px-8 py-3 bg-black text-white rounded-full text-xs uppercase tracking-widest hover:bg-zinc-800 transition-colors"
+          >
+            Back to Shop
+          </button>
+        </Container>
       </div>
     );
   }
@@ -116,7 +124,7 @@ const handleFollow = async () => {
       <Container className="py-12 lg:py-24">
         <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
           
-          {/* GALLERY */}
+          {/* GALLERY SECTION */}
           <div className="lg:col-span-7 space-y-12">
             <ProductGallery 
               images={selectedVariant?.images?.map((img: any) => img.imageUrl) || product.images || []} 
@@ -127,7 +135,7 @@ const handleFollow = async () => {
             </div>
           </div>
 
-          {/* SIDEBAR */}
+          {/* PRODUCT CONFIGURATION SIDEBAR */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
             <ProductInfo 
               title={product.title}
@@ -173,7 +181,9 @@ const handleFollow = async () => {
           </aside>
         </div>
 
-        <RecommendedProducts products={recommended || []} />
+        {recommended && recommended.length > 0 && (
+          <RecommendedProducts products={recommended} />
+        )}
       </Container>
     </div>
   );
