@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 // Hooks & Store
-import { useProductData } from '@/src/hooks/useProductData'; // New custom hook for fetching
+import { useProductData } from '@/src/hooks/useProductData';
 import { useCartStore } from '@/src/store/useCartStore';
+import { api } from '@/src/lib/axios'; // Ensure you have your axios instance
 
 // Components
 import { ProductGallery } from '@/src/components/product/ProductGallery';
@@ -35,14 +36,25 @@ export default function ProductDetailsPage() {
     qty, setQty 
   } = useProductData(productId as string);
 
-  // 2. Zustand Store Actions
+  // 2. Vendor Interaction State
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [localFollowerCount, setLocalFollowerCount] = useState(0);
+
+  // Sync local state when vendor data arrives
+  useEffect(() => {
+    if (vendor) {
+      setLocalFollowerCount(vendor.followers);
+      // setIsFollowing(vendor.userIsFollowing); // Logic for checking if current user follows
+    }
+  }, [vendor]);
+
+  // 3. Zustand Store Actions
   const addItem = useCartStore((state) => state.addItem);
 
-  // 3. Optimized Event Handlers
+  // 4. Optimized Event Handlers
   const handleAddToCart = async () => {
     if (!product) return;
     
-    // Safety check for variants
     if (product.variants?.length > 0 && !selectedSize) {
       alert("Please select a size to continue.");
       return;
@@ -61,12 +73,25 @@ export default function ProductDetailsPage() {
     });
   };
 
-  const handleBuyNow = async () => {
-    await handleAddToCart();
-    router.push('/cart');
+  const handleFollowVendor = async () => {
+    if (!vendor) return;
+
+    try {
+      // Optimistic Update
+      const previousState = isFollowing;
+      setIsFollowing(!previousState);
+      setLocalFollowerCount(prev => previousState ? prev - 1 : prev + 1);
+
+      // Actual API call
+      await api.post(`/vendors/${vendor.id}/follow`);
+    } catch (err) {
+      // Revert if API fails
+      setIsFollowing(prev => !prev);
+      setLocalFollowerCount(prev => isFollowing ? prev + 1 : prev - 1);
+      console.error("FOLLOW_ERROR", err);
+    }
   };
 
-  // 4. Memoized Prices (Avoid recalculating on every re-render)
   const priceData = useMemo(() => ({
     current: product?.price || 0,
     original: (product?.price || 0) * 1.2,
@@ -74,7 +99,7 @@ export default function ProductDetailsPage() {
   }), [product?.price]);
 
   if (loading) return <ProductSkeleton />;
-  if (!product) return <div className="py-40 text-center font-bold text-zinc-400">PRODUCT_NOT_FOUND</div>;
+  if (!product) return <div className="py-40 text-center font-bold text-zinc-400 text-xs uppercase tracking-widest">Product Not Found</div>;
 
   return (
     <div className="min-h-screen bg-white">
@@ -83,18 +108,16 @@ export default function ProductDetailsPage() {
       <Container className="py-12 lg:py-24">
         <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
           
-          {/* VISUALS COLUMN */}
           <div className="lg:col-span-7 space-y-12">
             <ProductGallery 
               images={selectedVariant?.images || product.images} 
               title={product.title} 
             />
-            <div className="hidden lg:block">
+            <div className="hidden lg:block pt-12 border-t border-zinc-100">
               <ProductDescription description={product.description} />
             </div>
           </div>
 
-          {/* PURCHASE COLUMN (Sticky) */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
             <ProductInfo 
               title={product.title}
@@ -117,25 +140,29 @@ export default function ProductDetailsPage() {
                 setQty={setQty} 
                 maxStock={product.stock} 
               />
-<ProductActions 
-  stockCount={product.stock}
-  onAddToCart={handleAddToCart} // The real deal
-  onBuyNow={() => {
-    handleAddToCart();
-    router.push('/cart');
-  }} 
-/>
+              <ProductActions 
+                stockCount={product.stock}
+                onAddToCart={handleAddToCart}
+                onBuyNow={async () => {
+                  await handleAddToCart();
+                  router.push('/cart');
+                }} 
+              />
             </div>
 
+            {/* FIXED VENDOR CARD */}
             <VendorCard 
-              vendor={vendor} 
-              isFollowing={false} 
-              onFollow={() => {}} 
+              vendor={{
+                ...vendor,
+                followers: localFollowerCount // Passing the dynamic local count
+              }} 
+              isFollowing={isFollowing} 
+              onFollow={handleFollowVendor} 
             />
             
             <DeliveryInfo />
 
-            <div className="lg:hidden">
+            <div className="lg:hidden border-t border-zinc-100 pt-10">
               <ProductDescription description={product.description} />
             </div>
           </aside>
