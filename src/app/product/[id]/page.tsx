@@ -73,7 +73,7 @@ const safeImage =
       : product.images[0]?.imageUrl
     : '/placeholder.jpg';
 
-    
+
   // 4. Handlers
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
@@ -141,16 +141,14 @@ const safeImage =
           
           {/* GALLERY SECTION */}
           <div className="lg:col-span-7 space-y-12">
-            <ProductGallery 
-              images={
-  Array.isArray(selectedVariant?.images)
-    ? selectedVariant.images.map((img: any) => img?.imageUrl || img)
-    : Array.isArray(product?.images)
-    ? product.images
-    : []
-}
-              title={product.title} 
-            />
+<ProductGallery 
+  images={
+    selectedVariant?.images || 
+    product?.images || 
+    []
+  } 
+  title={product?.title || 'Product'} 
+/>
             <div className="hidden lg:block pt-12 border-t border-zinc-100">
               <ProductDescription description={product.description} />
             </div>

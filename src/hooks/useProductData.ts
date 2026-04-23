@@ -41,9 +41,9 @@ export function useProductData(productId: string): UseProductDataReturn {
       setProduct(productData);
 
       // Initialize variant if exists
-      if (productData.variants?.length > 0) {
-        setSelectedVariant(productData.variants[0]);
-      }
+if (productData.variants?.length > 0 && productData.variants[0]) {
+  setSelectedVariant(productData.variants[0]);
+}
 
       // 2. Parallel Secondary Fetching (Vendor + Recommendations)
       const [vRes, rRes] = await Promise.all([

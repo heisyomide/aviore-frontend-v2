@@ -5,37 +5,45 @@ import Image from 'next/image';
 import { Share2, Heart } from 'lucide-react';
 
 interface GalleryProps {
-  images: any[];
+  images: any[];        // Keep as is
   title: string;
 }
 
 export function ProductGallery({ images, title }: GalleryProps) {
   const [activeImg, setActiveImg] = useState(0);
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000'; // your backend port
 
-  // Resolve paths: handles strings or objects, local or remote
-// Inside ProductGallery.tsx
-const resolvedImages = useMemo(() => {
-  // 1. Ensure images is an array and filter out any null/undefined values
-  const validImages = (images || []).filter(img => img !== null && img !== undefined);
+  const resolvedImages = useMemo(() => {
+    // Stronger safety: treat null/undefined as empty array
+    const imageList = Array.isArray(images) ? images : [];
 
-  if (validImages.length === 0) return ["/placeholder.jpg"];
+    if (imageList.length === 0) {
+      return ['/placeholder.jpg'];
+    }
 
-  return validImages.map((img) => {
-    // 2. Extract path safely
-    const path = typeof img === 'string' ? img : img?.imageUrl;
-    
-    // 3. Final fallback if path is still missing
-    if (!path) return "/placeholder.jpg";
+    return imageList
+      .filter((img): img is any => img != null) // remove null/undefined
+      .map((img) => {
+        const path = typeof img === 'string' 
+          ? img 
+          : img?.imageUrl || img?.url;
 
-    if (path.startsWith('http')) return path;
-    return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
-  });
-}, [images, apiBase]);
+        if (!path) return '/placeholder.jpg';
+
+        if (path.startsWith('http')) return path;
+
+        // Clean path and add base URL
+        const cleanPath = path.replace(/^\//, '');
+        return `${apiBase}/uploads/${cleanPath}`;
+      });
+  }, [images, apiBase]);
+
+  // Safety for active image index
+  const currentImage = resolvedImages[activeImg] || resolvedImages[0] || '/placeholder.jpg';
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
-      {/* 1. THUMBNAIL STRIP (Desktop: Left, Mobile: Bottom) */}
+      {/* Thumbnail Strip */}
       <div className="flex md:flex-col gap-3 order-2 md:order-1 overflow-x-auto no-scrollbar py-2">
         {resolvedImages.map((img, idx) => (
           <button
@@ -45,15 +53,20 @@ const resolvedImages = useMemo(() => {
               activeImg === idx ? 'border-black scale-95 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
             }`}
           >
-            <Image src={img} alt={`${title} view ${idx}`} fill className="object-cover" />
+            <Image 
+              src={img} 
+              alt={`${title} view ${idx}`} 
+              fill 
+              className="object-cover" 
+            />
           </button>
         ))}
       </div>
 
-      {/* 2. MAIN HERO IMAGE */}
+      {/* Main Image */}
       <div className="flex-1 relative aspect-square md:aspect-[4/5] rounded-[2.5rem] bg-zinc-50 overflow-hidden order-1 md:order-2 group">
         <Image
-          src={resolvedImages[activeImg]}
+          src={currentImage}
           alt={title}
           fill
           className="object-cover transition-transform duration-700 group-hover:scale-105"
