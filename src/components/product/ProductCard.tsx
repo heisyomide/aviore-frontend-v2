@@ -136,7 +136,12 @@ export function ProductCard({ product }: { product: any }) {
           </button>
         </div>
 
-        <DeliveryBadge min={product.deliveryMin} max={product.deliveryMax} unit={product.deliveryUnit} />
+        <DeliveryBadge 
+  origin={product.origin}
+  min={product.deliveryMin} 
+  max={product.deliveryMax} 
+  unit={product.deliveryUnit} 
+/>
 
         <div className="flex items-center justify-between border-t border-gray-50 pt-3">
           <Rating rate={rating} count={reviewCount} />
@@ -195,12 +200,36 @@ const ProductImageSection = memo(({
   </div>
 ));
 
-const DeliveryBadge = memo(({ min, max, unit }: any) => {
-  if (!min || !max) return null;
+const DeliveryBadge = memo(({ origin, min, max, unit }: {
+  origin?: 'LOCAL' | 'INTERNATIONAL';
+  min?: number;
+  max?: number;
+  unit?: string;
+}) => {
+  if (!origin) return null;
+
+  const isLocal = origin === 'LOCAL';
+
   return (
-    <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 uppercase">
+    <div className={`flex items-center gap-1 text-[9px] font-bold uppercase ${
+      isLocal ? 'text-emerald-600' : 'text-blue-600'
+    }`}>
       <Truck size={12} />
-      {min}-{max} {unit || 'days'} delivery
+
+      {/* Label */}
+      <span>
+        {isLocal ? 'Fast Local Delivery' : 'Ships Worldwide'}
+      </span>
+
+      {/* Dot separator */}
+      {(min && max) && <span className="opacity-40">•</span>}
+
+      {/* Delivery time */}
+      {(min && max) && (
+        <span>
+          {min}-{max} {unit || 'days'}
+        </span>
+      )}
     </div>
   );
 });
