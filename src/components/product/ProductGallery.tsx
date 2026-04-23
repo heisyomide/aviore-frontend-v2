@@ -14,14 +14,24 @@ export function ProductGallery({ images, title }: GalleryProps) {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   // Resolve paths: handles strings or objects, local or remote
-  const resolvedImages = useMemo(() => {
-    if (!images?.length) return ["/placeholder.jpg"];
-    return images.map((img) => {
-      const path = typeof img === 'string' ? img : img.imageUrl;
-      if (path.startsWith('http')) return path;
-      return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
-    });
-  }, [images, apiBase]);
+// Inside ProductGallery.tsx
+const resolvedImages = useMemo(() => {
+  // 1. Ensure images is an array and filter out any null/undefined values
+  const validImages = (images || []).filter(img => img !== null && img !== undefined);
+
+  if (validImages.length === 0) return ["/placeholder.jpg"];
+
+  return validImages.map((img) => {
+    // 2. Extract path safely
+    const path = typeof img === 'string' ? img : img?.imageUrl;
+    
+    // 3. Final fallback if path is still missing
+    if (!path) return "/placeholder.jpg";
+
+    if (path.startsWith('http')) return path;
+    return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+  });
+}, [images, apiBase]);
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
