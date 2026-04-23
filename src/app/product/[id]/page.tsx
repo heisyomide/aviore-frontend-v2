@@ -27,9 +27,12 @@ export default function ProductDetailsPage() {
   const { id: productId } = useParams();
   const router = useRouter();
   
-  // 1. Hydration Guard: Prevents the "Server vs Client" disagreement
+  // 1. Hydration Guard
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { 
+    setMounted(true); 
+    console.log("AVIORE_DEBUG: Page Mounted");
+  }, []);
 
   // 2. Data Fetching
   const { 
@@ -42,19 +45,19 @@ export default function ProductDetailsPage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
-  // 3. Price Logic: Normalized for string-to-number safety
+  // 3. Price Logic
   const priceData = useMemo(() => {
-    // If product.price is "5000", parseFloat makes it a real number
-    const basePrice = typeof product?.price === 'string' 
+    if (!product) return { current: 0, original: 0, discount: 0 };
+    const basePrice = typeof product.price === 'string' 
       ? parseFloat(product.price) 
-      : (product?.price || 0);
+      : (product.price || 0);
 
     return {
       current: basePrice,
       original: basePrice * 1.2,
       discount: 20
     };
-  }, [product?.price]);
+  }, [product]);
 
   // 4. Handlers
   const handleAddToCart = async () => {
@@ -65,36 +68,36 @@ export default function ProductDetailsPage() {
       return;
     }
 
-    // Pass the numeric price calculated in useMemo
- // Inside your handleAddToCart function in page.tsx
-
-await addItem({
-  id: product.id,
-  name: product.title,
-  price: priceData.current, 
-  image: selectedVariant?.images?.[0]?.imageUrl || product.images?.[0] || '/placeholder.jpg',
-  vendorId: product.vendorId,
-  stock: product.stock,
-  quantity: qty,
-  size: selectedSize,
-  // FIX: Change 'variantId' to 'variant' as per the TS error suggestion
-  variant: selectedVariant // This passes the whole object, which is usually safer
-});
+    addItem({
+      id: product.id,
+      name: product.title,
+      price: priceData.current, 
+      image: selectedVariant?.images?.[0]?.imageUrl || product.images?.[0] || '/placeholder.jpg',
+      vendorId: product.vendorId,
+      stock: product.stock,
+      quantity: qty,
+      size: selectedSize,
+      variant: selectedVariant // Passed as 'variant' to match your store
+    });
+  };
 
   const handleBuyNow = async () => {
-    await handleAddToCart();
+    handleAddToCart();
     router.push('/cart');
   };
 
-  const handleFollow = async () => {
-    setIsFollowing(!isFollowing);
-  };
+// Inside ProductDetailsPage component
+const handleFollow = async () => {
+  setIsFollowing(!isFollowing);
+  // In the future, you'll add your API call here:
+  // await api.post(`/vendors/${vendor?.id}/follow`);
+};
 
-  // 5. Defensive Returns
-  // If we aren't mounted or are still loading, show the Skeleton.
-  if (!mounted || loading) return <ProductSkeleton />;
+  // 5. Early Returns
+  if (!mounted || loading) {
+    return <ProductSkeleton />;
+  }
   
-  // If loading finished but no product exists, show 404 state.
   if (!product) {
     return (
       <div className="min-h-screen bg-white">
@@ -113,8 +116,8 @@ await addItem({
       <Container className="py-12 lg:py-24">
         <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
           
+          {/* GALLERY */}
           <div className="lg:col-span-7 space-y-12">
-            {/* FIX: Ensure we pass a flat array of image strings to the gallery */}
             <ProductGallery 
               images={selectedVariant?.images?.map((img: any) => img.imageUrl) || product.images || []} 
               title={product.title} 
@@ -124,6 +127,7 @@ await addItem({
             </div>
           </div>
 
+          {/* SIDEBAR */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
             <ProductInfo 
               title={product.title}
@@ -173,5 +177,4 @@ await addItem({
       </Container>
     </div>
   );
-}
 }
