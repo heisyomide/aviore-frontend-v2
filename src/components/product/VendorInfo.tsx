@@ -25,7 +25,7 @@ export const VendorInfo = ({
           <p className="text-sm font-medium">
             {vendorData?.storeName || product.vendor?.storeName}
           </p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs bg-zinc-900">
             Verified seller
           </p>
         </div>
@@ -33,7 +33,7 @@ export const VendorInfo = ({
 
       <button
         onClick={handleFollowToggle}
-        className="text-sm border px-4 py-2 rounded-lg"
+        className="text-sm border  px-4 py-2 rounded-lg"
       >
         {isFollowing ? 'Following' : 'Follow'}
       </button>

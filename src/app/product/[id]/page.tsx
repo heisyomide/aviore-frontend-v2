@@ -1,136 +1,146 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { api } from '@/src/lib/axios';
+import { useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 
-// --- Import our New Components ---
-import {ProductGallery} from '@/src/components/product/ProductGallery';
-import {ProductInfo} from '@/src/components/product/ProductInfo';
-import {VariantSelector} from '@/src/components/product/VariantSelector';
-import {QuantitySelector} from '@/src/components/product/QuantitySelector';
-import {ProductActions} from '@/src/components/product/ProductActions';
-import {VendorCard} from '@/src/components/product/VendorCard';
-import {DeliveryInfo} from '@/src/components/product/DeliveryInfo';
-import {ProductDescription} from '@/src/components/product/ProductDescription';
-import {RecommendedProducts} from '@/src/components/product/RecommendedProducts';
+// Hooks & Store
+import { useProductData } from '@/src/hooks/useProductData'; // New custom hook for fetching
+import { useCartStore } from '@/src/store/useCartStore';
 
-// --- Layout Wrappers ---
+// Components
+import { ProductGallery } from '@/src/components/product/ProductGallery';
+import { ProductInfo } from '@/src/components/product/ProductInfo';
+import { VariantSelector } from '@/src/components/product/VariantSelector';
+import { QuantitySelector } from '@/src/components/product/QuantitySelector';
+import { ProductActions } from '@/src/components/product/ProductActions';
+import { VendorCard } from '@/src/components/product/VendorCard';
+import { DeliveryInfo } from '@/src/components/product/DeliveryInfo';
+import { ProductDescription } from '@/src/components/product/ProductDescription';
+import { RecommendedProducts } from '@/src/components/product/RecommendedProducts';
+
+// Layout
 import { Container } from '@/src/components/layout/Container';
 import { Navbar } from '@/src/components/navbar/Navbar';
 import { ProductSkeleton } from '@/src/components/product/ProductSkeleton';
 
 export default function ProductDetailsPage() {
   const { id: productId } = useParams();
+  const router = useRouter();
   
-  // State Management
-  const [product, setProduct] = useState<any>(null);
-  const [vendor, setVendor] = useState<any>(null);
-  const [recommended, setRecommended] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Interactive State
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
-  const [selectedSize, setSelectedSize] = useState('');
-  const [qty, setQty] = useState(1);
+  // 1. Centralized Data Fetching
+  const { 
+    product, vendor, recommended, loading, 
+    selectedVariant, setSelectedVariant,
+    selectedSize, setSelectedSize,
+    qty, setQty 
+  } = useProductData(productId as string);
 
-  useEffect(() => {
-    async function loadData() {
-      if (!productId) return;
-      try {
-        setLoading(true);
-        const { data } = await api.get(`/products/${productId}`);
-        setProduct(data);
-        if (data.variants?.length) setSelectedVariant(data.variants[0]);
-        
-        // Fetch supplemental data
-        const [vRes, rRes] = await Promise.all([
-          api.get(`/storefront/vendors/public-profile/${data.vendorId}`),
-          api.get('/products', { params: { category: data.category?.slug, limit: 10 } })
-        ]);
-        setVendor(vRes.data);
-        setRecommended(rRes.data.data.filter((p: any) => p.id !== productId));
-      } catch (err) {
-        console.error("Layout_Mount_Error", err);
-      } finally {
-        setLoading(false);
-      }
+  // 2. Zustand Store Actions
+  const addItem = useCartStore((state) => state.addItem);
+
+  // 3. Optimized Event Handlers
+  const handleAddToCart = async () => {
+    if (!product) return;
+    
+    // Safety check for variants
+    if (product.variants?.length > 0 && !selectedSize) {
+      alert("Please select a size to continue.");
+      return;
     }
-    loadData();
-  }, [productId]);
+
+    await addItem({
+      id: product.id,
+      name: product.title,
+      price: product.price,
+      image: selectedVariant?.images?.[0]?.imageUrl || product.images?.[0] || '/placeholder.jpg',
+      vendorId: product.vendorId,
+      stock: product.stock,
+      quantity: qty,
+      size: selectedSize,
+      variant: selectedVariant
+    });
+  };
+
+  const handleBuyNow = async () => {
+    await handleAddToCart();
+    router.push('/cart');
+  };
+
+  // 4. Memoized Prices (Avoid recalculating on every re-render)
+  const priceData = useMemo(() => ({
+    current: product?.price || 0,
+    original: (product?.price || 0) * 1.2,
+    discount: 20
+  }), [product?.price]);
 
   if (loading) return <ProductSkeleton />;
-  if (!product) return <div className="py-40 text-center font-black text-zinc-300">ENTRY_NOT_FOUND</div>;
+  if (!product) return <div className="py-40 text-center font-bold text-zinc-400">PRODUCT_NOT_FOUND</div>;
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <Container className="py-12 lg:py-20">
-        <div className="grid lg:grid-cols-12 gap-16 xl:gap-24">
+      <Container className="py-12 lg:py-24">
+        <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
           
-          {/* LEFT COLUMN: VISUALS (Scrolling) */}
-          <div className="lg:col-span-7">
+          {/* VISUALS COLUMN */}
+          <div className="lg:col-span-7 space-y-12">
             <ProductGallery 
               images={selectedVariant?.images || product.images} 
               title={product.title} 
             />
-            
-            {/* Description is placed below the gallery on desktop to keep the buy panel accessible */}
             <div className="hidden lg:block">
               <ProductDescription description={product.description} />
             </div>
           </div>
 
-          {/* RIGHT COLUMN: INFO & ACTIONS (Sticky) */}
-          <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-32 space-y-10">
-              
-              <ProductInfo 
-                title={product.title}
-                price={product.price}
-                originalPrice={product.price * 1.2} // Example discount logic
-                discount={20}
+          {/* PURCHASE COLUMN (Sticky) */}
+          <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
+            <ProductInfo 
+              title={product.title}
+              price={priceData.current}
+              originalPrice={priceData.original}
+              discount={priceData.discount}
+            />
+
+            <VariantSelector 
+              variants={product.variants}
+              selectedVariant={selectedVariant}
+              onSelectVariant={setSelectedVariant}
+              selectedSize={selectedSize}
+              onSelectSize={setSelectedSize}
+            />
+
+            <div className="p-8 rounded-[2.5rem] border border-zinc-100 bg-zinc-50/30 space-y-8">
+              <QuantitySelector 
+                qty={qty} 
+                setQty={setQty} 
+                maxStock={product.stock} 
               />
-
-              <VariantSelector 
-                variants={product.variants}
-                selectedVariant={selectedVariant}
-                onSelectVariant={setSelectedVariant}
-                selectedSize={selectedSize}
-                onSelectSize={setSelectedSize}
-              />
-
-              <div className="space-y-8 bg-zinc-50/50 p-8 rounded-[2.5rem] border border-zinc-100">
-                <QuantitySelector 
-                  qty={qty} 
-                  setQty={setQty} 
-                  maxStock={product.stock} 
-                />
-                <ProductActions 
-                  stockCount={product.stock}
-                  onAddToCart={() => console.log("Added")}
-                  onBuyNow={() => console.log("Buying")}
-                />
-              </div>
-
-              <VendorCard 
-                vendor={vendor} 
-                isFollowing={false} 
-                onFollow={() => {}} 
-              />
-              
-              <DeliveryInfo />
-
-              {/* Mobile Only: Description appears here */}
-              <div className="lg:hidden">
-                <ProductDescription description={product.description} />
-              </div>
+<ProductActions 
+  stockCount={product.stock}
+  onAddToCart={handleAddToCart} // The real deal
+  onBuyNow={() => {
+    handleAddToCart();
+    router.push('/cart');
+  }} 
+/>
             </div>
-          </div>
+
+            <VendorCard 
+              vendor={vendor} 
+              isFollowing={false} 
+              onFollow={() => {}} 
+            />
+            
+            <DeliveryInfo />
+
+            <div className="lg:hidden">
+              <ProductDescription description={product.description} />
+            </div>
+          </aside>
         </div>
 
-        {/* FULL WIDTH BOTTOM SECTION */}
         <RecommendedProducts products={recommended} />
       </Container>
     </div>

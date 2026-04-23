@@ -5,12 +5,13 @@ import "./globals.css";
 // 🚀 Core Infrastructure
 import { Providers } from "../components/providers/Provider";
 import { CartSyncProvider } from "../components/providers/CartSyncProvider";
+import { CartToast } from '@/src/components/product/CartToast';
 
 // 🚀 UI Hierarchy
-import { Navbar } from "../components/navbar/Navbar";
-import { MobileBottomNav } from "../components/navbar/MobileBottomNav";
+
 import { BackToTop } from "../components/ui/BackToTop";
-import { Footer } from "../components/Footer";
+
+
 
 // 🏛️ Font Instrumentation
 const geistSans = Geist({ 
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* 2. Main Stage (Registry Content) */}
             <main className="flex-1">
               {children}
+              <CartToast /> {/* It will only render when needed. */}
             </main>
 
      
