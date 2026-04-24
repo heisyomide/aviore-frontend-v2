@@ -29,11 +29,12 @@ const getProductImageUrl = (product: any, apiBase: string): string => {
     ? (typeof variantImg === 'string' ? variantImg : variantImg.imageUrl || variantImg.url)
     : null;
 
-  // Fallback to main images
+  // Fallback to main product images
   if (!raw) {
     const mainImages = Array.isArray(product.images) ? product.images : [];
     const firstImg = mainImages[0];
-    raw = product.image || (typeof firstImg === 'string' ? firstImg : firstImg?.imageUrl);
+    raw = product.image || 
+          (typeof firstImg === 'string' ? firstImg : firstImg?.imageUrl);
   }
 
   if (!raw || raw === 'undefined' || raw === 'null') return '/placeholder.png';
@@ -108,7 +109,7 @@ export function ProductCard({ product }: { product: any }) {
       <ProductImageSection
         image={resolvedImage}
         name={name}
-        discount={product?.discount}
+        discount={toSafeNumber(product?.discount)}
         isHearted={isHearted}
         onQuickAdd={handleQuickAdd}
         onWishlist={handleWishlistAction}
@@ -131,7 +132,7 @@ export function ProductCard({ product }: { product: any }) {
             )}
           </div>
 
-          {/* Mobile Quick Add */}
+          {/* Mobile Quick Add Button */}
           <button
             onClick={handleQuickAdd}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 active:scale-95 md:hidden"
@@ -176,7 +177,7 @@ const ProductImageSection = memo(({
       </div>
     )}
 
-    {discount && (
+    {discount > 0 && (
       <div className="absolute left-2 top-2 z-10 bg-[#A4143D] px-2 py-1 text-[10px] font-black text-white shadow-sm">
         -{discount}%
       </div>
