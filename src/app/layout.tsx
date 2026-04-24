@@ -2,18 +2,18 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-// 🚀 Core Infrastructure
+// Core Providers
 import { Providers } from "../components/providers/Provider";
 import { CartSyncProvider } from "../components/providers/CartSyncProvider";
 import { CartToast } from '@/src/components/product/CartToast';
 
-// 🚀 UI Hierarchy
-
+// UI Components
 import { BackToTop } from "../components/ui/BackToTop";
 
+// Global Error Handler (NEW)
+import GlobalErrorHandler from "../components/GlobalErrorHandler";
 
-
-// 🏛️ Font Instrumentation
+// Font Configuration
 const geistSans = Geist({ 
   variable: "--font-geist-sans", 
   subsets: ["latin"],
@@ -26,7 +26,7 @@ const geistMono = Geist_Mono({
   display: 'swap',
 });
 
-// 🏛️ Registry Metadata
+// Metadata
 export const metadata: Metadata = {
   title: {
     default: "Aviore Marketplace | Unique Artifacts & Global Deals",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.ico" },
 };
 
-// 🏛️ Hardware Optimization
+// Viewport
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -48,31 +48,32 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`
-        ${geistSans.variable} 
-        ${geistMono.variable} 
-        antialiased 
-        bg-[#FAFAFA] 
-        text-zinc-900
-        selection:bg-blue-600 selection:text-white
-      `}>
+      <body 
+        className={`
+          ${geistSans.variable} 
+          ${geistMono.variable} 
+          antialiased 
+          bg-[#FAFAFA] 
+          text-zinc-900
+          selection:bg-blue-600 selection:text-white
+        `}
+      >
         <Providers>
-          {/* 🛰️ REGISTRY_HANDSHAKE: Keeps Laptop & Phone in sync via NestJS */}
+          {/* Global Error Logger - Captures ALL uncaught errors and promise rejections */}
+          <GlobalErrorHandler />
+
+          {/* Cart Sync Provider */}
           <CartSyncProvider />
 
           <div className="relative flex min-h-screen flex-col">
-
-
-            {/* 2. Main Stage (Registry Content) */}
+            {/* Main Content */}
             <main className="flex-1">
               {children}
-              <CartToast /> {/* It will only render when needed. */}
+              <CartToast />
             </main>
 
-     
-            {/* 5. Global Utility Tools */}
+            {/* Global Utilities */}
             <BackToTop />
-            
           </div>
         </Providers>
       </body>
