@@ -41,6 +41,8 @@ export function ProductGallery({ images, title }: GalleryProps) {
   // Safety for active image index
   const currentImage = resolvedImages[activeImg] || resolvedImages[0] || '/placeholder.jpg';
 
+  console.log('🖼 GALLERY INPUT:', images);
+
   return (
     <div className="flex flex-col md:flex-row gap-6">
       {/* Thumbnail Strip */}

@@ -143,6 +143,12 @@ const safeImage =
     throw new Error('Function not implemented.');
   }
 
+  console.log('🧠 PRODUCT DEBUG:', {
+  product,
+  selectedVariant,
+  images: selectedVariant?.images,
+});
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
