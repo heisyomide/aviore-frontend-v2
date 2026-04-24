@@ -49,15 +49,15 @@ export function ProductCard({ product }: { product: any }) {
   const [mounted, setMounted] = useState(false);
 
   const addItem = useCartStore((s) => s.addItem);
-  const wishlist = useWishlistStore();   // Get full store
+  const wishlistStore = useWishlistStore();
 
-  // Safe function extraction
-  const toggleWishlistFn = typeof wishlist.toggleWishlist === 'function' 
-    ? wishlist.toggleWishlist 
-    : async () => {};
+  // Extremely defensive function extraction
+  const toggleWishlist = typeof wishlistStore.toggleWishlist === 'function' 
+    ? wishlistStore.toggleWishlist 
+    : async () => { console.warn('toggleWishlist not ready'); };
 
-  const isWishlistedFn = typeof wishlist.isWishlisted === 'function' 
-    ? wishlist.isWishlisted 
+  const isWishlisted = typeof wishlistStore.isWishlisted === 'function' 
+    ? wishlistStore.isWishlisted 
     : () => false;
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export function ProductCard({ product }: { product: any }) {
     ? product.reviews.length 
     : toSafeNumber(product?.reviewCount);
 
-  const isHearted = mounted ? isWishlistedFn(product?.id) : false;
+  const isHearted = mounted ? isWishlisted(product?.id) : false;
 
   const handleNavigate = () => {
     if (product?.id) router.push(`/product/${product.id}`);
@@ -101,7 +101,7 @@ export function ProductCard({ product }: { product: any }) {
     if (!product?.id) return;
 
     try {
-      await toggleWishlistFn({ 
+      await toggleWishlist({ 
         id: product.id, 
         name, 
         price, 
