@@ -16,18 +16,22 @@ export function ProductInfo({
   title = "Product Title",
   subTitle,
   price = 0,
-  originalPrice,
+  originalPrice = 0,
   discount = 0,
   rating = 4.8,
   reviewCount = 128,
 }: ProductInfoProps) {
 
-  // Safely convert price values
-  const currentPrice = useSafeNumber(price);
-  const original = useSafeNumber(originalPrice);
+  // Safe number conversion
+  const currentPrice = toSafeNumber(price);
+  const original = toSafeNumber(originalPrice);
 
   const savings = original > currentPrice ? original - currentPrice : 0;
-  const discountPercent = discount || (original > 0 ? Math.round((savings / original) * 100) : 0);
+  const discountPercent = discount > 0 
+    ? discount 
+    : original > 0 
+      ? Math.round((savings / original) * 100) 
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -82,10 +86,8 @@ export function ProductInfo({
   );
 }
 
-/* ====================== Helper ====================== */
-
-// Safe number converter to prevent .toString() / .toLocaleString() crashes
-function useSafeNumber(value: number | string | null | undefined): number {
+/* ====================== Helper Function ====================== */
+function toSafeNumber(value: number | string | null | undefined): number {
   if (value == null) return 0;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
