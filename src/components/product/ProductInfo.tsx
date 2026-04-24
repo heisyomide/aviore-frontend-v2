@@ -5,8 +5,8 @@ import { Star } from 'lucide-react';
 interface ProductInfoProps {
   title?: string;
   subTitle?: string;
-  price?: number | string | null;
-  originalPrice?: number | string | null;
+  price?: number | string | null | undefined;
+  originalPrice?: number | string | null | undefined;
   discount?: number;
   rating?: number;
   reviewCount?: number;
@@ -14,7 +14,7 @@ interface ProductInfoProps {
 
 export function ProductInfo({
   title = "Product Title",
-  subTitle,
+  subTitle = "",
   price = 0,
   originalPrice = 0,
   discount = 0,
@@ -22,20 +22,20 @@ export function ProductInfo({
   reviewCount = 128,
 }: ProductInfoProps) {
 
-  // Safe number conversion
+  // Ultra-safe number conversion
   const currentPrice = toSafeNumber(price);
-  const original = toSafeNumber(originalPrice);
+  const origPrice = toSafeNumber(originalPrice);
 
-  const savings = original > currentPrice ? original - currentPrice : 0;
+  const savings = origPrice > currentPrice ? origPrice - currentPrice : 0;
   const discountPercent = discount > 0 
     ? discount 
-    : original > 0 
-      ? Math.round((savings / original) * 100) 
+    : origPrice > 0 
+      ? Math.round((savings / origPrice) * 100) 
       : 0;
 
   return (
     <div className="space-y-6">
-      {/* Status & Social Proof */}
+      {/* Status & Rating */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-bold uppercase tracking-widest">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -48,12 +48,12 @@ export function ProductInfo({
             {rating.toFixed(1)}
           </span>
           <span className="text-[11px] text-zinc-400">
-            ({reviewCount.toLocaleString()} reviews)
+            ({Number(reviewCount).toLocaleString()} reviews)
           </span>
         </div>
       </div>
 
-      {/* Title Section */}
+      {/* Title */}
       <div className="space-y-1">
         <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 leading-tight">
           {title}
@@ -65,16 +65,16 @@ export function ProductInfo({
         )}
       </div>
 
-      {/* Price Display */}
+      {/* Price - Most Defensive Section */}
       <div className="flex items-baseline gap-4 pt-2">
         <span className="text-4xl font-bold text-[#A4143D] tracking-tighter">
           ₦{currentPrice.toLocaleString()}
         </span>
 
-        {original > currentPrice && (
+        {origPrice > currentPrice && (
           <div className="flex flex-col">
             <span className="text-sm text-zinc-400 line-through font-medium">
-              ₦{original.toLocaleString()}
+              ₦{origPrice.toLocaleString()}
             </span>
             <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-tighter">
               You save ₦{savings.toLocaleString()} ({discountPercent}%)
@@ -86,8 +86,8 @@ export function ProductInfo({
   );
 }
 
-/* ====================== Helper Function ====================== */
-function toSafeNumber(value: number | string | null | undefined): number {
+/* ====================== Safe Helper ====================== */
+function toSafeNumber(value: any): number {
   if (value == null) return 0;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
