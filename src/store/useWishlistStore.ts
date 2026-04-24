@@ -48,38 +48,36 @@ export const useWishlistStore = create<WishlistStore>()(
         if (currentItems.some((p) => p.id === item.id)) return;
 
         const previousItems = [...currentItems];
-
         set({ items: [...previousItems, item] });
 
         try {
           await api.post(`/wishlist/${item.id}`);
         } catch (error) {
           console.error('Add to wishlist failed', error);
-          set({ items: previousItems }); // rollback
+          set({ items: previousItems });
         }
       },
 
       removeFromWishlist: async (id) => {
         const currentItems = get().items;
         const previousItems = [...currentItems];
-
         set({ items: currentItems.filter((p) => p.id !== id) });
 
         try {
           await api.delete(`/wishlist/${id}`);
         } catch (error) {
           console.error('Remove from wishlist failed', error);
-          set({ items: previousItems }); // rollback
+          set({ items: previousItems });
         }
       },
 
-      // FINAL FIXED VERSION - Self-contained, no circular calls
+      // ✅ CLEAN & SAFE TOGGLE - No calling other functions from get()
       toggleWishlist: async (item) => {
         const currentItems = get().items;
         const isCurrentlyWishlisted = currentItems.some((p) => p.id === item.id);
 
         if (isCurrentlyWishlisted) {
-          // Remove
+          // Remove logic directly
           const previousItems = [...currentItems];
           set({ items: currentItems.filter((p) => p.id !== item.id) });
 
@@ -90,7 +88,7 @@ export const useWishlistStore = create<WishlistStore>()(
             set({ items: previousItems });
           }
         } else {
-          // Add
+          // Add logic directly
           const previousItems = [...currentItems];
           set({ items: [...previousItems, item] });
 
