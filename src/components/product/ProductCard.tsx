@@ -49,10 +49,12 @@ export function ProductCard({ product }: { product: any }) {
   const [mounted, setMounted] = useState(false);
 
   const addItem = useCartStore((s) => s.addItem);
-  const wishlistStore = useWishlistStore();
+  const wishlist = useWishlistStore();   // Get the whole store
 
-  const toggleWishlist = wishlistStore.toggleWishlist;
-  const isWishlistedFn = wishlistStore.isWishlisted || (() => false);
+  const toggleWishlist = wishlist.toggleWishlist;
+  const isWishlistedFn = typeof wishlist.isWishlisted === 'function' 
+    ? wishlist.isWishlisted 
+    : () => false;
 
   useEffect(() => {
     setMounted(true);
@@ -95,7 +97,10 @@ export function ProductCard({ product }: { product: any }) {
 
   const handleWishlistAction = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!product?.id || typeof toggleWishlist !== 'function') return;
+    if (!product?.id || typeof toggleWishlist !== 'function') {
+      console.warn("toggleWishlist is not available yet");
+      return;
+    }
 
     try {
       await toggleWishlist({ 
