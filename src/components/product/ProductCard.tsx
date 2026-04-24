@@ -23,13 +23,11 @@ const toSafeNumber = (value: any): number => {
 const getProductImageUrl = (product: any, apiBase: string): string => {
   if (!product) return '/placeholder.png';
 
-  // Try variant image first
   const variantImg = product.variants?.[0]?.images?.[0];
   let raw = variantImg 
     ? (typeof variantImg === 'string' ? variantImg : variantImg.imageUrl || variantImg.url)
     : null;
 
-  // Fallback to main product images
   if (!raw) {
     const mainImages = Array.isArray(product.images) ? product.images : [];
     const firstImg = mainImages[0];
@@ -51,7 +49,10 @@ export function ProductCard({ product }: { product: any }) {
   const [mounted, setMounted] = useState(false);
 
   const addItem = useCartStore((s) => s.addItem);
-  const { toggleWishlist, isWishlisted } = useWishlistStore();
+  const wishlistStore = useWishlistStore();
+
+  const toggleWishlist = wishlistStore.toggleWishlist;
+  const isWishlistedFn = wishlistStore.isWishlisted || (() => false);
 
   useEffect(() => {
     setMounted(true);
@@ -69,7 +70,9 @@ export function ProductCard({ product }: { product: any }) {
     ? product.reviews.length 
     : toSafeNumber(product?.reviewCount);
 
-  const isHearted = mounted ? isWishlisted(product?.id) : false;
+  const isHearted = mounted && typeof isWishlistedFn === 'function' 
+    ? isWishlistedFn(product?.id) 
+    : false;
 
   const handleNavigate = () => {
     if (product?.id) router.push(`/product/${product.id}`);
@@ -92,13 +95,18 @@ export function ProductCard({ product }: { product: any }) {
 
   const handleWishlistAction = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!product?.id) return;
-    await toggleWishlist({ 
-      id: product.id, 
-      name, 
-      price, 
-      image: resolvedImage 
-    });
+    if (!product?.id || typeof toggleWishlist !== 'function') return;
+
+    try {
+      await toggleWishlist({ 
+        id: product.id, 
+        name, 
+        price, 
+        image: resolvedImage 
+      });
+    } catch (err) {
+      console.error("Wishlist toggle failed:", err);
+    }
   };
 
   return (
@@ -132,7 +140,6 @@ export function ProductCard({ product }: { product: any }) {
             )}
           </div>
 
-          {/* Mobile Quick Add Button */}
           <button
             onClick={handleQuickAdd}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 active:scale-95 md:hidden"
@@ -228,7 +235,6 @@ const StockStatus = memo(({ stock }: { stock: number }) => {
   );
 });
 
-// Display names for easier debugging
 ProductImageSection.displayName = 'ProductImageSection';
 DeliveryBadge.displayName = 'DeliveryBadge';
 StockStatus.displayName = 'StockStatus';
