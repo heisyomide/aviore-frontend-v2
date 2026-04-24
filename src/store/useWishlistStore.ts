@@ -29,7 +29,6 @@ export const useWishlistStore = create<WishlistStore>()(
       items: [],
       loading: false,
 
-      // Fetch wishlist from backend
       fetchWishlist: async () => {
         try {
           set({ loading: true });
@@ -39,72 +38,79 @@ export const useWishlistStore = create<WishlistStore>()(
             loading: false 
           });
         } catch (error) {
-          console.error('Wishlist fetch failed:', error);
+          console.error('Wishlist fetch failed', error);
           set({ loading: false });
         }
       },
 
-      // Add item to wishlist with optimistic update + rollback
       addToWishlist: async (item) => {
         const currentItems = get().items;
-        const exists = currentItems.some((p) => p.id === item.id);
-
-        if (exists) return;
+        if (currentItems.some((p) => p.id === item.id)) return;
 
         const previousItems = [...currentItems];
 
-        // Optimistic update
         set({ items: [...previousItems, item] });
 
         try {
           await api.post(`/wishlist/${item.id}`);
         } catch (error) {
-          console.error('Add to wishlist failed:', error);
-          // Rollback on failure
-          set({ items: previousItems });
+          console.error('Add to wishlist failed', error);
+          set({ items: previousItems }); // rollback
         }
       },
 
-      // Remove item from wishlist with optimistic update + rollback
       removeFromWishlist: async (id) => {
         const currentItems = get().items;
         const previousItems = [...currentItems];
 
-        // Optimistic update
         set({ items: currentItems.filter((p) => p.id !== id) });
 
         try {
           await api.delete(`/wishlist/${id}`);
         } catch (error) {
-          console.error('Remove from wishlist failed:', error);
-          // Rollback on failure
-          set({ items: previousItems });
+          console.error('Remove from wishlist failed', error);
+          set({ items: previousItems }); // rollback
         }
       },
 
-      // Toggle wishlist - Clean version without circular dependency
+      // FINAL FIXED VERSION - Self-contained, no circular calls
       toggleWishlist: async (item) => {
-        const isCurrentlyWishlisted = get().items.some((p) => p.id === item.id);
+        const currentItems = get().items;
+        const isCurrentlyWishlisted = currentItems.some((p) => p.id === item.id);
 
         if (isCurrentlyWishlisted) {
-          await get().removeFromWishlist(item.id);
+          // Remove
+          const previousItems = [...currentItems];
+          set({ items: currentItems.filter((p) => p.id !== item.id) });
+
+          try {
+            await api.delete(`/wishlist/${item.id}`);
+          } catch (error) {
+            console.error('Remove from wishlist failed', error);
+            set({ items: previousItems });
+          }
         } else {
-          await get().addToWishlist(item);
+          // Add
+          const previousItems = [...currentItems];
+          set({ items: [...previousItems, item] });
+
+          try {
+            await api.post(`/wishlist/${item.id}`);
+          } catch (error) {
+            console.error('Add to wishlist failed', error);
+            set({ items: previousItems });
+          }
         }
       },
 
-      // Check if item is in wishlist
-      isWishlisted: (id: string) => {
+      isWishlisted: (id) => {
         return get().items.some((p) => p.id === id);
       },
 
-      // Clear entire wishlist
       clearWishlist: () => set({ items: [] }),
     }),
     {
       name: 'aviore-wishlist',
-      // Optional: Only persist items, not loading state
-      partialize: (state) => ({ items: state.items }),
     }
   )
 );
