@@ -49,9 +49,13 @@ export function ProductCard({ product }: { product: any }) {
   const [mounted, setMounted] = useState(false);
 
   const addItem = useCartStore((s) => s.addItem);
-  const wishlist = useWishlistStore();   // Get the whole store
+  const wishlist = useWishlistStore();   // Get full store
 
-  const toggleWishlist = wishlist.toggleWishlist;
+  // Safe function extraction
+  const toggleWishlistFn = typeof wishlist.toggleWishlist === 'function' 
+    ? wishlist.toggleWishlist 
+    : async () => {};
+
   const isWishlistedFn = typeof wishlist.isWishlisted === 'function' 
     ? wishlist.isWishlisted 
     : () => false;
@@ -62,7 +66,6 @@ export function ProductCard({ product }: { product: any }) {
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
-  // Safe derived values
   const resolvedImage = useMemo(() => getProductImageUrl(product, apiBase), [product, apiBase]);
   const name = product?.title || product?.name || 'Unknown Product';
   const price = toSafeNumber(product?.price);
@@ -72,9 +75,7 @@ export function ProductCard({ product }: { product: any }) {
     ? product.reviews.length 
     : toSafeNumber(product?.reviewCount);
 
-  const isHearted = mounted && typeof isWishlistedFn === 'function' 
-    ? isWishlistedFn(product?.id) 
-    : false;
+  const isHearted = mounted ? isWishlistedFn(product?.id) : false;
 
   const handleNavigate = () => {
     if (product?.id) router.push(`/product/${product.id}`);
@@ -97,13 +98,10 @@ export function ProductCard({ product }: { product: any }) {
 
   const handleWishlistAction = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!product?.id || typeof toggleWishlist !== 'function') {
-      console.warn("toggleWishlist is not available yet");
-      return;
-    }
+    if (!product?.id) return;
 
     try {
-      await toggleWishlist({ 
+      await toggleWishlistFn({ 
         id: product.id, 
         name, 
         price, 
