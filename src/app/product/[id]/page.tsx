@@ -150,6 +150,11 @@ function toSafeNumber(value: any, fallback = 0): number {
   images: selectedVariant?.images,
 });
 
+console.log('SAFE VALUES:', {
+  rating: toSafeNumber(product?.rating),
+  reviewCount: toSafeNumber(product?.reviewCount)
+});
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
