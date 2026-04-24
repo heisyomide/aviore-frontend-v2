@@ -26,82 +26,89 @@ import { ProductSkeleton } from '@/src/components/product/ProductSkeleton';
 export default function ProductDetailsPage() {
   const { id: productId } = useParams();
   const router = useRouter();
-  
-  // 1. Hydration & Mount State
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { 
-    setMounted(true); 
-  }, []);
 
-  // 2. Data Fetching
-  const { 
-    product, vendor, recommended, loading, 
-    selectedVariant, setSelectedVariant,
-    selectedSize, setSelectedSize,
-    qty, setQty 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const {
+    product,
+    vendor,
+    recommended,
+    loading,
+    selectedVariant,
+    setSelectedVariant,
+    selectedSize,
+    setSelectedSize,
+    qty,
+    setQty,
   } = useProductData(productId as string);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
-  // 3. Defensive Price Logic
-const priceData = useMemo(() => {
-  if (!product) {
-    return { current: 0, original: 0, discount: 0 };
-  }
-
-  // Handle all possible price formats safely
-  let basePrice = 0;
-
-  if (typeof product.price === 'number') {
-    basePrice = product.price;
-  } else if (typeof product.price === 'string') {
-    basePrice = parseFloat(product.price);
-  } else if (product.price && typeof product.price === 'object') {
-    // In case price is an object (some APIs do this)
-    basePrice = Number(product.price) || 0;
-  }
-
-  const safePrice = isNaN(basePrice) ? 0 : basePrice;
-
-  return {
-    current: safePrice,
-    original: Math.round(safePrice * 1.2),
-    discount: safePrice > 0 ? 20 : 0,
+  // ✅ SAFE HELPERS (centralized)
+  const toSafeNumber = (value: any, fallback = 0): number => {
+    const num = Number(value);
+    return isNaN(num) ? fallback : num;
   };
-}, [product]);
 
-const safeImage =
-  Array.isArray(selectedVariant?.images) && selectedVariant.images.length > 0
-    ? selectedVariant.images[0]?.imageUrl
-    : Array.isArray(product?.images)
-    ? typeof product.images[0] === 'string'
-      ? product.images[0]
-      : product.images[0]?.imageUrl
-    : '/placeholder.jpg';
+  const toSafeString = (value: any, fallback = ''): string => {
+    if (value === null || value === undefined) return fallback;
+    return String(value);
+  };
 
+  // ✅ PRICE LOGIC
+  const priceData = useMemo(() => {
+    const base = toSafeNumber(product?.price);
 
-  // 4. Handlers
+    return {
+      current: base,
+      original: Math.round(base * 1.2),
+      discount: base > 0 ? 20 : 0,
+    };
+  }, [product]);
+
+  // ✅ SAFE IMAGE
+  const safeImage = useMemo(() => {
+    if (selectedVariant?.images?.length) {
+      return selectedVariant.images[0]?.imageUrl || '/placeholder.jpg';
+    }
+
+    if (product?.images?.length) {
+      const first = product.images[0];
+      return typeof first === 'string'
+        ? first
+        : first?.imageUrl || '/placeholder.jpg';
+    }
+
+    return '/placeholder.jpg';
+  }, [selectedVariant, product]);
+
+  // ✅ SAFE NUMBERS
+  const rating = toSafeNumber(product?.rating);
+  const reviewCount = toSafeNumber(product?.reviewCount);
+
+  // ✅ HANDLERS
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
-    
-    if (product.variants?.length > 0 && !selectedSize) {
-      alert("Please select a size to continue.");
+
+    if (product.variants?.length && !selectedSize) {
+      alert('Please select a size to continue.');
       return;
     }
 
     addItem({
       id: product.id,
-      name: product.title,
-      price: priceData.current, 
+      name: toSafeString(product.title, 'Untitled'),
+      price: priceData.current,
       image: safeImage,
       vendorId: product.vendorId,
-      stock: product.stock,
+      stock: product.stock ?? 0,
       quantity: qty,
       size: selectedSize,
-      variant: selectedVariant 
+      variant: selectedVariant,
     });
-  }, [product, selectedSize, selectedVariant, priceData, qty, addItem]);
+  }, [product, selectedSize, selectedVariant, priceData, qty, safeImage, addItem]);
 
   const handleBuyNow = async () => {
     await handleAddToCart();
@@ -109,15 +116,14 @@ const safeImage =
   };
 
   const handleFollow = async () => {
-    setIsFollowing(prev => !prev);
-    // Future API call: await toggleFollow(vendor?.id);
+    setIsFollowing((prev) => !prev);
   };
 
-  // 5. High-Priority Guard Rails
-  // Prevents UI flicker and crashes if data is missing during a timeout
+  // ✅ LOADING GUARD
   if (!mounted || loading) return <ProductSkeleton />;
-  
-  if (!product || !product.id) {
+
+  // ✅ NOT FOUND GUARD
+  if (!product?.id) {
     return (
       <div className="min-h-screen bg-white">
         <Navbar />
@@ -126,11 +132,11 @@ const safeImage =
             Product Not Found
           </h1>
           <p className="text-zinc-500 mb-8 max-w-xs mx-auto">
-            The item you are looking for may have been moved or is currently unavailable.
+            The item you are looking for may be unavailable.
           </p>
-          <button 
+          <button
             onClick={() => router.push('/shop')}
-            className="px-8 py-3 bg-black text-white rounded-full text-xs uppercase tracking-widest hover:bg-zinc-800 transition-colors"
+            className="px-8 py-3 bg-black text-white rounded-full text-xs uppercase tracking-widest"
           >
             Back to Shop
           </button>
@@ -139,57 +145,39 @@ const safeImage =
     );
   }
 
-function toSafeNumber(value: any, fallback = 0): number {
-  const num = Number(value);
-  return isNaN(num) ? fallback : num;
-}
-
-  console.log('🧠 PRODUCT DEBUG:', {
-  product,
-  selectedVariant,
-  images: selectedVariant?.images,
-});
-
-console.log('SAFE VALUES:', {
-  rating: toSafeNumber(product?.rating),
-  reviewCount: toSafeNumber(product?.reviewCount)
-});
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
       <Container className="py-12 lg:py-24">
         <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
-          
-          {/* GALLERY SECTION */}
+
+          {/* GALLERY */}
           <div className="lg:col-span-7 space-y-12">
-<ProductGallery 
-  images={
-    selectedVariant?.images || 
-    product?.images || 
-    []
-  } 
-  title={product?.title || 'Product'} 
-/>
+            <ProductGallery
+              images={selectedVariant?.images || product.images || []}
+              title={toSafeString(product.title, 'Product')}
+            />
+
             <div className="hidden lg:block pt-12 border-t border-zinc-100">
-              <ProductDescription description={product.description} />
+              <ProductDescription description={product.description || ''} />
             </div>
           </div>
 
-          {/* PRODUCT CONFIGURATION SIDEBAR */}
+          {/* SIDEBAR */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
-<ProductInfo 
-  title={product?.title}
-  subTitle={product?.subTitle}
-  price={priceData.current}
-  originalPrice={priceData.original}
-  discount={priceData.discount}
-  rating={toSafeNumber(product?.rating)}
-  reviewCount={toSafeNumber(product?.reviewCount)}
-/>
 
-            <VariantSelector 
+            <ProductInfo
+              title={toSafeString(product.title)}
+              subTitle={toSafeString(product.subTitle)}
+              price={priceData.current}
+              originalPrice={priceData.original}
+              discount={priceData.discount}
+              rating={rating}
+              reviewCount={reviewCount}
+            />
+
+            <VariantSelector
               variants={product.variants || []}
               selectedVariant={selectedVariant}
               onSelectVariant={setSelectedVariant}
@@ -198,39 +186,40 @@ console.log('SAFE VALUES:', {
             />
 
             <div className="p-8 rounded-[2.5rem] border border-zinc-100 bg-zinc-50/30 space-y-8">
-              <QuantitySelector 
-                qty={qty} 
-                setQty={setQty} 
-                maxStock={product.stock} 
+              <QuantitySelector
+                qty={qty}
+                setQty={setQty}
+                maxStock={product.stock ?? 0}
               />
-              <ProductActions 
-                stockCount={product.stock}
+
+              <ProductActions
+                stockCount={product.stock ?? 0}
                 onAddToCart={handleAddToCart}
-                onBuyNow={handleBuyNow} 
+                onBuyNow={handleBuyNow}
               />
             </div>
 
             {vendor && (
-              <VendorCard 
-                vendor={vendor} 
-                isFollowing={isFollowing} 
-                onFollow={handleFollow} 
+              <VendorCard
+                vendor={vendor}
+                isFollowing={isFollowing}
+                onFollow={handleFollow}
               />
             )}
-            
-            <DeliveryInfo 
-  origin={product.origin}
-  min={product.deliveryMin}
-  max={product.deliveryMax}
-/>
+
+            <DeliveryInfo
+              origin={product.origin}
+              min={product.deliveryMin}
+              max={product.deliveryMax}
+            />
 
             <div className="lg:hidden pt-10 border-t border-zinc-100">
-              <ProductDescription description={product.description} />
+              <ProductDescription description={product.description || ''} />
             </div>
           </aside>
         </div>
 
-        {recommended && recommended.length > 0 && (
+        {recommended?.length > 0 && (
           <RecommendedProducts products={recommended} />
         )}
       </Container>
