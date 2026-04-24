@@ -9,7 +9,6 @@ import { useCartStore } from '@/src/store/useCartStore';
 
 // Components
 import { ProductGallery } from '@/src/components/product/ProductGallery';
-import { ProductInfo } from '@/src/components/product/ProductInfo';
 import { VariantSelector } from '@/src/components/product/VariantSelector';
 import { QuantitySelector } from '@/src/components/product/QuantitySelector';
 import { ProductActions } from '@/src/components/product/ProductActions';
@@ -23,17 +22,27 @@ import { Container } from '@/src/components/layout/Container';
 import { Navbar } from '@/src/components/navbar/Navbar';
 import { ProductSkeleton } from '@/src/components/product/ProductSkeleton';
 
+/**
+ * 1. PURE UTILITIES
+ * Extracted from the component scope to avoid re-allocation on every render.
+ */
+const toSafeNumber = (value: any, fallback = 0): number => {
+  const num = Number(value);
+  return isNaN(num) ? fallback : num;
+};
+
+const getSafeImage = (product: any, selectedVariant: any): string => {
+  if (selectedVariant?.images?.[0]?.imageUrl) return selectedVariant.images[0].imageUrl;
+  if (typeof product?.images?.[0] === 'string') return product.images[0];
+  return product?.images?.[0]?.imageUrl || '/placeholder.jpg';
+};
+
 export default function ProductDetailsPage() {
   const { id: productId } = useParams();
   const router = useRouter();
-  
-  // 1. Hydration & Mount State
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { 
-    setMounted(true); 
-  }, []);
+  const addItem = useCartStore((state) => state.addItem);
 
-  // 2. Data Fetching
+  // 2. DATA FETCHING & UI STATE
   const { 
     product, vendor, recommended, loading, 
     selectedVariant, setSelectedVariant,
@@ -42,47 +51,28 @@ export default function ProductDetailsPage() {
   } = useProductData(productId as string);
 
   const [isFollowing, setIsFollowing] = useState(false);
-  const addItem = useCartStore((state) => state.addItem);
+  const [mounted, setMounted] = useState(false);
 
-  // 3. Defensive Price Logic
-const priceData = useMemo(() => {
-  if (!product) {
-    return { current: 0, original: 0, discount: 0 };
-  }
+  useEffect(() => setMounted(true), []);
 
-  // Handle all possible price formats safely
-  let basePrice = 0;
+  // 3. MEMOIZED LOGIC
+  const priceData = useMemo(() => {
+    if (!product) return { current: 0, original: 0, discount: 0 };
+    const current = toSafeNumber(product.price);
+    return {
+      current,
+      original: Math.round(current * 1.2), // Matches AVIORÈ's 20% luxury markup
+      discount: current > 0 ? 20 : 0,
+    };
+  }, [product]);
 
-  if (typeof product.price === 'number') {
-    basePrice = product.price;
-  } else if (typeof product.price === 'string') {
-    basePrice = parseFloat(product.price);
-  } else if (product.price && typeof product.price === 'object') {
-    // In case price is an object (some APIs do this)
-    basePrice = Number(product.price) || 0;
-  }
+  const safeImage = useMemo(() => 
+    getSafeImage(product, selectedVariant), 
+    [product, selectedVariant]
+  );
 
-  const safePrice = isNaN(basePrice) ? 0 : basePrice;
-
-  return {
-    current: safePrice,
-    original: Math.round(safePrice * 1.2),
-    discount: safePrice > 0 ? 20 : 0,
-  };
-}, [product]);
-
-const safeImage =
-  Array.isArray(selectedVariant?.images) && selectedVariant.images.length > 0
-    ? selectedVariant.images[0]?.imageUrl
-    : Array.isArray(product?.images)
-    ? typeof product.images[0] === 'string'
-      ? product.images[0]
-      : product.images[0]?.imageUrl
-    : '/placeholder.jpg';
-
-
-  // 4. Handlers
-  const handleAddToCart = useCallback(async () => {
+  // 4. HANDLERS
+  const handleAddToCart = useCallback(() => {
     if (!product) return;
     
     if (product.variants?.length > 0 && !selectedSize) {
@@ -101,23 +91,22 @@ const safeImage =
       size: selectedSize,
       variant: selectedVariant 
     });
-  }, [product, selectedSize, selectedVariant, priceData, qty, addItem]);
+  }, [product, selectedSize, selectedVariant, priceData.current, safeImage, qty, addItem]);
 
   const handleBuyNow = async () => {
-    await handleAddToCart();
+    handleAddToCart();
     router.push('/cart');
   };
 
   const handleFollow = async () => {
     setIsFollowing(prev => !prev);
-    // Future API call: await toggleFollow(vendor?.id);
+    // await toggleFollow(vendor?.id);
   };
 
-  // 5. High-Priority Guard Rails
-  // Prevents UI flicker and crashes if data is missing during a timeout
+  // 5. GUARD RAILS
   if (!mounted || loading) return <ProductSkeleton />;
   
-  if (!product || !product.id) {
+  if (!product?.id) {
     return (
       <div className="min-h-screen bg-white">
         <Navbar />
@@ -125,9 +114,6 @@ const safeImage =
           <h1 className="text-sm font-bold text-zinc-400 uppercase tracking-[0.3em] mb-4">
             Product Not Found
           </h1>
-          <p className="text-zinc-500 mb-8 max-w-xs mx-auto">
-            The item you are looking for may have been moved or is currently unavailable.
-          </p>
           <button 
             onClick={() => router.push('/shop')}
             className="px-8 py-3 bg-black text-white rounded-full text-xs uppercase tracking-widest hover:bg-zinc-800 transition-colors"
@@ -139,22 +125,6 @@ const safeImage =
     );
   }
 
-function toSafeNumber(value: any, fallback = 0): number {
-  const num = Number(value);
-  return isNaN(num) ? fallback : num;
-}
-
-  console.log('🧠 PRODUCT DEBUG:', {
-  product,
-  selectedVariant,
-  images: selectedVariant?.images,
-});
-
-console.log('SAFE VALUES:', {
-  rating: toSafeNumber(product?.rating),
-  reviewCount: toSafeNumber(product?.reviewCount)
-});
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -162,23 +132,27 @@ console.log('SAFE VALUES:', {
       <Container className="py-12 lg:py-24">
         <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
           
-          {/* GALLERY SECTION */}
+          {/* LEFT: VISUALS & DETAILED CONTENT */}
           <div className="lg:col-span-7 space-y-12">
-<ProductGallery 
-  images={
-    selectedVariant?.images || 
-    product?.images || 
-    []
-  } 
-  title={product?.title || 'Product'} 
-/>
+            <ProductGallery 
+              images={selectedVariant?.images || product?.images || []} 
+              title={product.title} 
+            />
             <div className="hidden lg:block pt-12 border-t border-zinc-100">
               <ProductDescription description={product.description} />
             </div>
           </div>
 
-          {/* PRODUCT CONFIGURATION SIDEBAR */}
+          {/* RIGHT: INTERACTIVE SIDEBAR */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
+            <div className="space-y-4">
+               <h1 className="text-3xl font-light tracking-tight text-zinc-900 leading-tight">
+                {product.title}
+              </h1>
+              <p className="text-2xl font-medium text-zinc-800">
+                ₦{priceData.current.toLocaleString()}
+              </p>
+            </div>
 
             <VariantSelector 
               variants={product.variants || []}
@@ -189,11 +163,7 @@ console.log('SAFE VALUES:', {
             />
 
             <div className="p-8 rounded-[2.5rem] border border-zinc-100 bg-zinc-50/30 space-y-8">
-              <QuantitySelector 
-                qty={qty} 
-                setQty={setQty} 
-                maxStock={product.stock} 
-              />
+              <QuantitySelector qty={qty} setQty={setQty} maxStock={product.stock} />
               <ProductActions 
                 stockCount={product.stock}
                 onAddToCart={handleAddToCart}
@@ -210,10 +180,10 @@ console.log('SAFE VALUES:', {
             )}
             
             <DeliveryInfo 
-  origin={product.origin}
-  min={product.deliveryMin}
-  max={product.deliveryMax}
-/>
+              origin={product.origin}
+              min={product.deliveryMin}
+              max={product.deliveryMax}
+            />
 
             <div className="lg:hidden pt-10 border-t border-zinc-100">
               <ProductDescription description={product.description} />
@@ -221,7 +191,7 @@ console.log('SAFE VALUES:', {
           </aside>
         </div>
 
-        {recommended && recommended.length > 0 && (
+        {recommended?.length > 0 && (
           <RecommendedProducts products={recommended} />
         )}
       </Container>
