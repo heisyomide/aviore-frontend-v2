@@ -139,6 +139,10 @@ const safeImage =
     );
   }
 
+  function toSafeNumber(rating: any): number | undefined {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -169,8 +173,8 @@ const safeImage =
   price={priceData.current}
   originalPrice={priceData.original}
   discount={priceData.discount}
-  rating={product?.rating || 4.8}
-  reviewCount={product?.reviewCount || 128}
+  rating={toSafeNumber(product?.rating)}
+  reviewCount={toSafeNumber(product?.reviewCount)}
 />
 
             <VariantSelector 
