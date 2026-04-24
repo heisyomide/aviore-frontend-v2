@@ -46,21 +46,28 @@ export default function ProductDetailsPage() {
 
   // 3. Defensive Price Logic
 const priceData = useMemo(() => {
-  if (!product) return { current: 0, original: 0, discount: 0 };
+  if (!product) {
+    return { current: 0, original: 0, discount: 0 };
+  }
 
-  const basePrice =
-    typeof product.price === 'number'
-      ? product.price
-      : typeof product.price === 'string'
-      ? parseFloat(product.price)
-      : 0;
+  // Handle all possible price formats safely
+  let basePrice = 0;
+
+  if (typeof product.price === 'number') {
+    basePrice = product.price;
+  } else if (typeof product.price === 'string') {
+    basePrice = parseFloat(product.price);
+  } else if (product.price && typeof product.price === 'object') {
+    // In case price is an object (some APIs do this)
+    basePrice = Number(product.price) || 0;
+  }
 
   const safePrice = isNaN(basePrice) ? 0 : basePrice;
 
   return {
     current: safePrice,
-    original: safePrice * 1.2,
-    discount: safePrice ? 20 : 0
+    original: Math.round(safePrice * 1.2),
+    discount: safePrice > 0 ? 20 : 0,
   };
 }, [product]);
 
@@ -156,12 +163,15 @@ const safeImage =
 
           {/* PRODUCT CONFIGURATION SIDEBAR */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
-            <ProductInfo 
-              title={product.title}
-              price={priceData.current}
-              originalPrice={priceData.original}
-              discount={priceData.discount}
-            />
+<ProductInfo 
+  title={product?.title}
+  subTitle={product?.subTitle}
+  price={priceData.current}
+  originalPrice={priceData.original}
+  discount={priceData.discount}
+  rating={product?.rating || 4.8}
+  reviewCount={product?.reviewCount || 128}
+/>
 
             <VariantSelector 
               variants={product.variants || []}
