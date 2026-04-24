@@ -139,9 +139,10 @@ const safeImage =
     );
   }
 
-  function toSafeNumber(rating: any): number | undefined {
-    throw new Error('Function not implemented.');
-  }
+function toSafeNumber(value: any, fallback = 0): number {
+  const num = Number(value);
+  return isNaN(num) ? fallback : num;
+}
 
   console.log('🧠 PRODUCT DEBUG:', {
   product,
