@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/src/lib/axios';
 
 interface UseProductDataReturn {
@@ -15,72 +15,95 @@ interface UseProductDataReturn {
   setSelectedSize: (size: string) => void;
   qty: number;
   setQty: (qty: number) => void;
+  refresh: () => Promise<void>;
 }
 
 export function useProductData(productId: string): UseProductDataReturn {
-  const [product, setProduct] = useState<any>(null);
-  const [vendor, setVendor] = useState<any>(null);
-  const [recommended, setRecommended] = useState<any[]>([]);
+  // 1. Data States
+  const [data, setData] = useState<{
+    product: any;
+    vendor: any;
+    recommended: any[];
+  }>({
+    product: null,
+    vendor: null,
+    recommended: [],
+  });
+
+  // 2. UI States
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Interactive UI State
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedSize, setSelectedSize] = useState('');
   const [qty, setQty] = useState(1);
 
+  // Use a ref to track the current productId to prevent race conditions
+  const currentIdRef = useRef(productId);
+
   const loadData = useCallback(async () => {
     if (!productId) return;
+    
+    currentIdRef.current = productId;
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-
-      // 1. Primary Product Fetch
+      // Step A: Fetch Primary Product Data
       const { data: productData } = await api.get(`/products/${productId}`);
-      setProduct(productData);
 
-      // Initialize variant if exists
-if (productData.variants?.length > 0 && productData.variants[0]) {
-  setSelectedVariant(productData.variants[0]);
-}
-
-      // 2. Parallel Secondary Fetching (Vendor + Recommendations)
-      const [vRes, rRes] = await Promise.all([
+      // Step B: Parallel Fetching for secondary data
+      // We wrap these in a try/catch or handle defaults so a vendor API 
+      // failure doesn't crash the whole product page.
+      const [vRes, rRes] = await Promise.allSettled([
         api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
         api.get('/products', { 
-          params: { 
-            category: productData.category?.slug, 
-            limit: 8 
-          } 
+          params: { category: productData.category?.slug, limit: 8 } 
         })
       ]);
 
-      setVendor(vRes.data);
-      setRecommended(rRes.data.data.filter((p: any) => p.id !== productId));
+      // Step C: Atomic Update
+      // Only update state if the user hasn't navigated away during the fetch
+      if (currentIdRef.current === productId) {
+        setData({
+          product: productData,
+          vendor: vRes.status === 'fulfilled' ? vRes.value.data : null,
+          recommended: rRes.status === 'fulfilled' 
+            ? rRes.value.data.data.filter((p: any) => p.id !== productId) 
+            : [],
+        });
 
+        // Initialize UI states based on new product
+        if (productData.variants?.length > 0) {
+          setSelectedVariant(productData.variants[0]);
+        } else {
+          setSelectedVariant(null);
+        }
+      }
     } catch (err: any) {
       console.error("PRODUCT_HOOK_ERROR:", err);
-      setError(err.response?.data?.message || "Failed to load product data.");
+      if (currentIdRef.current === productId) {
+        setError(err.response?.data?.message || "Product not found or unavailable.");
+      }
     } finally {
-      setLoading(false);
+      if (currentIdRef.current === productId) {
+        setLoading(false);
+      }
     }
   }, [productId]);
 
   useEffect(() => {
     loadData();
     
-    // Reset state when ID changes to prevent showing old data during transitions
     return () => {
+      // Cleanup UI states on unmount or ID change
       setQty(1);
       setSelectedSize('');
+      setSelectedVariant(null);
     };
   }, [loadData]);
 
   return {
-    product,
-    vendor,
-    recommended,
+    ...data,
     loading,
     error,
     selectedVariant,
@@ -88,6 +111,7 @@ if (productData.variants?.length > 0 && productData.variants[0]) {
     selectedSize,
     setSelectedSize,
     qty,
-    setQty
+    setQty,
+    refresh: loadData
   };
 }

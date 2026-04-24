@@ -135,7 +135,7 @@ export function ProductCard({ product }: { product: any }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-base font-black italic text-[#A4143D]">
-              ₦{safeNumber(price).toLocaleString()}
+              ₦{(Number(price) || 0).toLocaleString()}
             </span>
             {product?.oldPrice && (
               <span className="text-[10px] text-gray-300 line-through">
