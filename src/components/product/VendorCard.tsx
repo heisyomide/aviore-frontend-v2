@@ -82,7 +82,7 @@ export function VendorCard({ vendor, onFollow, isFollowing }: VendorCardProps) {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-sm uppercase tracking-tight line-clamp-1">{v.name}</h3>
+              <h3 className="font-bold text-sm uppercase text-zinc-950 tracking-tight line-clamp-1">{v.name}</h3>
               {v.isVerified && <BadgeCheck size={16} className="text-blue-500 fill-blue-500/10 shrink-0" />}
             </div>
             <p className="text-[10px] text-zinc-400 font-medium">
@@ -118,7 +118,7 @@ export function VendorCard({ vendor, onFollow, isFollowing }: VendorCardProps) {
           className={`h-12 rounded-2xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
             isFollowing 
               ? 'bg-zinc-100 text-zinc-500' 
-              : 'bg-zinc-950 text-white hover:bg-black active:scale-95'
+              : 'bg-white text-zinc-950 hover:bg-black active:scale-95'
           }`}
         >
           {isPending ? (
@@ -132,7 +132,7 @@ export function VendorCard({ vendor, onFollow, isFollowing }: VendorCardProps) {
         
         <Link 
           href={vendorLink}
-          className="h-12 border border-zinc-200 rounded-2xl text-[10px] font-bold uppercase tracking-wider hover:bg-zinc-50 transition-all flex items-center justify-center active:scale-95"
+          className="h-12 border text-zinc-950 border-zinc-200 rounded-2xl text-[10px] font-bold uppercase tracking-wider hover:bg-zinc-50 transition-all flex items-center justify-center active:scale-95"
         >
           View Store
         </Link>
