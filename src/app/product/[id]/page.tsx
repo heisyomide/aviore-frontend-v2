@@ -34,17 +34,20 @@ export default function ProductDetailsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // 🛒 HANDLERS (Now Fully Working)
+  // 🛒 HANDLERS
   const handleAddToCart = useCallback(async () => {
     if (!product?.id) return;
     
-    // Size Check
-    if (product.variants?.length > 0 && !selectedSize) {
+    // ✅ FIXED TS7006: Added types (v: any, s: any) to the parameters
+    const hasValidSizes = product.variants?.some((v: any) => 
+      v.sizes?.some((s: any) => s && s.trim() !== "")
+    );
+    
+    if (hasValidSizes && !selectedSize) {
       alert("Please select a size to continue.");
       return;
     }
 
-    // Resolve Image for Cart
     const cartImg = selectedVariant?.images?.[0]?.imageUrl || 
                     product.variants?.[0]?.images?.[0]?.imageUrl || 
                     '/placeholder.jpg';
@@ -57,14 +60,13 @@ export default function ProductDetailsPage() {
       vendorId: product.vendorId,
       stock: product.stock,
       quantity: qty,
-      size: selectedSize,
+      size: selectedSize || undefined,
       variant: selectedVariant 
     });
   }, [product, selectedVariant, selectedSize, qty, addItem]);
 
   const handleBuyNow = async () => {
     await handleAddToCart();
-    // Redirect after adding
     router.push('/cart');
   };
 
@@ -72,33 +74,36 @@ export default function ProductDetailsPage() {
     return <ProductSkeleton />;
   }
 
-  // Prep images for gallery
   const galleryImages = selectedVariant?.images || product.variants?.[0]?.images || [];
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <Container className="py-8 lg:py-16">
-        {/* Breadcrumbs (Optional but matches your screenshot) */}
+      <Container className="py-6 lg:py-10">
+        {/* Breadcrumbs */}
         <nav className="flex gap-2 text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-8">
-          <span>Home</span> <span>/</span> <span>{product.category?.name}</span>
+          <span>Home</span> <span className="text-zinc-200">/</span> 
+          <span>{product.category?.name}</span> <span className="text-zinc-200">/</span> 
+          <span className="text-zinc-900">{product.title}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-12 gap-12 xl:gap-20 items-start">
+        <div className="grid lg:grid-cols-12 gap-12 xl:gap-24 items-start">
           
-          {/* LEFT: GALLERY & DESCRIPTION */}
-          <div className="lg:col-span-7 space-y-16">
+          {/* LEFT: GALLERY SECTION */}
+          <div className="lg:col-span-7">
              <ProductGallery images={galleryImages} title={product.title} />
              
-             {/* Description only on Desktop here */}
-             <div className="hidden lg:block">
+             {/* Desktop Tabs at Bottom */}
+             <div className="hidden lg:block mt-24">
                <ProductDescription description={product.description} />
              </div>
           </div>
 
-          {/* RIGHT: SIDEBAR (Sticky on Desktop) */}
-          <aside className="lg:col-span-5 lg:sticky lg:top-28 space-y-10">
+          {/* RIGHT: SIDEBAR (Sticky Layout) */}
+          <aside className="lg:col-span-5 lg:sticky lg:top-24 space-y-10">
+            
+            {/* 1. Header Info (Price/Title/Rating) */}
             <ProductInfo 
               title={product.title}
               price={product.price}
@@ -106,6 +111,7 @@ export default function ProductDetailsPage() {
               reviewCount={product.reviewCount}
             />
 
+            {/* 2. Variant & Size Selection */}
             <VariantSelector 
               variants={product.variants}
               selectedVariant={selectedVariant}
@@ -114,31 +120,56 @@ export default function ProductDetailsPage() {
               onSelectSize={setSelectedSize}
             />
 
-            {/* The "Buy Box" from your design */}
-            <div className="p-8 rounded-[2.5rem] border border-zinc-100 bg-zinc-50/40 space-y-8">
+            {/* 3. Action Box (Grey background match) */}
+            <div className="p-8 rounded-[3rem] border border-zinc-100 bg-zinc-50/50 space-y-8">
               <QuantitySelector qty={qty} setQty={setQty} maxStock={product.stock} />
               
-              <ProductActions 
-                stockCount={product.stock} 
-                onAddToCart={handleAddToCart}
-                onBuyNow={handleBuyNow}
-              />
+              <div className="space-y-4">
+                <ProductActions 
+                  stockCount={product.stock} 
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                />
+                
+                {/* Low Stock Indicator */}
+                {product.stock > 0 && product.stock <= 10 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-orange-600">Only {product.stock} items left!</p>
+                    <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-orange-500" 
+                        style={{ width: `${(product.stock / 10) * 100}%` }} 
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {vendor && <VendorCard vendor={vendor} isFollowing={false} onFollow={async () => {}} />}
+            {/* 4. Vendor Section */}
+            {vendor && (
+              <div className="pt-4 border-t border-zinc-100">
+                <VendorCard vendor={vendor} isFollowing={false} onFollow={async () => {}} />
+              </div>
+            )}
 
-            <DeliveryInfo origin={product.origin} min={product.deliveryMin} max={product.deliveryMax} />
+            {/* 5. Trust Badges */}
+            <DeliveryInfo 
+              origin={product.origin} 
+              min={product.deliveryMin} 
+              max={product.deliveryMax} 
+            />
 
-            {/* Description only on Mobile here */}
-            <div className="lg:hidden pt-8 border-t">
+            {/* Mobile Tabs */}
+            <div className="lg:hidden">
               <ProductDescription description={product.description} />
             </div>
           </aside>
         </div>
 
-        {/* RECOMMENDATIONS: Hidden if empty, but ready for when you add more products */}
+        {/* Recommended Products */}
         {recommended && recommended.length > 0 && (
-          <div className="mt-32">
+          <div className="mt-24">
             <RecommendedProducts products={recommended} />
           </div>
         )}
