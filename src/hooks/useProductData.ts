@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/src/lib/axios';
 
-interface UseProductDataReturn {
+// 1. Interface must be defined before the function uses it
+export interface UseProductDataReturn {
   product: any;
   vendor: any;
   recommended: any[];
@@ -19,7 +20,7 @@ interface UseProductDataReturn {
 }
 
 export function useProductData(productId: string): UseProductDataReturn {
-  // 1. Data States
+  // Data States
   const [data, setData] = useState<{
     product: any;
     vendor: any;
@@ -30,14 +31,13 @@ export function useProductData(productId: string): UseProductDataReturn {
     recommended: [],
   });
 
-  // 2. UI States
+  // UI States
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedSize, setSelectedSize] = useState('');
   const [qty, setQty] = useState(1);
 
-  // Use a ref to track the current productId to prevent race conditions
   const currentIdRef = useRef(productId);
 
   const loadData = useCallback(async () => {
@@ -47,13 +47,15 @@ export function useProductData(productId: string): UseProductDataReturn {
     setLoading(true);
     setError(null);
 
+    // ✅ Reset UI state at the START of a new load, not in a cleanup function
+    // This prevents the infinite re-render loop (#310)
+    setQty(1);
+    setSelectedSize('');
+    setSelectedVariant(null);
+
     try {
-      // Step A: Fetch Primary Product Data
       const { data: productData } = await api.get(`/products/${productId}`);
 
-      // Step B: Parallel Fetching for secondary data
-      // We wrap these in a try/catch or handle defaults so a vendor API 
-      // failure doesn't crash the whole product page.
       const [vRes, rRes] = await Promise.allSettled([
         api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
         api.get('/products', { 
@@ -61,22 +63,17 @@ export function useProductData(productId: string): UseProductDataReturn {
         })
       ]);
 
-      // Step C: Atomic Update
-      // Only update state if the user hasn't navigated away during the fetch
       if (currentIdRef.current === productId) {
         setData({
           product: productData,
           vendor: vRes.status === 'fulfilled' ? vRes.value.data : null,
           recommended: rRes.status === 'fulfilled' 
-            ? rRes.value.data.data.filter((p: any) => p.id !== productId) 
+            ? (rRes.value.data?.data || rRes.value.data || []).filter((p: any) => p.id !== productId) 
             : [],
         });
 
-        // Initialize UI states based on new product
         if (productData.variants?.length > 0) {
           setSelectedVariant(productData.variants[0]);
-        } else {
-          setSelectedVariant(null);
         }
       }
     } catch (err: any) {
@@ -94,12 +91,9 @@ export function useProductData(productId: string): UseProductDataReturn {
   useEffect(() => {
     loadData();
     
-    return () => {
-      // Cleanup UI states on unmount or ID change
-      setQty(1);
-      setSelectedSize('');
-      setSelectedVariant(null);
-    };
+    // ❌ REMOVED: Return cleanup with setters. 
+    // Triggering setters in the cleanup of an ID-based effect 
+    // is what creates the infinite render loop.
   }, [loadData]);
 
   return {
