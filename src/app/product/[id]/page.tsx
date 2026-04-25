@@ -78,36 +78,30 @@ export default function ProductDetailsPage() {
   // ================= 4. DEFENSIVE CALCULATIONS =================
   console.log('🧠 [PAGE] Running Calculations for Product:', product.id);
 
+  // Inside ProductDetailsPage.tsx
+
   const priceData = useMemo(() => {
-    try {
-      const basePrice = safeNumber(product.price, 0);
-      return {
-        current: basePrice,
-        original: Math.round(basePrice * 1.2),
-        discount: basePrice > 0 ? 20 : 0,
-      };
-    } catch (err) {
-      console.error('❌ [PAGE] Error in priceData Memo:', err);
-      return { current: 0, original: 0, discount: 0 };
-    }
-  }, [product]);
+    if (!product?.id) return { current: 0, original: 0, discount: 0 };
+    
+    const basePrice = safeNumber(product.price, 0);
+    return {
+      current: basePrice,
+      original: Math.round(basePrice * 1.2),
+      discount: basePrice > 0 ? 20 : 0,
+    };
+  }, [product?.id, product?.price]); // 🔥 Use specific values, not the whole object
 
   const safeImage = useMemo(() => {
-    try {
-      // 1. Check variant images
-      const variantImg = selectedVariant?.images?.[0];
-      if (variantImg) return typeof variantImg === 'string' ? variantImg : (variantImg.imageUrl || variantImg.url);
+    if (!product?.id) return '/placeholder.jpg';
 
-      // 2. Check main product images
-      const mainImg = Array.isArray(product.images) ? product.images[0] : product.image;
-      if (mainImg) return typeof mainImg === 'string' ? mainImg : (mainImg.imageUrl || mainImg.url);
+    const variantImg = selectedVariant?.images?.[0];
+    if (variantImg) return typeof variantImg === 'string' ? variantImg : (variantImg.imageUrl || variantImg.url);
 
-      return '/placeholder.jpg';
-    } catch (err) {
-      console.error('❌ [PAGE] Error in safeImage Memo:', err);
-      return '/placeholder.jpg';
-    }
-  }, [product, selectedVariant]);
+    const mainImg = Array.isArray(product.images) ? product.images[0] : product.image;
+    if (mainImg) return typeof mainImg === 'string' ? mainImg : (mainImg.imageUrl || mainImg.url);
+
+    return '/placeholder.jpg';
+  }, [product?.id, selectedVariant?.id]); // 🔥 Use specific IDs
 
   // ================= 5. HANDLERS =================
   const handleAddToCart = useCallback(async () => {

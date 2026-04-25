@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/src/lib/axios';
 
-// 1. Interface must be defined before the function uses it
 export interface UseProductDataReturn {
   product: any;
   vendor: any;
@@ -20,18 +19,7 @@ export interface UseProductDataReturn {
 }
 
 export function useProductData(productId: string): UseProductDataReturn {
-  // Data States
-  const [data, setData] = useState<{
-    product: any;
-    vendor: any;
-    recommended: any[];
-  }>({
-    product: null,
-    vendor: null,
-    recommended: [],
-  });
-
-  // UI States
+  const [data, setData] = useState({ product: null, vendor: null, recommended: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
@@ -47,8 +35,7 @@ export function useProductData(productId: string): UseProductDataReturn {
     setLoading(true);
     setError(null);
 
-    // ✅ Reset UI state at the START of a new load, not in a cleanup function
-    // This prevents the infinite re-render loop (#310)
+    // Initial state reset
     setQty(1);
     setSelectedSize('');
     setSelectedVariant(null);
@@ -58,9 +45,7 @@ export function useProductData(productId: string): UseProductDataReturn {
 
       const [vRes, rRes] = await Promise.allSettled([
         api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
-        api.get('/products', { 
-          params: { category: productData.category?.slug, limit: 8 } 
-        })
+        api.get('/products', { params: { category: productData.category?.slug, limit: 8 } })
       ]);
 
       if (currentIdRef.current === productId) {
@@ -78,23 +63,18 @@ export function useProductData(productId: string): UseProductDataReturn {
       }
     } catch (err: any) {
       console.error("PRODUCT_HOOK_ERROR:", err);
-      if (currentIdRef.current === productId) {
-        setError(err.response?.data?.message || "Product not found or unavailable.");
-      }
+      setError("Product not found.");
     } finally {
       if (currentIdRef.current === productId) {
         setLoading(false);
       }
     }
-  }, [productId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]); // 🔥 Only re-create if productId changes
 
   useEffect(() => {
     loadData();
-    
-    // ❌ REMOVED: Return cleanup with setters. 
-    // Triggering setters in the cleanup of an ID-based effect 
-    // is what creates the infinite render loop.
-  }, [loadData]);
+  }, [productId]); // 🔥 Only run when productId changes, NOT loadData
 
   return {
     ...data,
