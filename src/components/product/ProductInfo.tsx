@@ -23,76 +23,43 @@ export function ProductInfo({
   reviewCount = 0,
 }: ProductInfoProps) {
 
-  /* ================= SAFE NUMBER ================= */
-  const toSafeNumber = (value: any): number => {
-    if (value == null) return 0;
-
-    if (typeof value === 'number') {
-      return isNaN(value) ? 0 : value;
-    }
-
-    if (typeof value === 'string') {
-      // Remove currency symbols, commas, spaces
-      const cleaned = value.replace(/[^\d.-]/g, '');
-      const parsed = parseFloat(cleaned);
+  /* ================= SAFE CONVERSION ================= */
+  // Moved logic into a more stable internal helper
+  const parseValue = (val: any): number => {
+    if (val === null || val === undefined) return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val.replace(/[^\d.-]/g, ''));
       return isNaN(parsed) ? 0 : parsed;
     }
-
     return 0;
   };
 
-  /* ================= MEMOIZED VALUES ================= */
-  const {
-    currentPrice,
-    origPrice,
-    safeRating,
-    safeReviewCount,
-    savings,
-    discountPercent,
-  } = useMemo(() => {
-    const currentPrice = toSafeNumber(price);
-    const origPrice = toSafeNumber(originalPrice);
-
-    const safeRating = Math.max(0, toSafeNumber(rating));
-    const safeReviewCount = Math.max(0, toSafeNumber(reviewCount));
-
-    const savings = origPrice > currentPrice ? origPrice - currentPrice : 0;
-
-    const discountPercent =
-      discount && discount > 0
-        ? discount
-        : origPrice > 0
-        ? Math.round((savings / origPrice) * 100)
-        : 0;
+  /* ================= MEMOIZED DATA ================= */
+  const data = useMemo(() => {
+    const current = parseValue(price);
+    const original = parseValue(originalPrice);
+    const safeRating = Math.max(0, parseValue(rating));
+    const safeReviews = Math.max(0, parseValue(reviewCount));
+    
+    const savingsAmount = original > current ? original - current : 0;
+    const computedDiscount = discount && discount > 0 
+      ? discount 
+      : original > 0 ? Math.round((savingsAmount / original) * 100) : 0;
 
     return {
-      currentPrice,
-      origPrice,
+      current,
+      original,
       safeRating,
-      safeReviewCount,
-      savings,
-      discountPercent,
+      safeReviews,
+      savingsAmount,
+      computedDiscount,
     };
   }, [price, originalPrice, discount, rating, reviewCount]);
 
-  /* ================= SAFE FORMATTERS ================= */
-  const formatMoney = (value: number) => {
-    try {
-      return Number(value || 0).toLocaleString();
-    } catch {
-      return '0';
-    }
-  };
+  /* ================= UI FORMATTERS ================= */
+  const format = (num: number) => num.toLocaleString('en-NG');
 
-  const formatNumber = (value: number) => {
-    try {
-      return Number(value || 0).toLocaleString();
-    } catch {
-      return '0';
-    }
-  };
-
-  /* ================= UI ================= */
   return (
     <div className="space-y-6">
       {/* Status & Rating */}
@@ -104,48 +71,45 @@ export function ProductInfo({
 
         <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-50 rounded-full border border-zinc-100">
           <Star size={12} className="fill-yellow-400 text-yellow-400" />
-          
-<span className="text-[11px] font-bold text-zinc-900">
-  {safeRating.toFixed(1)}
-</span>
-
+          <span className="text-[11px] font-bold text-zinc-900">
+            {/* SAFE GUARD HERE: Ensure toFixed is called on a number */}
+            {(data.safeRating ?? 0).toFixed(1)}
+          </span>
           <span className="text-[11px] text-zinc-400">
-            ({formatNumber(safeReviewCount)} reviews)
-          </span>Number
+            ({format(data.safeReviews)} reviews)
+          </span>
         </div>
       </div>
 
       {/* Title */}
       <div className="space-y-1">
         <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 leading-tight">
-          {title}
+          {title || "Product Title"}
         </h1>
-
-        {subTitle ? (
+        {subTitle && (
           <p className="text-zinc-500 font-medium text-lg italic">
             {subTitle}
           </p>
-        ) : null}
+        )}
       </div>
 
-      {/* Price */}
+      {/* Price Section */}
       <div className="flex items-baseline gap-4 pt-2">
         <span className="text-4xl font-bold text-[#A4143D] tracking-tighter">
-          ₦{formatMoney(currentPrice)}
+          ₦{format(data.current)}
         </span>
 
-        {origPrice > currentPrice && (
+        {data.original > data.current && (
           <div className="flex flex-col">
             <span className="text-sm text-zinc-400 line-through font-medium">
-              ₦{formatMoney(origPrice)}
+              ₦{format(data.original)}
             </span>
-
             <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-tighter">
-              You save ₦{formatMoney(savings)} ({discountPercent}%)
+              You save ₦{format(data.savingsAmount)} ({data.computedDiscount}%)
             </span>
           </div>
         )}
       </div>
     </div>
   );
-} 
+}

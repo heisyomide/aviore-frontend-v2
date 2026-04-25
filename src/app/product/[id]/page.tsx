@@ -17,7 +17,7 @@ import { VendorCard } from '@/src/components/product/VendorCard';
 import { DeliveryInfo } from '@/src/components/product/DeliveryInfo';
 import { ProductDescription } from '@/src/components/product/ProductDescription';
 import { RecommendedProducts } from '@/src/components/product/RecommendedProducts';
-import {safeNumber} from '@/src/utils/safe';
+import { safeNumber, safeString } from '@/src/utils/safe';
 
 // Layout
 import { Container } from '@/src/components/layout/Container';
@@ -25,13 +25,17 @@ import { Navbar } from '@/src/components/navbar/Navbar';
 import { ProductSkeleton } from '@/src/components/product/ProductSkeleton';
 
 export default function ProductDetailsPage() {
+  console.log('🚀 [PAGE] Render Start');
+  
   const { id: productId } = useParams();
   const router = useRouter();
-  
-  // 1. Hydration & Mount State
+  const addItem = useCartStore((state) => state.addItem);
+
+  // 1. Mount State
   const [mounted, setMounted] = useState(false);
   useEffect(() => { 
     setMounted(true); 
+    console.log('✅ [PAGE] Component Mounted');
   }, []);
 
   // 2. Data Fetching
@@ -43,88 +47,16 @@ export default function ProductDetailsPage() {
   } = useProductData(productId as string);
 
   const [isFollowing, setIsFollowing] = useState(false);
-  const addItem = useCartStore((state) => state.addItem);
 
-  // 3. Defensive Price Logic
-const priceData = useMemo(() => {
-  if (!product) {
-    return { current: 0, original: 0, discount: 0 };
+  // ================= 3. HIGH PRIORITY GUARD RAILS =================
+  // We check this BEFORE calculating prices or images to prevent null pointers
+  if (loading) {
+    console.log('⏳ [PAGE] State: Loading');
+    return <ProductSkeleton />;
   }
 
-  // Handle all possible price formats safely
-  let basePrice = 0;
-
-  if (typeof product.price === 'number') {
-    basePrice = product.price;
-  } else if (typeof product.price === 'string') {
-    basePrice = parseFloat(product.price);
-  } else if (product.price && typeof product.price === 'object') {
-    // In case price is an object (some APIs do this)
-    basePrice = Number(product.price) || 0;
-  }
-
-  const safePrice = isNaN(basePrice) ? 0 : basePrice;
-
-  return {
-    current: safePrice,
-    original: Math.round(safePrice * 1.2),
-    discount: safePrice > 0 ? 20 : 0,
-  };
-}, [product]);
-
-const safeImage =
-  Array.isArray(selectedVariant?.images) && selectedVariant.images.length > 0
-    ? selectedVariant.images[0]?.imageUrl
-    : Array.isArray(product?.images)
-    ? typeof product.images[0] === 'string'
-      ? product.images[0]
-      : product.images[0]?.imageUrl
-    : '/placeholder.jpg';
-
-
-  // 4. Handlers
-  const handleAddToCart = useCallback(async () => {
-    if (!product) return;
-    
-    if (product.variants?.length > 0 && !selectedSize) {
-      alert("Please select a size to continue.");
-      return;
-    }
-
-    addItem({
-      id: product.id,
-      name: product.title,
-      price: priceData.current, 
-      image: safeImage,
-      vendorId: product.vendorId,
-      stock: product.stock,
-      quantity: qty,
-      size: selectedSize,
-      variant: selectedVariant 
-    });
-  }, [product, selectedSize, selectedVariant, priceData, qty, addItem]);
-
-  const handleBuyNow = async () => {
-    await handleAddToCart();
-    router.push('/cart');
-  };
-
-  const handleFollow = async () => {
-    setIsFollowing(prev => !prev);
-    // Future API call: await toggleFollow(vendor?.id);
-  };
-
-  // 5. High-Priority Guard Rails
-  // Prevents UI flicker and crashes if data is missing during a timeout
-  if (!product || typeof product !== 'object') {
-  console.error('❌ PRODUCT INVALID:', product);
-  return <ProductSkeleton />;
-}
-
-  
   if (!product || !product.id) {
-
-    console.log('🔥 RAW PRODUCT RATING:', product?.rating);
+    console.warn('⚠️ [PAGE] State: Product Invalid or Missing ID', product);
     return (
       <div className="min-h-screen bg-white">
         <Navbar />
@@ -132,12 +64,9 @@ const safeImage =
           <h1 className="text-sm font-bold text-zinc-400 uppercase tracking-[0.3em] mb-4">
             Product Not Found
           </h1>
-          <p className="text-zinc-500 mb-8 max-w-xs mx-auto">
-            The item you are looking for may have been moved or is currently unavailable.
-          </p>
           <button 
             onClick={() => router.push('/shop')}
-            className="px-8 py-3 bg-black text-white rounded-full text-xs uppercase tracking-widest hover:bg-zinc-800 transition-colors"
+            className="px-8 py-3 bg-black text-white rounded-full text-xs uppercase tracking-widest"
           >
             Back to Shop
           </button>
@@ -146,13 +75,79 @@ const safeImage =
     );
   }
 
+  // ================= 4. DEFENSIVE CALCULATIONS =================
+  console.log('🧠 [PAGE] Running Calculations for Product:', product.id);
 
+  const priceData = useMemo(() => {
+    try {
+      const basePrice = safeNumber(product.price, 0);
+      return {
+        current: basePrice,
+        original: Math.round(basePrice * 1.2),
+        discount: basePrice > 0 ? 20 : 0,
+      };
+    } catch (err) {
+      console.error('❌ [PAGE] Error in priceData Memo:', err);
+      return { current: 0, original: 0, discount: 0 };
+    }
+  }, [product]);
 
-  console.log('🧠 PRODUCT DEBUG:', {
-  product,
-  selectedVariant,
-  images: selectedVariant?.images,
-});
+  const safeImage = useMemo(() => {
+    try {
+      // 1. Check variant images
+      const variantImg = selectedVariant?.images?.[0];
+      if (variantImg) return typeof variantImg === 'string' ? variantImg : (variantImg.imageUrl || variantImg.url);
+
+      // 2. Check main product images
+      const mainImg = Array.isArray(product.images) ? product.images[0] : product.image;
+      if (mainImg) return typeof mainImg === 'string' ? mainImg : (mainImg.imageUrl || mainImg.url);
+
+      return '/placeholder.jpg';
+    } catch (err) {
+      console.error('❌ [PAGE] Error in safeImage Memo:', err);
+      return '/placeholder.jpg';
+    }
+  }, [product, selectedVariant]);
+
+  // ================= 5. HANDLERS =================
+  const handleAddToCart = useCallback(async () => {
+    console.log('🛒 [ACTION] Add to Cart Triggered');
+    if (!product) return;
+    
+    if (Array.isArray(product.variants) && product.variants.length > 0 && !selectedSize) {
+      alert("Please select a size to continue.");
+      return;
+    }
+
+    try {
+      await addItem({
+        id: String(product.id),
+        name: safeString(product.title || product.name, 'Product'),
+        price: priceData.current, 
+        image: safeImage,
+        vendorId: String(product.vendorId || ''),
+        stock: safeNumber(product.stock, 0),
+        quantity: qty,
+        size: selectedSize,
+        variant: selectedVariant 
+      });
+      console.log('✅ [ACTION] Item added to store');
+    } catch (err) {
+      console.error('❌ [ACTION] Add to Cart Failed:', err);
+    }
+  }, [product, selectedSize, selectedVariant, priceData, qty, addItem, safeImage]);
+
+  const handleBuyNow = async () => {
+    await handleAddToCart();
+    router.push('/cart');
+  };
+
+  const handleFollow = async () => {
+    setIsFollowing(prev => !prev);
+  };
+
+  // ================= 6. FINAL UI RENDER =================
+  console.log('✨ [PAGE] Rendering UI');
 
   return (
     <div className="min-h-screen bg-white">
@@ -161,35 +156,31 @@ const safeImage =
       <Container className="py-12 lg:py-24">
         <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
           
-          {/* GALLERY SECTION */}
+          {/* LEFT: GALLERY & DESCRIPTION */}
           <div className="lg:col-span-7 space-y-12">
-<ProductGallery 
-  images={
-    selectedVariant?.images || 
-    product?.images || 
-    []
-  } 
-  title={product?.title || 'Product'} 
-/>
+            <ProductGallery 
+              images={selectedVariant?.images || product.images || []} 
+              title={product.title} 
+            />
             <div className="hidden lg:block pt-12 border-t border-zinc-100">
               <ProductDescription description={product.description} />
             </div>
           </div>
 
-          {/* PRODUCT CONFIGURATION SIDEBAR */}
+          {/* RIGHT: CONFIGURATION SIDEBAR */}
           <aside className="lg:col-span-5 lg:sticky lg:top-32 space-y-10">
-<ProductInfo 
-  title={product?.title}
-  subTitle={product?.subTitle}
-  price={priceData.current}
-  originalPrice={priceData.original}
-  discount={priceData.discount}
-rating={safeNumber(product?.rating, 0)}
-reviewCount={safeNumber(product?.reviewCount, 0)}
-/>
+            <ProductInfo 
+              title={product.title}
+              subTitle={product.subTitle}
+              price={priceData.current}
+              originalPrice={priceData.original}
+              discount={priceData.discount}
+              rating={product.rating || product.averageRating}
+              reviewCount={product.reviewCount}
+            />
 
             <VariantSelector 
-              variants={product.variants || []}
+              variants={product.variants}
               selectedVariant={selectedVariant}
               onSelectVariant={setSelectedVariant}
               selectedSize={selectedSize}
@@ -218,10 +209,10 @@ reviewCount={safeNumber(product?.reviewCount, 0)}
             )}
             
             <DeliveryInfo 
-  origin={product.origin}
-  min={product.deliveryMin}
-  max={product.deliveryMax}
-/>
+              origin={product.origin}
+              min={product.deliveryMin}
+              max={product.deliveryMax}
+            />
 
             <div className="lg:hidden pt-10 border-t border-zinc-100">
               <ProductDescription description={product.description} />
