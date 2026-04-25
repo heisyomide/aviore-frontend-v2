@@ -3,7 +3,7 @@
 import React, { useState, useMemo, memo, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, ImageOff, Heart, Truck } from 'lucide-react';
+import { ShoppingBag, Heart, ImageOff, Zap } from 'lucide-react';
 
 import { Rating } from '../ui/Rating';
 import { useCartStore } from '../../store/useCartStore';
@@ -17,264 +17,150 @@ import {
   formatMoney
 } from '@/src/utils/safe';
 
-/* ====================== TYPES ====================== */
-interface Product {
-  id?: string;
-  title?: string;
-  name?: string;
-  price?: any;
-  oldPrice?: any;
-  stock?: any;
-  discount?: any;
-  averageRating?: any;
-  rating?: any;
-  reviewCount?: any;
-  reviews?: any[];
-  vendorId?: string;
-  image?: any;
-  images?: any[];
-  variants?: any[];
-  origin?: string;
-  deliveryMin?: any;
-  deliveryMax?: any;
-  deliveryUnit?: string;
-}
-
-/* ====================== IMAGE RESOLVER ====================== */
-const resolveImage = (product: Product, apiBase: string) => {
-  const variantImg = product?.variants?.[0]?.images?.[0];
-
-  const raw =
-    safeImage(variantImg) ||
-    safeImage(product?.image) ||
-    safeImage(safeArray(product?.images)[0]);
-
-  if (!raw) return '/placeholder.png';
-
-  return raw.startsWith('http')
-    ? raw
-    : `${apiBase}/uploads/${raw.replace(/^\//, '')}`;
-};
-
-/* ====================== MAIN ====================== */
-export function ProductCard({ product }: { product: Product }) {
+/* ====================== MODERN PRODUCT CARD ====================== */
+export function ProductCard({ product }: { product: any }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-
   const addItem = useCartStore((s) => s.addItem);
   const { toggleWishlist, isWishlisted } = useWishlistStore();
 
   useEffect(() => setMounted(true), []);
 
-  const apiBase =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
-  /* ================= SAFE DATA ================= */
   const data = useMemo(() => {
     const price = safeNumber(product?.price);
-    const oldPrice = safeNumber(product?.oldPrice);
-    const stock = safeNumber(product?.stock);
-
-    const rating = safeNumber(
-      product?.averageRating ?? product?.rating ?? 0
-    );
-
-    const reviewCount = Array.isArray(product?.reviews)
-      ? product.reviews.length
-      : safeNumber(product?.reviewCount);
+    const rating = safeNumber(product?.averageRating ?? product?.rating ?? 0);
+    const firstImg = product?.variants?.[0]?.images?.[0]?.imageUrl || 
+                     product?.images?.[0]?.imageUrl || 
+                     product?.image;
 
     return {
       id: safeString(product?.id),
-      name: safeString(product?.title || product?.name, 'Unknown Product'),
+      name: safeString(product?.title || product?.name, 'Product'),
+      category: safeString(product?.category?.name, 'New Arrival'),
       price,
-      oldPrice,
-      stock,
+      oldPrice: safeNumber(product?.oldPrice),
+      stock: safeNumber(product?.stock),
       rating,
-      reviewCount,
+      reviewCount: safeNumber(product?.reviewCount),
       discount: safeNumber(product?.discount),
-      image: resolveImage(product, apiBase),
+      image: firstImg ? (firstImg.startsWith('http') ? firstImg : `${apiBase}/uploads/${firstImg}`) : '/placeholder.png',
       vendorId: safeString(product?.vendorId),
     };
   }, [product, apiBase]);
 
-  const isHearted = mounted && data.id
-    ? isWishlisted?.(data.id)
-    : false;
+  const isHearted = mounted && data.id ? isWishlisted?.(data.id) : false;
 
-  /* ================= HANDLERS ================= */
-  const handleNavigate = () => {
-    if (data.id) router.push(`/product/${data.id}`);
-  };
+  const handleNavigate = () => data.id && router.push(`/product/${data.id}`);
 
-  const handleQuickAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (!data.id || !data.vendorId) {
-      console.error('Invalid cart data:', data);
-      return;
-    }
-
-    addItem({
-      id: data.id,
-      name: data.name,
-      price: data.price,
-      image: data.image,
-      vendorId: data.vendorId,
-      stock: data.stock,
-      quantity: 1,
-    });
-  };
-
-  const handleWishlist = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (!data.id) return;
-
-    try {
-      await toggleWishlist?.({
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        image: data.image,
-      });
-    } catch (err) {
-      console.error('Wishlist error:', err);
-    }
-  };
-
-  /* ================= UI ================= */
   return (
-    <div
+    <div 
       onClick={handleNavigate}
-      className="group relative cursor-pointer rounded-2xl bg-white p-3 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl border border-transparent hover:border-gray-100"
+      className="group relative flex flex-col bg-white transition-all duration-500 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] rounded-[2rem] overflow-hidden border border-zinc-50"
     >
-      <ProductImageSection
-        image={data.image}
-        name={data.name}
-        discount={data.discount}
-        isHearted={isHearted}
-        onQuickAdd={handleQuickAdd}
-        onWishlist={handleWishlist}
-      />
-
-      <div className="space-y-3 px-1 mt-3">
-        <h3 className="line-clamp-2 h-8 text-[11px] font-black uppercase tracking-tight text-gray-500 group-hover:text-black">
-          {data.name}
-        </h3>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-black italic text-[#A4143D]">
-              {formatMoney(data.price)}
-            </span>
-
-            {data.oldPrice > 0 && (
-              <span className="text-[10px] text-gray-300 line-through">
-                {formatMoney(data.oldPrice)}
-              </span>
-            )}
+      {/* IMAGE SECTION */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-zinc-100">
+        {data.image !== '/placeholder.png' ? (
+          <Image
+            src={data.image}
+            alt={data.name}
+            fill
+            sizes="(max-width:768px) 50vw, 25vw"
+            className="object-cover transition-transform duration-1000 group-hover:scale-110"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-zinc-300">
+            <ImageOff size={32} strokeWidth={1.5} />
           </div>
+        )}
 
+        {/* TOP OVERLAYS */}
+        <div className="absolute inset-x-3 top-3 flex items-start justify-between">
+          {data.discount > 0 ? (
+            <span className="bg-black text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter">
+              -{data.discount}%
+            </span>
+          ) : <div />}
+          
           <button
-            onClick={handleQuickAdd}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 active:scale-95 md:hidden"
+            onClick={(e) => { e.stopPropagation(); toggleWishlist(data); }}
+            className={`h-10 w-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all active:scale-90 ${
+              isHearted ? 'bg-[#A4143D] text-white' : 'bg-white/80 text-zinc-900 shadow-sm hover:bg-white'
+            }`}
           >
-            <ShoppingCart size={14} />
+            <Heart size={18} fill={isHearted ? 'currentColor' : 'none'} strokeWidth={2} />
           </button>
         </div>
 
-        <DeliveryBadge
-          origin={product?.origin}
-          min={product?.deliveryMin}
-          max={product?.deliveryMax}
-          unit={product?.deliveryUnit}
-        />
+        {/* BOTTOM QUICK ADD (Slides up on Hover) */}
+        <div className="absolute inset-x-3 bottom-3 translate-y-12 transition-transform duration-500 group-hover:translate-y-0 hidden md:block">
+          <button
+            onClick={(e) => { e.stopPropagation(); addItem({...data, quantity: 1}); }}
+            className="w-full bg-black/90 hover:bg-black backdrop-blur-md text-white py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+          >
+            <ShoppingBag size={14} />
+            Add to Cart
+          </button>
+        </div>
+      </div>
 
-        <div className="flex items-center justify-between border-t border-gray-50 pt-3">
+      {/* CONTENT SECTION */}
+      <div className="p-5 flex flex-col flex-1 space-y-3">
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+            {data.category}
+          </p>
+          <h3 className="text-sm font-semibold text-zinc-900 line-clamp-1 group-hover:text-[#A4143D] transition-colors">
+            {data.name}
+          </h3>
+        </div>
+
+        {/* PRICE & RATING */}
+        <div className="flex items-end justify-between">
+          <div className="flex flex-col">
+            {data.oldPrice > data.price && (
+              <span className="text-[10px] text-zinc-300 line-through font-medium">
+                ₦{data.oldPrice.toLocaleString()}
+              </span>
+            )}
+            <span className="text-lg font-bold text-zinc-950 tracking-tighter">
+              ₦{data.price.toLocaleString()}
+            </span>
+          </div>
+          
           <Rating rate={data.rating} count={data.reviewCount} />
-          <StockStatus stock={data.stock} />
+        </div>
+
+        {/* STOCK STATUS PILL */}
+        <div className="pt-2 border-t border-zinc-50 flex items-center justify-between">
+          <StockIndicator stock={data.stock} />
+          <div className="md:hidden">
+            <button 
+              onClick={(e) => { e.stopPropagation(); addItem({...data, quantity: 1}); }}
+              className="h-9 w-9 bg-zinc-950 text-white rounded-xl flex items-center justify-center shadow-lg shadow-zinc-200"
+            >
+              <ShoppingBag size={14} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ================= SUB COMPONENTS ================= */
-
-const ProductImageSection = memo(
-  ({ image, name, discount, isHearted, onQuickAdd, onWishlist }: any) => (
-    <div className="relative mb-4 aspect-square overflow-hidden rounded-xl bg-gray-50">
-      {image !== '/placeholder.png' ? (
-        <Image
-          src={image}
-          alt={name}
-          fill
-          sizes="(max-width:768px) 50vw, 25vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
-        />
-      ) : (
-        <div className="flex h-full items-center justify-center bg-gray-100">
-          <ImageOff size={24} />
-        </div>
-      )}
-
-      {discount > 0 && (
-        <div className="absolute left-2 top-2 bg-[#A4143D] px-2 py-1 text-[10px] text-white font-black">
-          -{discount}%
-        </div>
-      )}
-
-      <button
-        onClick={onWishlist}
-        className={`absolute right-2 top-2 h-9 w-9 flex items-center justify-center rounded-full ${
-          isHearted
-            ? 'bg-[#A4143D] text-white'
-            : 'bg-white text-gray-400'
-        }`}
-      >
-        <Heart size={16} fill={isHearted ? 'currentColor' : 'none'} />
-      </button>
+const StockIndicator = ({ stock }: { stock: number }) => {
+  if (stock <= 0) return <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">Out of Stock</span>;
+  if (stock < 5) return (
+    <div className="flex items-center gap-1.5">
+      <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+      <span className="text-[10px] font-bold text-orange-600 uppercase tracking-tighter">Low Stock</span>
     </div>
-  )
-);
-
-const DeliveryBadge = memo(({ origin, min, max, unit }: any) => {
-  if (!origin) return null;
-
-  const isLocal = safeString(origin).toUpperCase() === 'LOCAL';
-
+  );
   return (
-    <div className={`flex items-center gap-1 text-[9px] font-bold uppercase ${
-      isLocal ? 'text-emerald-600' : 'text-blue-600'
-    }`}>
-      <Truck size={12} />
-      <span>{isLocal ? 'Fast Local Delivery' : 'Ships Worldwide'}</span>
-      {min != null && max != null && (
-        <>
-          <span className="opacity-40">•</span>
-          <span>{min}-{max} {unit || 'days'}</span>
-        </>
-      )}
+    <div className="flex items-center gap-1.5">
+      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">Available</span>
     </div>
   );
-});
-
-const StockStatus = memo(({ stock }: { stock: number }) => {
-  if (stock <= 0) {
-    return <span className="text-[8px] font-black text-red-500">Out of Stock</span>;
-  }
-
-  return stock < 10 ? (
-    <span className="text-[8px] font-black text-orange-600">
-      Only {stock} Left
-    </span>
-  ) : (
-    <span className="text-[8px] font-black text-emerald-600">
-      In Stock
-    </span>
-  );
-});
-
-ProductImageSection.displayName = 'ProductImageSection';
-DeliveryBadge.displayName = 'DeliveryBadge';
-StockStatus.displayName = 'StockStatus';
+};
