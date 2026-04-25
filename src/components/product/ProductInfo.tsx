@@ -106,12 +106,12 @@ export function ProductInfo({
           <Star size={12} className="fill-yellow-400 text-yellow-400" />
           
 <span className="text-[11px] font-bold text-zinc-900">
-  {(Number(rating) || 0).toFixed(1)}
+  {safeRating.toFixed(1)}
 </span>
 
           <span className="text-[11px] text-zinc-400">
             ({formatNumber(safeReviewCount)} reviews)
-          </span>
+          </span>Number
         </div>
       </div>
 

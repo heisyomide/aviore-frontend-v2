@@ -17,6 +17,7 @@ import { VendorCard } from '@/src/components/product/VendorCard';
 import { DeliveryInfo } from '@/src/components/product/DeliveryInfo';
 import { ProductDescription } from '@/src/components/product/ProductDescription';
 import { RecommendedProducts } from '@/src/components/product/RecommendedProducts';
+import {safeNumber} from '@/src/utils/safe';
 
 // Layout
 import { Container } from '@/src/components/layout/Container';
@@ -115,9 +116,15 @@ const safeImage =
 
   // 5. High-Priority Guard Rails
   // Prevents UI flicker and crashes if data is missing during a timeout
-  if (!mounted || loading) return <ProductSkeleton />;
+  if (!product || typeof product !== 'object') {
+  console.error('❌ PRODUCT INVALID:', product);
+  return <ProductSkeleton />;
+}
+
   
   if (!product || !product.id) {
+
+    console.log('🔥 RAW PRODUCT RATING:', product?.rating);
     return (
       <div className="min-h-screen bg-white">
         <Navbar />
@@ -139,10 +146,7 @@ const safeImage =
     );
   }
 
-function toSafeNumber(value: any, fallback = 0): number {
-  const num = Number(value);
-  return isNaN(num) ? fallback : num;
-}
+
 
   console.log('🧠 PRODUCT DEBUG:', {
   product,
@@ -180,8 +184,8 @@ function toSafeNumber(value: any, fallback = 0): number {
   price={priceData.current}
   originalPrice={priceData.original}
   discount={priceData.discount}
-  rating={toSafeNumber(product?.rating)}
-  reviewCount={toSafeNumber(product?.reviewCount)}
+rating={safeNumber(product?.rating, 0)}
+reviewCount={safeNumber(product?.reviewCount, 0)}
 />
 
             <VariantSelector 
