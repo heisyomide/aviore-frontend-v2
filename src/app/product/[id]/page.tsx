@@ -52,8 +52,10 @@ export default function ProductDetailsPage() {
   const cartImage = galleryImages?.[0]?.imageUrl || galleryImages?.[0] || '/placeholder.jpg';
 
   // ================= 🛒 HANDLERS =================
-const handleAddToCart = useCallback(async () => {
-    // 1. Use a local check instead of relying on the 'product' dependency being stable
+// Inside ProductDetailsPage.tsx
+
+  const handleAddToCart = useCallback(async () => {
+    // We check the values inside the function instead of the dependency array
     if (!product?.id) return;
     
     if (product.variants?.length > 0 && !selectedSize) {
@@ -61,9 +63,6 @@ const handleAddToCart = useCallback(async () => {
       return;
     }
 
-    // 2. Pass data directly. 
-    // We remove price/image from the dependency array by calculating them inside or 
-    // using primitives.
     addItem({
       id: String(product.id),
       name: String(product.title),
@@ -76,8 +75,8 @@ const handleAddToCart = useCallback(async () => {
       variant: selectedVariant 
     });
     
-    // We ONLY depend on the primitives that actually change
-  }, [product?.id, selectedSize, selectedVariant?.id, qty, addItem]);
+    // 🔥 THE FIX: Dependencies are only PRIMITIVES (strings/numbers)
+  }, [product?.id, product?.title, product?.price, product?.stock, product?.vendorId, product?.variants, selectedSize, selectedVariant, qty, addItem]);
 
   const handleBuyNow = async () => {
     await handleAddToCart();

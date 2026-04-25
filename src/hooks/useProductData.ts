@@ -76,24 +76,9 @@ if (currentIdRef.current === productId) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]); // 🔥 Only re-create if productId changes
 
-// src/hooks/useProductData.ts
-
   useEffect(() => {
-    let isMounted = true;
-
-    const executeLoad = async () => {
-      if (isMounted) {
-        await loadData();
-      }
-    };
-
-    executeLoad();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]); // 🔥 ONLY depend on productId. NOT loadData.
+    loadData();
+  }, [productId]); // 🔥 Only run when productId changes, NOT loadData
 
   return {
     ...data,
