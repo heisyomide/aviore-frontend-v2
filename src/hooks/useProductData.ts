@@ -48,19 +48,23 @@ export function useProductData(productId: string): UseProductDataReturn {
         api.get('/products', { params: { category: productData.category?.slug, limit: 8 } })
       ]);
 
-      if (currentIdRef.current === productId) {
-        setData({
-          product: productData,
-          vendor: vRes.status === 'fulfilled' ? vRes.value.data : null,
-          recommended: rRes.status === 'fulfilled' 
-            ? (rRes.value.data?.data || rRes.value.data || []).filter((p: any) => p.id !== productId) 
-            : [],
-        });
+// Inside src/hooks/useProductData.ts -> loadData function
 
-        if (productData.variants?.length > 0) {
-          setSelectedVariant(productData.variants[0]);
-        }
-      }
+if (currentIdRef.current === productId) {
+  setData({
+    product: productData,
+    vendor: productData.vendor || null, // API already includes vendor!
+    recommended: rRes.status === 'fulfilled' 
+      ? (rRes.value.data?.data || []).filter((p: any) => p.id !== productId) 
+      : [],
+  });
+
+  // Check if variants exist in the response
+  if (productData.variants && productData.variants.length > 0) {
+    // Only set if we don't have one selected to prevent the #310 loop
+    setSelectedVariant((prev: any) => prev ? prev : productData.variants[0]);
+  }
+}
     } catch (err: any) {
       console.error("PRODUCT_HOOK_ERROR:", err);
       setError("Product not found.");

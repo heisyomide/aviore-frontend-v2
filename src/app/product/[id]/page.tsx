@@ -80,28 +80,29 @@ export default function ProductDetailsPage() {
 
   // Inside ProductDetailsPage.tsx
 
-  const priceData = useMemo(() => {
-    if (!product?.id) return { current: 0, original: 0, discount: 0 };
-    
-    const basePrice = safeNumber(product.price, 0);
-    return {
-      current: basePrice,
-      original: Math.round(basePrice * 1.2),
-      discount: basePrice > 0 ? 20 : 0,
-    };
-  }, [product?.id, product?.price]); // 🔥 Use specific values, not the whole object
+const priceData = useMemo(() => {
+  const basePrice = safeNumber(product?.price, 0);
+  return {
+    current: basePrice,
+    original: Math.round(basePrice * 1.2),
+    discount: 20,
+  };
+}, [product?.id, product?.price]);
 
-  const safeImage = useMemo(() => {
-    if (!product?.id) return '/placeholder.jpg';
+// 2. Image Logic (Deep diving into variants)
+const safeImage = useMemo(() => {
+  // Priority 1: Selected Variant Images
+  if (selectedVariant?.images?.length > 0) {
+    return selectedVariant.images[0].imageUrl;
+  }
 
-    const variantImg = selectedVariant?.images?.[0];
-    if (variantImg) return typeof variantImg === 'string' ? variantImg : (variantImg.imageUrl || variantImg.url);
+  // Priority 2: First Variant fallback (since product.images is empty [])
+  if (product?.variants?.[0]?.images?.[0]?.imageUrl) {
+    return product.variants[0].images[0].imageUrl;
+  }
 
-    const mainImg = Array.isArray(product.images) ? product.images[0] : product.image;
-    if (mainImg) return typeof mainImg === 'string' ? mainImg : (mainImg.imageUrl || mainImg.url);
-
-    return '/placeholder.jpg';
-  }, [product?.id, selectedVariant?.id]); // 🔥 Use specific IDs
+  return '/placeholder.jpg';
+}, [product?.id, selectedVariant?.id]);
 
   // ================= 5. HANDLERS =================
   const handleAddToCart = useCallback(async () => {
@@ -169,7 +170,7 @@ export default function ProductDetailsPage() {
               price={priceData.current}
               originalPrice={priceData.original}
               discount={priceData.discount}
-              rating={product.rating || product.averageRating}
+              rating={product.averageRating}
               reviewCount={product.reviewCount}
             />
 
