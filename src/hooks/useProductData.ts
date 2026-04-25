@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/src/lib/axios';
+import { normalizeProduct } from '../utils/normalizer';
 
 export interface UseProductDataReturn {
   product: any;
@@ -19,7 +20,16 @@ export interface UseProductDataReturn {
 }
 
 export function useProductData(productId: string): UseProductDataReturn {
-  const [data, setData] = useState({ product: null, vendor: null, recommended: [] });
+  // Data States with explicit type allowing both null and the object
+  const [data, setData] = useState<{
+    product: any | null;
+    vendor: any | null;
+    recommended: any[];
+  }>({
+    product: null,
+    vendor: null,
+    recommended: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
@@ -35,50 +45,48 @@ export function useProductData(productId: string): UseProductDataReturn {
     setLoading(true);
     setError(null);
 
-    // Initial state reset
+    // ✅ UI Reset: Done once per load to prevent #310 loop
     setQty(1);
     setSelectedSize('');
     setSelectedVariant(null);
 
     try {
-      const { data: productData } = await api.get(`/products/${productId}`);
+      const { data: rawProduct } = await api.get(`/products/${productId}`);
+      
+      // 🔥 CRASH-PROOF LAYER: Normalize the product immediately
+      const cleanProduct = normalizeProduct(rawProduct);
 
-      const [vRes, rRes] = await Promise.allSettled([
-        api.get(`/storefront/vendors/public-profile/${productData.vendorId}`),
-        api.get('/products', { params: { category: productData.category?.slug, limit: 8 } })
-      ]);
+      // Fetch recommended in parallel
+      const rRes = await api.get('/products', { 
+        params: { category: cleanProduct?.category?.slug, limit: 8 } 
+      }).catch(() => ({ data: { data: [] } }));
 
-// Inside src/hooks/useProductData.ts -> loadData function
+      if (currentIdRef.current === productId && cleanProduct) {
+        setData({
+          product: cleanProduct,
+          vendor: cleanProduct.vendor, // Use normalized vendor from normalizer
+          recommended: (rRes.data?.data || rRes.data || [])
+            .filter((p: any) => p.id !== productId),
+        });
 
-if (currentIdRef.current === productId) {
-  setData({
-    product: productData,
-    vendor: productData.vendor || null, // API already includes vendor!
-    recommended: rRes.status === 'fulfilled' 
-      ? (rRes.value.data?.data || []).filter((p: any) => p.id !== productId) 
-      : [],
-  });
-
-  // Check if variants exist in the response
-  if (productData.variants && productData.variants.length > 0) {
-    // Only set if we don't have one selected to prevent the #310 loop
-    setSelectedVariant((prev: any) => prev ? prev : productData.variants[0]);
-  }
-}
+        // ✅ Initialize variant safely
+        if (cleanProduct.variants && cleanProduct.variants.length > 0) {
+          setSelectedVariant(cleanProduct.variants[0]);
+        }
+      }
     } catch (err: any) {
       console.error("PRODUCT_HOOK_ERROR:", err);
-      setError("Product not found.");
+      setError("Product not found or unavailable.");
     } finally {
       if (currentIdRef.current === productId) {
         setLoading(false);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]); // 🔥 Only re-create if productId changes
+  }, [productId]); 
 
   useEffect(() => {
     loadData();
-  }, [productId]); // 🔥 Only run when productId changes, NOT loadData
+  }, [productId]); // 🔥 Only react to ID changes to kill the infinite loop
 
   return {
     ...data,
