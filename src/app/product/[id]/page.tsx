@@ -52,26 +52,32 @@ export default function ProductDetailsPage() {
   const cartImage = galleryImages?.[0]?.imageUrl || galleryImages?.[0] || '/placeholder.jpg';
 
   // ================= 🛒 HANDLERS =================
-  const handleAddToCart = useCallback(async () => {
-    if (!product) return;
+const handleAddToCart = useCallback(async () => {
+    // 1. Use a local check instead of relying on the 'product' dependency being stable
+    if (!product?.id) return;
     
     if (product.variants?.length > 0 && !selectedSize) {
       alert("Please select a size to continue.");
       return;
     }
 
+    // 2. Pass data directly. 
+    // We remove price/image from the dependency array by calculating them inside or 
+    // using primitives.
     addItem({
-      id: product.id,
-      name: product.title,
-      price: price, 
-      image: cartImage,
-      vendorId: product.vendorId || '',
+      id: String(product.id),
+      name: String(product.title),
+      price: Number(product.price) || 0, 
+      image: selectedVariant?.images?.[0]?.imageUrl || product.variants?.[0]?.images?.[0]?.imageUrl || '/placeholder.jpg',
+      vendorId: String(product.vendorId || ''),
       stock: Number(product.stock) || 0,
       quantity: qty,
       size: selectedSize,
       variant: selectedVariant 
     });
-  }, [product, price, cartImage, selectedSize, selectedVariant, qty, addItem]);
+    
+    // We ONLY depend on the primitives that actually change
+  }, [product?.id, selectedSize, selectedVariant?.id, qty, addItem]);
 
   const handleBuyNow = async () => {
     await handleAddToCart();
