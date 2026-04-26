@@ -107,40 +107,49 @@ export function ProductCard({ product }: { product: any }) {
           </span>
         </div>
 
-{/* Rating & Stock Row */}
-<div className="flex items-center justify-between pt-1">
+{/* Rating & Stock/Urgency Row */}
+<div className="flex items-center justify-between pt-1 min-h-[20px]">
   
-  {/* LEFT: Rating OR New */}
-  {data.reviewCount > 0 ? (
-    <div className="flex items-center gap-1">
-      <Star size={10} className="fill-yellow-400 text-yellow-400" />
-      <span className="text-[11px] font-bold text-zinc-800">
-        {data.rating.toFixed(1)}
+  {/* 1. SEEDED RATING LOGIC */}
+  <div className="flex items-center gap-1">
+    {data.reviewCount > 0 ? (
+      <>
+        <Star size={10} className="fill-yellow-400 text-yellow-400" />
+        <span className="text-[11px] font-bold text-zinc-800">
+          {(data.rating || 4.5).toFixed(1)} 
+        </span>
+        <span className="text-[10px] text-zinc-400">
+          ({data.reviewCount})
+        </span>
+      </>
+    ) : (
+      // Badge for new items instead of 0.0
+      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter bg-zinc-50 px-2 py-0.5 rounded-md">
+        New Arrival
       </span>
-      <span className="text-[10px] text-zinc-400">
-        ({data.reviewCount})
-      </span>
-    </div>
-  ) : (
-    <span className="text-[10px] font-semibold text-zinc-400">
-      New
-    </span>
-  )}
+    )}
+  </div>
 
-  {/* RIGHT: Smart Stock Indicator */}
-  {data.stock <= 0 ? (
-    <span className="text-[10px] font-bold text-red-500">
-      Out of stock
-    </span>
-  ) : data.stock < 5 ? (
-    <span className="text-[10px] font-bold text-red-500 animate-pulse">
-      Only {data.stock} left
-    </span>
-  ) : (
-    <span className="text-[10px] font-semibold text-emerald-500">
-      Available
-    </span>
-  )}
+  {/* 2. DYNAMIC URGENCY LOGIC */}
+  <div className="flex flex-col items-end">
+    {data.stock > 0 && data.stock <= 5 ? (
+      // RED URGENCY: Only shown if stock is critical
+      <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter animate-pulse">
+        Only {data.stock} Left
+      </span>
+    ) : data.stock > 0 ? (
+      // SUBTLE STOCK: Standard in-stock signal
+      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">
+        In Stock
+      </span>
+    ) : (
+      // SOLD OUT: Greyed out
+      <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-tighter">
+        Out of Stock
+      </span>
+    )}
+  </div>
+
 </div>
 
         {/* Delivery Footer */}
