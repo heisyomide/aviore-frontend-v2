@@ -1,178 +1,129 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, memo, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Heart, ImageOff, Truck } from 'lucide-react';
+import { ShoppingCart, Heart, Truck, ImageOff, Star } from 'lucide-react';
 
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
+import { safeNumber, safeString, formatMoney } from '@/src/utils/safe';
 
-import {
-  safeNumber,
-  safeString,
-  formatMoney
-} from '@/src/utils/safe';
-
+/* ====================== EXACT MATCH PRODUCT CARD ====================== */
 export function ProductCard({ product }: { product: any }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const { toggleWishlist, isWishlisted } = useWishlistStore();
 
-  const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
   const data = useMemo(() => {
     const price = safeNumber(product?.price);
-
-    const image =
-      product?.variants?.[0]?.images?.[0]?.imageUrl ||
-      product?.images?.[0]?.imageUrl ||
-      product?.image;
+    const firstImg = product?.variants?.[0]?.images?.[0]?.imageUrl || 
+                     product?.images?.[0]?.imageUrl || 
+                     product?.image;
 
     return {
       id: safeString(product?.id),
-      name: safeString(product?.title, 'Product'),
-      category: safeString(product?.category?.name, 'Premium Quality'),
-      origin: safeString(product?.origin, 'Local'),
+      name: safeString(product?.title || product?.name, 'Product Name'),
+      subTitle: safeString(product?.subTitle || "Premium Quality"),
+      origin: safeString(product?.origin || "Local"),
       price,
-      oldPrice: safeNumber(product?.oldPrice),
-      stock: safeNumber(product?.stock),
-      rating: safeNumber(product?.averageRating ?? product?.rating),
-      reviewCount: safeNumber(product?.reviewCount),
-      discount: safeNumber(product?.discount),
-      deliveryMin: product?.deliveryMin,
-      deliveryMax: product?.deliveryMax,
-      image: image
-        ? image.startsWith('http')
-          ? image
-          : `${apiBase}/uploads/${image}`
-        : '/placeholder.png',
+      oldPrice: safeNumber(product?.oldPrice || price * 1.2),
+      stock: safeNumber(product?.stock, 0),
+      rating: safeNumber(product?.averageRating || product?.rating, 0),
+      reviewCount: safeNumber(product?.reviewCount, 0),
+      discount: safeNumber(product?.discount, 15), // fallback to 15 if missing
+      image: firstImg ? (firstImg.startsWith('http') ? firstImg : `${apiBase}/uploads/${firstImg}`) : '/placeholder.png',
       vendorId: safeString(product?.vendorId),
     };
   }, [product, apiBase]);
 
-  const isHearted =
-    mounted && data.id ? isWishlisted?.(data.id) : false;
+  const isHearted = mounted && data.id ? isWishlisted?.(data.id) : false;
 
-  const navigate = () => {
-    if (data.id) router.push(`/product/${data.id}`);
-  };
-
-  const quickAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    addItem({
-      id: data.id,
-      name: data.name,
-      price: data.price,
-      image: data.image,
-      vendorId: data.vendorId,
-      stock: data.stock,
-      quantity: 1,
-    });
-  };
-
-  const wishlist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    toggleWishlist?.(data);
-  };
+  const handleNavigate = () => data.id && router.push(`/product/${data.id}`);
 
   return (
-    <div
-      onClick={navigate}
-      className="group bg-[#fafafa] rounded-2xl overflow-hidden border border-zinc-100 hover:shadow-md transition"
+    <div 
+      onClick={handleNavigate}
+      className="group bg-white rounded-2xl border border-zinc-100 overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
     >
-      {/* IMAGE */}
-      <div className="relative aspect-[4/3] bg-zinc-100">
+      {/* 1. IMAGE CONTAINER (Exactly like sample) */}
+      <div className="relative aspect-square m-2 rounded-xl bg-zinc-50 overflow-hidden">
         {data.image !== '/placeholder.png' ? (
           <Image
             src={data.image}
             alt={data.name}
             fill
+            sizes="(max-width:768px) 50vw, 25vw"
             className="object-cover"
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-zinc-300">
-            <ImageOff size={28} />
-          </div>
+          <div className="flex h-full items-center justify-center text-zinc-300"><ImageOff size={24} /></div>
         )}
 
-        {/* Discount */}
-        {data.discount > 0 && (
-          <span className="absolute top-3 left-3 bg-red-600 text-white text-[11px] px-2 py-1 rounded-md font-semibold">
+        {/* Floating Badges */}
+        <div className="absolute top-2 left-2">
+          <span className="bg-[#A4143D] text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
             -{data.discount}%
           </span>
-        )}
+        </div>
 
-        {/* Wishlist */}
         <button
-          onClick={wishlist}
-          className="absolute top-3 right-3 h-10 w-10 bg-white rounded-full flex items-center justify-center shadow"
+          onClick={(e) => { e.stopPropagation(); toggleWishlist(data); }}
+          className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-sm border border-zinc-50 transition-transform active:scale-90"
         >
-          <Heart
-            size={18}
-            fill={isHearted ? 'currentColor' : 'none'}
-          />
+          <Heart size={14} className={isHearted ? "fill-[#A4143D] text-[#A4143D]" : "text-zinc-400"} />
         </button>
 
-        {/* Quick Add */}
         <button
-          onClick={quickAdd}
-          className="absolute bottom-3 right-3 h-11 w-11 bg-white rounded-full flex items-center justify-center shadow-lg"
+          onClick={(e) => { e.stopPropagation(); addItem({...data, quantity: 1}); }}
+          className="absolute bottom-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-sm border border-zinc-50 transition-transform active:scale-90 hover:text-[#A4143D]"
         >
-          <ShoppingBag size={16} />
+          <ShoppingCart size={14} className="text-zinc-600" />
         </button>
       </div>
 
-      {/* CONTENT */}
-      <div className="p-4 space-y-3">
-        {/* Title */}
-        <h3 className="text-sm font-semibold text-zinc-900">
-          {data.name}
-        </h3>
-
-        {/* META */}
-        <p className="text-xs text-zinc-500">
-          {data.category} •{' '}
-          <span className="text-green-600 font-medium">
-            {data.origin}
-          </span>
-        </p>
-
-        {/* PRICE */}
-        <div className="flex items-center gap-2">
-          <span className="text-red-600 font-bold text-lg">
-            {formatMoney(data.price)}
-          </span>
-
-          {data.oldPrice > data.price && (
-            <span className="text-xs line-through text-zinc-400">
-              {formatMoney(data.oldPrice)}
-            </span>
-          )}
+      {/* 2. CONTENT AREA */}
+      <div className="p-3 pt-1 space-y-2">
+        {/* Title & Subtitle */}
+        <div className="space-y-0.5">
+          <h3 className="text-[13px] font-bold text-zinc-900 truncate">{data.name}</h3>
+          <p className="text-[10px] text-zinc-400 font-medium">
+            {data.subTitle} • <span className="text-emerald-600">{data.origin}</span>
+          </p>
         </div>
 
-        {/* RATING + STOCK */}
-        <div className="flex justify-between items-center text-xs">
-          <span className="text-zinc-600">
-            ⭐ {data.rating} ({data.reviewCount})
+        {/* Price Row */}
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm font-bold text-[#A4143D]">
+            ₦{data.price.toLocaleString()}
           </span>
+          <span className="text-[10px] text-zinc-300 line-through">
+            ₦{data.oldPrice.toLocaleString()}
+          </span>
+        </div>
 
-          <span className="text-green-600 font-medium">
+        {/* Rating & Stock Row */}
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-1">
+            <Star size={10} className="fill-yellow-400 text-yellow-400" />
+            <span className="text-[11px] font-bold text-zinc-800">{data.rating.toFixed(1)}</span>
+            <span className="text-[10px] text-zinc-400">({data.reviewCount})</span>
+          </div>
+          <span className={`text-[10px] font-bold ${data.stock > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
             {data.stock > 0 ? 'In Stock' : 'Out of Stock'}
           </span>
         </div>
 
-        {/* DELIVERY */}
-        <div className="flex items-center gap-2 text-xs text-zinc-500 border-t pt-3">
-          <Truck size={14} />
-          <span>
-            {data.origin === 'Local'
-              ? `Fast Local Delivery • ${data.deliveryMin || 1}-${data.deliveryMax || 3} days`
-              : `Ships Worldwide • ${data.deliveryMin || 5}-${data.deliveryMax || 10} days`}
+        {/* Delivery Footer */}
+        <div className="pt-2 border-t border-zinc-50 flex items-center gap-2 text-zinc-500">
+          <Truck size={12} className="shrink-0" />
+          <span className="text-[10px] font-medium truncate">
+            {data.origin === 'LOCAL' ? 'Fast Local Delivery • 1-3 days' : 'Ships Worldwide • 5-10 days'}
           </span>
         </div>
       </div>
