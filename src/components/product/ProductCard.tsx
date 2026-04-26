@@ -1,42 +1,20 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, memo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Heart, ImageOff } from 'lucide-react';
+import { ShoppingBag, Heart, ImageOff, Truck } from 'lucide-react';
 
-import { Rating } from '../ui/Rating';
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 
 import {
   safeNumber,
   safeString,
-  safeArray,
   formatMoney
 } from '@/src/utils/safe';
 
-/* ====================== TYPES ====================== */
-interface ProductCardProps {
-  product: any;
-}
-
-/* ====================== HELPERS ====================== */
-const resolveImage = (product: any, apiBase: string) => {
-  const variantImage = product?.variants?.[0]?.images?.[0]?.imageUrl;
-  const productImage = product?.images?.[0]?.imageUrl || product?.image;
-
-  const raw = variantImage || productImage;
-
-  if (!raw) return '/placeholder.png';
-
-  return raw.startsWith('http')
-    ? raw
-    : `${apiBase}/uploads/${raw.replace(/^\//, '')}`;
-};
-
-/* ====================== MAIN ====================== */
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product }: { product: any }) {
   const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
   const { toggleWishlist, isWishlisted } = useWishlistStore();
@@ -44,42 +22,47 @@ export function ProductCard({ product }: ProductCardProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const apiBase =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
-  /* ================= NORMALIZED DATA ================= */
   const data = useMemo(() => {
     const price = safeNumber(product?.price);
-    const oldPrice = safeNumber(product?.oldPrice);
+
+    const image =
+      product?.variants?.[0]?.images?.[0]?.imageUrl ||
+      product?.images?.[0]?.imageUrl ||
+      product?.image;
 
     return {
       id: safeString(product?.id),
-      name: safeString(product?.title || product?.name, 'Product'),
-      category: safeString(product?.category?.name, 'New Arrival'),
+      name: safeString(product?.title, 'Product'),
+      category: safeString(product?.category?.name, 'Premium Quality'),
+      origin: safeString(product?.origin, 'Local'),
       price,
-      oldPrice,
+      oldPrice: safeNumber(product?.oldPrice),
       stock: safeNumber(product?.stock),
       rating: safeNumber(product?.averageRating ?? product?.rating),
       reviewCount: safeNumber(product?.reviewCount),
       discount: safeNumber(product?.discount),
+      deliveryMin: product?.deliveryMin,
+      deliveryMax: product?.deliveryMax,
+      image: image
+        ? image.startsWith('http')
+          ? image
+          : `${apiBase}/uploads/${image}`
+        : '/placeholder.png',
       vendorId: safeString(product?.vendorId),
-      image: resolveImage(product, apiBase),
     };
   }, [product, apiBase]);
 
   const isHearted =
     mounted && data.id ? isWishlisted?.(data.id) : false;
 
-  /* ================= HANDLERS ================= */
   const navigate = () => {
-    if (!data.id) return;
-    router.push(`/product/${data.id}`);
+    if (data.id) router.push(`/product/${data.id}`);
   };
 
-  const handleQuickAdd = (e: React.MouseEvent) => {
+  const quickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
-
-    if (!data.id || !data.vendorId) return;
 
     addItem({
       id: data.id,
@@ -92,146 +75,107 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const wishlist = (e: React.MouseEvent) => {
     e.stopPropagation();
-
-    if (!data.id) return;
-
-    toggleWishlist?.({
-      id: data.id,
-      name: data.name,
-      price: data.price,
-      image: data.image,
-    });
+    toggleWishlist?.(data);
   };
 
-  /* ================= UI ================= */
   return (
     <div
       onClick={navigate}
-      className="group relative flex flex-col bg-white rounded-[2rem] overflow-hidden border border-zinc-100 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl"
+      className="group bg-[#fafafa] rounded-2xl overflow-hidden border border-zinc-100 hover:shadow-md transition"
     >
-      <ProductImage
-        image={data.image}
-        name={data.name}
-        discount={data.discount}
-        isHearted={isHearted}
-        onWishlist={handleWishlist}
-        onQuickAdd={handleQuickAdd}
-      />
-
-      <ProductContent data={data} onQuickAdd={handleQuickAdd} />
-    </div>
-  );
-}
-
-/* ================= IMAGE SECTION ================= */
-const ProductImage = memo(
-  ({ image, name, discount, isHearted, onWishlist, onQuickAdd }: any) => {
-    return (
-      <div className="relative aspect-[4/5] bg-zinc-100 overflow-hidden">
-        {image !== '/placeholder.png' ? (
+      {/* IMAGE */}
+      <div className="relative aspect-[4/3] bg-zinc-100">
+        {data.image !== '/placeholder.png' ? (
           <Image
-            src={image}
-            alt={name}
+            src={data.image}
+            alt={data.name}
             fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            className="object-cover"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-zinc-300">
-            <ImageOff size={32} />
+          <div className="flex items-center justify-center h-full text-zinc-300">
+            <ImageOff size={28} />
           </div>
         )}
 
         {/* Discount */}
-        {discount > 0 && (
-          <span className="absolute left-3 top-3 bg-black text-white text-[10px] px-2 py-1 rounded-full font-bold">
-            -{discount}%
+        {data.discount > 0 && (
+          <span className="absolute top-3 left-3 bg-red-600 text-white text-[11px] px-2 py-1 rounded-md font-semibold">
+            -{data.discount}%
           </span>
         )}
 
         {/* Wishlist */}
         <button
-          onClick={onWishlist}
-          className={`absolute right-3 top-3 h-10 w-10 flex items-center justify-center rounded-full transition ${
-            isHearted
-              ? 'bg-black text-white'
-              : 'bg-white/80 text-zinc-900'
-          }`}
+          onClick={wishlist}
+          className="absolute top-3 right-3 h-10 w-10 bg-white rounded-full flex items-center justify-center shadow"
         >
-          <Heart size={18} fill={isHearted ? 'currentColor' : 'none'} />
+          <Heart
+            size={18}
+            fill={isHearted ? 'currentColor' : 'none'}
+          />
         </button>
 
-        {/* Hover Quick Add */}
-        <div className="absolute inset-x-3 bottom-3 translate-y-12 group-hover:translate-y-0 transition duration-500 hidden md:block">
-          <button
-            onClick={onQuickAdd}
-            className="w-full bg-black text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider"
-          >
-            Add to Cart
-          </button>
-        </div>
+        {/* Quick Add */}
+        <button
+          onClick={quickAdd}
+          className="absolute bottom-3 right-3 h-11 w-11 bg-white rounded-full flex items-center justify-center shadow-lg"
+        >
+          <ShoppingBag size={16} />
+        </button>
       </div>
-    );
-  }
-);
 
-ProductImage.displayName = 'ProductImage';
-
-/* ================= CONTENT ================= */
-const ProductContent = memo(({ data, onQuickAdd }: any) => {
-  return (
-    <div className="p-5 flex flex-col space-y-3">
-      <div>
-        <p className="text-[10px] text-zinc-400 uppercase">
-          {data.category}
-        </p>
-        <h3 className="text-sm font-semibold text-zinc-900 line-clamp-1">
+      {/* CONTENT */}
+      <div className="p-4 space-y-3">
+        {/* Title */}
+        <h3 className="text-sm font-semibold text-zinc-900">
           {data.name}
         </h3>
-      </div>
 
-      {/* Price */}
-      <div className="flex justify-between items-end">
-        <div>
-          {data.oldPrice > data.price && (
-            <p className="text-xs line-through text-zinc-300">
-              {formatMoney(data.oldPrice)}
-            </p>
-          )}
-          <p className="text-lg font-bold text-zinc-950">
+        {/* META */}
+        <p className="text-xs text-zinc-500">
+          {data.category} •{' '}
+          <span className="text-green-600 font-medium">
+            {data.origin}
+          </span>
+        </p>
+
+        {/* PRICE */}
+        <div className="flex items-center gap-2">
+          <span className="text-red-600 font-bold text-lg">
             {formatMoney(data.price)}
-          </p>
+          </span>
+
+          {data.oldPrice > data.price && (
+            <span className="text-xs line-through text-zinc-400">
+              {formatMoney(data.oldPrice)}
+            </span>
+          )}
         </div>
 
-        <Rating rate={data.rating} count={data.reviewCount} />
-      </div>
+        {/* RATING + STOCK */}
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-zinc-600">
+            ⭐ {data.rating} ({data.reviewCount})
+          </span>
 
-      {/* Bottom */}
-      <div className="flex justify-between items-center pt-2 border-t">
-        <StockIndicator stock={data.stock} />
+          <span className="text-green-600 font-medium">
+            {data.stock > 0 ? 'In Stock' : 'Out of Stock'}
+          </span>
+        </div>
 
-        {/* Mobile Quick Add */}
-        <button
-          onClick={onQuickAdd}
-          className="md:hidden h-9 w-9 bg-black text-white rounded-lg flex items-center justify-center"
-        >
-          <ShoppingBag size={14} />
-        </button>
+        {/* DELIVERY */}
+        <div className="flex items-center gap-2 text-xs text-zinc-500 border-t pt-3">
+          <Truck size={14} />
+          <span>
+            {data.origin === 'Local'
+              ? `Fast Local Delivery • ${data.deliveryMin || 1}-${data.deliveryMax || 3} days`
+              : `Ships Worldwide • ${data.deliveryMin || 5}-${data.deliveryMax || 10} days`}
+          </span>
+        </div>
       </div>
     </div>
   );
-});
-
-ProductContent.displayName = 'ProductContent';
-
-/* ================= STOCK ================= */
-const StockIndicator = ({ stock }: { stock: number }) => {
-  if (stock <= 0)
-    return <span className="text-xs text-red-500">Out of stock</span>;
-
-  if (stock < 5)
-    return <span className="text-xs text-orange-500">Low stock</span>;
-
-  return <span className="text-xs text-emerald-500">Available</span>;
-};
+}
