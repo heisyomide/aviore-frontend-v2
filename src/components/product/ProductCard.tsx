@@ -107,17 +107,41 @@ export function ProductCard({ product }: { product: any }) {
           </span>
         </div>
 
-        {/* Rating & Stock Row */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1">
-            <Star size={10} className="fill-yellow-400 text-yellow-400" />
-            <span className="text-[11px] font-bold text-zinc-800">{data.rating.toFixed(1)}</span>
-            <span className="text-[10px] text-zinc-400">({data.reviewCount})</span>
-          </div>
-          <span className={`text-[10px] font-bold ${data.stock > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-            {data.stock > 0 ? 'In Stock' : 'Out of Stock'}
-          </span>
-        </div>
+{/* Rating & Stock Row */}
+<div className="flex items-center justify-between pt-1">
+  
+  {/* LEFT: Rating OR New */}
+  {data.reviewCount > 0 ? (
+    <div className="flex items-center gap-1">
+      <Star size={10} className="fill-yellow-400 text-yellow-400" />
+      <span className="text-[11px] font-bold text-zinc-800">
+        {data.rating.toFixed(1)}
+      </span>
+      <span className="text-[10px] text-zinc-400">
+        ({data.reviewCount})
+      </span>
+    </div>
+  ) : (
+    <span className="text-[10px] font-semibold text-zinc-400">
+      New
+    </span>
+  )}
+
+  {/* RIGHT: Smart Stock Indicator */}
+  {data.stock <= 0 ? (
+    <span className="text-[10px] font-bold text-red-500">
+      Out of stock
+    </span>
+  ) : data.stock < 5 ? (
+    <span className="text-[10px] font-bold text-red-500 animate-pulse">
+      Only {data.stock} left
+    </span>
+  ) : (
+    <span className="text-[10px] font-semibold text-emerald-500">
+      Available
+    </span>
+  )}
+</div>
 
         {/* Delivery Footer */}
         <div className="pt-2 border-t border-zinc-50 flex items-center gap-2 text-zinc-500">
