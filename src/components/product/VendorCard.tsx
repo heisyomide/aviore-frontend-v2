@@ -118,7 +118,7 @@ export function VendorCard({ vendor, onFollow, isFollowing }: VendorCardProps) {
           className={`h-12 rounded-2xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
             isFollowing 
               ? 'bg-zinc-100 text-zinc-500' 
-              : 'bg-white text-zinc-950 hover:bg-black active:scale-95'
+              : 'bg-white border border-zinc-200 text-zinc-950 hover:bg-zinc-50 active:scale-95'
           }`}
         >
           {isPending ? (
