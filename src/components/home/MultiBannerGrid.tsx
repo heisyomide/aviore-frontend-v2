@@ -1,108 +1,84 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Section } from '../layout/Section';
 
-const SAMPLE_BANNERS = [
-  { id: 1, image: "/womenfas.jpg", title: "Fashion for Women", subtitle: "SALE 60% OFF", link: "/shop?category=fashion" },
-  { id: 2, image: "/galaxy.jpg", title: "Galaxy Note 8", subtitle: "DO BIGGER THINGS", discount: "Super Deal!", link: "/shop?category=electronics" },
-  { id: 3, image: "/headphone.jpg", title: "Apple Headphone New", subtitle: "SALE 30% OFF", link: "/shop?category=audio" }
-];
+// 🎯 1. Define the possible banner types
+export type BannerType = 'women' | 'electronics' | 'audio';
 
-export function MultiBannerGrid() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // 🎯 Sync Dots with Scroll Position
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      const width = scrollRef.current.offsetWidth;
-      const scrollLeft = scrollRef.current.scrollLeft;
-      const index = Math.round(scrollLeft / width);
-      setActiveIndex(index);
-    }
-  };
-
-  return (
-    <Section className="!pt-4 !pb-12">
-      <div className="relative group">
-        
-        {/* 🚀 THE KINETIC TRACK */}
-        <div 
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 md:pb-0 md:grid md:grid-cols-4 lg:grid-cols-12 lg:gap-6"
-        >
-          {SAMPLE_BANNERS.map((item, idx) => (
-            <div 
-              key={item.id}
-              className={`min-w-[88%] md:min-w-0 snap-center
-                ${idx === 0 ? 'lg:col-span-3 md:col-span-2' : ''}
-                ${idx === 1 ? 'lg:col-span-6 md:col-span-4' : ''}
-                ${idx === 2 ? 'lg:col-span-3 md:col-span-2' : ''}
-              `}
-            >
-              <BannerCard item={item} isLarge={idx === 1} />
-            </div>
-          ))}
-        </div>
-
-        {/* 🚀 MOBILE DOTS INDICATOR (Hidden on Desktop) */}
-        <div className="flex justify-center gap-2 mt-4 md:hidden">
-          {SAMPLE_BANNERS.map((_, idx) => (
-            <div 
-              key={idx}
-              className={`h-1.5 transition-all duration-500 rounded-full ${
-                activeIndex === idx ? 'w-8 bg-[#A4143D]' : 'w-2 bg-zinc-200'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    </Section>
-  );
+interface BannerConfig {
+  image: string;
+  title: string;
+  subtitle: string;
+  link: string;
+  discount?: string;
 }
 
-function BannerCard({ item, isLarge = false }: { item: any; isLarge?: boolean }) {
+const BANNER_CONFIGS: Record<BannerType, BannerConfig> = {
+  women: { 
+    image: "/womenfas.jpg", 
+    title: "Fashion for Women", 
+    subtitle: "SALE 60% OFF", 
+    link: "/shop?category=fashion" 
+  },
+  electronics: { 
+    image: "/galaxy.jpg", 
+    title: "Galaxy Note 8", 
+    subtitle: "DO BIGGER THINGS", 
+    discount: "Super Deal!", 
+    link: "/shop?category=electronics" 
+  },
+  audio: { 
+    image: "/headphone.jpg", 
+    title: "Apple Headphone New", 
+    subtitle: "SALE 30% OFF", 
+    link: "/shop?category=audio" 
+  }
+};
+
+export function PromoBanner({ type }: { type: BannerType }) {
+  const item = BANNER_CONFIGS[type];
+
   return (
-    <Link 
-      href={item.link} 
-      className={`group relative flex w-full overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-gray-100 transition-all duration-700 ease-out hover:shadow-2xl hover:shadow-[#A4143D]/10 ${
-        isLarge ? 'aspect-[4/5] md:aspect-[16/7]' : 'aspect-[4/5]'
-      }`}
-    >
-      <Image 
-        src={item.image} 
-        alt={item.title} 
-        fill 
-        className="object-cover transition-transform duration-[1500ms] group-hover:scale-110"
-      />
-      
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+    <Section className="py-6!">
+      <Link 
+        href={item.link} 
+        className="group relative flex aspect-video w-full overflow-hidden rounded-4xl bg-gray-100 transition-all duration-700 ease-out hover:shadow-2xl md:aspect-21/7"
+      >
+        <Image 
+          src={item.image} 
+          alt={item.title} 
+          fill 
+          sizes="100vw"
+          className="duration-1500 object-cover transition-transform group-hover:scale-105"
+        />
+        
+        {/* 🎯 2. Using modern bg-linear-to-r for a clean cinematic look */}
+        <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/30 to-transparent" />
 
-      <div className="absolute inset-0 flex flex-col items-center justify-end p-6 md:p-10 text-center text-white">
-        {item.discount && (
-          <div className="absolute top-4 right-4 w-14 h-14 md:w-20 md:h-20 rounded-full bg-[#A4143D] flex flex-col items-center justify-center -rotate-12 border-4 border-white/10 animate-pulse">
-            <span className="text-[7px] font-black uppercase tracking-tighter">Super</span>
-            <span className="text-[10px] font-black uppercase">Deal!</span>
+        <div className="absolute inset-0 flex flex-col items-start justify-center p-8 text-left text-white md:p-20">
+          {item.discount && (
+            <div className="mb-4 flex h-16 w-16 -rotate-12 animate-pulse flex-col items-center justify-center rounded-full border-4 border-white/10 bg-[#A4143D] md:h-20 md:w-20">
+              <span className="text-[7px] font-black uppercase tracking-tighter">Super</span>
+              <span className="text-[10px] font-black uppercase">Deal!</span>
+            </div>
+          )}
+
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.4em] text-white/70 md:text-[12px]">
+            {item.title}
+          </p>
+          
+          <h3 className="mb-8 max-w-xl text-3xl font-black italic uppercase leading-none tracking-tighter md:text-6xl">
+            {item.subtitle}
+          </h3>
+          
+          <div className="flex items-center gap-3 rounded-full bg-white px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-black transition-all group-hover:bg-[#A4143D] group-hover:text-white">
+            Explore Collection <ArrowRight size={14} />
           </div>
-        )}
-
-        <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-white/70 mb-2">
-          {item.title}
-        </p>
-        
-        <h3 className={`${isLarge ? 'text-2xl md:text-5xl' : 'text-xl md:text-3xl'} font-black italic uppercase tracking-tighter leading-none mb-4 md:mb-6`}>
-          {item.subtitle}
-        </h3>
-        
-        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] border-b-2 border-[#A4143D] pb-1 group-hover:text-[#A4143D] transition-all">
-          Explore Now <ArrowRight size={12} />
         </div>
-      </div>
-    </Link>
+      </Link>
+    </Section>
   );
 }

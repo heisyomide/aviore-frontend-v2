@@ -11,7 +11,7 @@ import { SkeletonGrid } from '../components/product/SkeletonGrid';
 import { TrustBar } from '../components/home/TrustBar';
 import { HOME_CATEGORIES } from '../data/categories';
 import { TopDealsSection } from '../components/home/TopSaverDeals';
-import { MultiBannerGrid } from '../components/home/MultiBannerGrid';
+import {  PromoBanner } from '../components/home/MultiBannerGrid';
 import { PopularVendorsSection } from '../components/home/PopularVendors';
 import { api } from '@/src/lib/axios';
 import { ChevronRight, Sparkles, Zap, Loader2, PackageSearch } from 'lucide-react';
@@ -129,6 +129,8 @@ export default function HomePage() {
           <PopularVendorsSection initialVendors={registry.vendors} />
         </div>
 
+        <PromoBanner type="women" />
+
         {/* 2. DYNAMIC DEPARTMENTS */}
         <div className="flex flex-col">
           {registry.departments.map((section: any) => (
@@ -143,12 +145,14 @@ export default function HomePage() {
           ))}
         </div>
 
+        <PromoBanner type="electronics" />
+
         <div className="mt-12">
           <TopDealsSection initialDeals={registry.topSaver} />
         </div>
 
         <div className="py-12">
-          <MultiBannerGrid />
+            <PromoBanner type="audio" />
         </div>
 
         {/* 5. DISCOVERY ENGINE */}
