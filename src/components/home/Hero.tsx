@@ -1,371 +1,140 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container } from '../layout/Container';
-import {
-  Zap,
-  Star,
-  ArrowUpRight,
-  ArrowRight,
-} from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 
 type Slide = {
   id: string;
   imageUrl: string;
   tag: string;
   title: string;
-  subtitle?: string;
-  discount?: string;
-  bgColor?: string;
-  accentColor?: string;
+  description?: string;
+  price?: string;
+  originalPrice?: string;
 };
 
 export function Hero() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [current, setCurrent] = useState(0);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch logic remains same, but mapping to new cleaner Slide type
     const fetchSlides = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/admin/banners/active`
-        );
-
-        if (!res.ok) {
-          throw new Error('Failed to fetch banners');
-        }
-
-        const data: Slide[] = await res.json();
-        setSlides(data);
-      } catch (error) {
-        console.error('Banner fetch failed:', error);
-      } finally {
-        setLoading(false);
-      }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/banners/active`);
+      const data = await res.json();
+      setSlides(data);
     };
-
     fetchSlides();
   }, []);
 
-  useEffect(() => {
-    if (slides.length <= 1) return;
-
-    const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [slides]);
+  if (!slides.length) return null;
 
   const activeSlide = slides[current];
 
-  if (loading) {
-    return (
-      <section className="py-8 md:py-10">
-        <Container>
-          <div className="h-[480px] rounded-[2.5rem] bg-gray-100 animate-pulse" />
-        </Container>
-      </section>
-    );
-  }
-
-  if (!activeSlide) return null;
-
   return (
-    <section className="bg-[#f8f8f8] py-4 md:py-10 overflow-hidden">
+    <section className="bg-white py-12 md:py-20 overflow-hidden min-h-[600px] flex items-center">
       <Container>
-        {/* MOBILE */}
-        <div className="flex lg:hidden gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
-          <MainHeroSlide
-            slide={activeSlide}
-            current={current}
-            total={slides.length}
-            mobile
-          />
-
-          <PromoCard
-            title="70% OFF"
-            subtitle="Ends in 04:59:59"
-            tag="Flash Sale"
-            image="/registry/categories/side1.jpeg"
-            icon={<Zap size={14} fill="white" />}
-            className="bg-orange-500 border-orange-400 text-white"
-            rotate="rotate-6"
-            mobile
-          />
-
-          <PromoCard
-            title="NEW DROPS"
-            tag="Just In"
-            image="/registry/categories/arrivals.jpg"
-            icon={<Star size={14} fill="currentColor" />}
-            className="bg-white border-gray-100 text-slate-900"
-            rotate="-rotate-6"
-            secondary
-            mobile
-          />
-        </div>
-
-        {/* DESKTOP */}
-        <div className="hidden lg:grid lg:grid-cols-12 gap-6 h-[520px]">
-          <MainHeroSlide
-            slide={activeSlide}
-            current={current}
-            total={slides.length}
-          />
-
-          <div className="lg:col-span-4 grid gap-6">
-            <PromoCard
-              title="70% OFF"
-              subtitle="Ends in 04:59:59"
-              tag="Flash Sale"
-              image="/registry/categories/side1.jpeg"
-              icon={<Zap size={14} fill="white" />}
-              className="bg-orange-500 border-orange-400 text-white"
-              rotate="rotate-6"
-            />
-
-            <PromoCard
-              title="NEW DROPS"
-              tag="Just In"
-              image="/registry/categories/arrivals.jpg"
-              icon={<Star size={14} fill="currentColor" />}
-              className="bg-white border-gray-100 text-slate-900"
-              rotate="-rotate-6"
-              secondary
-            />
+        <div className="grid lg:grid-cols-12 gap-12 items-center">
+          
+          {/* LEFT: PAGINATION DOTS (The vertical line from your image) */}
+          <div className="hidden lg:flex lg:col-span-1 flex-col gap-6 items-center">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+                  i === current ? 'bg-orange-500 scale-[2.5]' : 'bg-zinc-200'
+                }`}
+              />
+            ))}
           </div>
+
+          {/* CENTER: CONTENT */}
+          <div className="lg:col-span-6 space-y-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeSlide.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <h1 className="text-6xl md:text-[5.5rem] font-black text-zinc-900 leading-[0.85] tracking-tighter uppercase mb-8">
+                  {activeSlide.title.split(' ').map((word, i) => (
+                    <span key={i} className="block">{word}</span>
+                  ))}
+                </h1>
+                
+                <p className="text-zinc-500 text-base md:text-lg max-w-sm leading-relaxed mb-10">
+                  {activeSlide.description || "Shop the latest high-performance tech tailored for your lifestyle at AVIORÈ."}
+                </p>
+
+                <button className="group flex items-center gap-6 px-8 py-4 rounded-full border border-zinc-200 hover:border-zinc-900 transition-all text-sm font-bold uppercase tracking-widest">
+                  View more
+                  <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                </button>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* RIGHT: IMAGE & FLOATING CARD */}
+          <div className="lg:col-span-5 relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeSlide.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1 }}
+                transition={{ duration: 0.8 }}
+                className="relative aspect-square flex items-center justify-center"
+              >
+                {/* Floating Detail Card */}
+                <motion.div 
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="absolute left-0 bottom-12 md:-left-12 bg-white/70 backdrop-blur-xl p-8 rounded-3xl shadow-[0_32px_64px_-15px_rgba(0,0,0,0.1)] border border-white/40 z-30 min-w-[240px]"
+                >
+                  <span className="text-[10px] uppercase text-zinc-400 font-bold tracking-[0.2em] mb-2 block">
+                    Product Highlight
+                  </span>
+                  <h4 className="font-bold text-zinc-900 text-lg mb-4">
+                    {activeSlide.title}
+                  </h4>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-2xl font-black text-zinc-900">{activeSlide.price || '$125.00'}</span>
+                    <span className="text-zinc-400 line-through text-sm">{activeSlide.originalPrice || '$250.00'}</span>
+                  </div>
+                  <div className="mt-6 flex items-center text-xs font-bold uppercase tracking-tighter cursor-pointer group">
+                    View more <ChevronRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                    <div className="ml-auto w-12 h-[1px] bg-zinc-200 group-hover:bg-zinc-900 transition-colors" />
+                  </div>
+                </motion.div>
+
+                {/* Main Product Image */}
+                <div className="relative w-full h-full">
+                  <Image
+                    src={`${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`}
+                    alt={activeSlide.title}
+                    fill
+                    className="object-contain drop-shadow-[0_50px_50px_rgba(0,0,0,0.12)]"
+                    priority
+                  />
+                </div>
+
+                {/* Decorative 50% Badge from Image */}
+                <div className="absolute top-10 right-10 w-16 h-16 bg-orange-400 rounded-full flex items-center justify-center text-white font-black text-xs">
+                  50%
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
         </div>
       </Container>
     </section>
-  );
-}
-
-function MainHeroSlide({
-  slide,
-  current,
-  total,
-  mobile = false,
-}: {
-  slide: Slide;
-  current: number;
-  total: number;
-  mobile?: boolean;
-}) {
-  return (
-    <div
-      className={`
-        ${
-          mobile
-            ? 'min-w-[90vw] snap-center'
-            : 'lg:col-span-8'
-        }
-        relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 h-[480px]
-      `}
-    >
-// ✅ NEW (Safe: multi-layered staggering)
-<AnimatePresence mode="wait">
-  <motion.div key={slide.id} className="relative inset-0 flex">
-    {/* Content: enters first from the left */}
-    <motion.div
-      initial={{ x: -60, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
-    >
-      <HeroContent slide={slide} />
-    </motion.div>
-    
-    {/* Image: enters slightly later and 'floats' */}
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 0.4, duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
-    >
-      <HeroImage slide={slide} />
-    </motion.div>
-  </motion.div>
-</AnimatePresence>
-
-      <ProgressIndicator
-        current={current}
-        total={total}
-      />
-    </div>
-  );
-}
-
-function HeroContent({
-  slide,
-}: {
-  slide: Slide;
-}) {
-  return (
-    <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center z-20">
-      <span
-        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase text-white shadow-lg ${
-          slide.bgColor || 'bg-orange-500'
-        } tracking-widest w-fit mb-6`}
-      >
-        {slide.tag}
-      </span>
-
- <div className="space-y-3">
-  {/* The minimal label */}
-  <motion.span className="block text-[11px] font-mono tracking-[0.3em] uppercase text-zinc-500">
-    {slide.tag}
-  </motion.span>
-  
-  {/* Editorial Headline */}
-  <motion.h2 className="text-5xl md:text-8xl font-light tracking-[-0.04em] text-white leading-[0.9] mb-4">
-    {slide.title.split(' ').map((word, i) => (
-      <span key={i} className={i === 0 ? 'font-light' : 'font-black italic'}>
-        {word}{' '}
-      </span>
-    ))}
-  </motion.h2>
-</div>
-
-      <motion.p
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className={`text-2xl md:text-5xl font-black italic mb-10 ${
-          slide.accentColor || 'text-orange-600'
-        }`}
-      >
-        {slide.discount || slide.subtitle}
-      </motion.p>
-
-      <button className="w-fit flex items-center gap-4 bg-slate-900 hover:bg-slate-800 transition-colors text-white pl-8 pr-3 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl">
-        Shop Collection
-        <div className="bg-white/10 p-2 rounded-lg">
-          <ArrowRight size={18} />
-        </div>
-      </button>
-    </div>
-  );
-}
-
-function HeroImage({
-  slide,
-}: {
-  slide: Slide;
-}) {
-  return (
-    <div className="hidden md:block w-1/2 relative h-full">
-      <div className="absolute inset-0 z-10 flex items-center justify-center">
-        <div className="relative w-4/5 h-4/5">
-          <Image
-            src={`${process.env.NEXT_PUBLIC_API_URL}${slide.imageUrl}`}
-            alt={slide.title}
-            fill
-            className="object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.25)]"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProgressIndicator({
-  current,
-  total,
-}: {
-  current: number;
-  total: number;
-}) {
-  return (
-    <div className="absolute bottom-8 left-8 md:left-16 flex gap-4 z-30">
-      {Array.from({ length: total }).map((_, index) => (
-        <div
-          key={index}
-          className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden"
-        >
-          {index === current && (
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: '100%' }}
-              transition={{
-                duration: 5,
-                ease: 'linear',
-              }}
-              className="h-full bg-orange-500"
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PromoCard({
-  title,
-  subtitle,
-  tag,
-  image,
-  icon,
-  className,
-  rotate,
-  secondary = false,
-  mobile = false,
-}: {
-  title: string;
-  subtitle?: string;
-  tag: string;
-  image: string;
-  icon: ReactNode;
-  className: string;
-  rotate: string;
-  secondary?: boolean;
-  mobile?: boolean;
-}) {
-  return (
-    <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      className={`
-        ${
-          mobile
-            ? 'min-w-[80vw] snap-center h-[480px]'
-            : 'min-h-[240px]'
-        }
-        relative rounded-[2rem] overflow-hidden shadow-xl border p-8 flex flex-col justify-between ${className}
-      `}
-    >
-      <div>
-        <div className="flex items-center gap-2 mb-3 font-black text-[11px] uppercase tracking-widest">
-          {icon} {tag}
-        </div>
-
-        <h3 className="text-4xl font-black italic tracking-tight">
-          {title}
-        </h3>
-
-        {subtitle && (
-          <p className="text-xs font-bold mt-2 opacity-80">
-            {subtitle}
-          </p>
-        )}
-      </div>
-
-      <div
-        className={`self-end w-28 h-28 relative ${rotate}`}
-      >
-        <Image
-          src={image}
-          alt={title}
-          fill
-          className="object-cover rounded-2xl shadow-2xl"
-        />
-      </div>
-
-      {secondary && (
-        <ArrowUpRight
-          size={40}
-          className="absolute top-6 right-6 text-gray-100"
-        />
-      )}
-    </motion.div>
   );
 }
