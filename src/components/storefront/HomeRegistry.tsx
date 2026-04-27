@@ -5,7 +5,7 @@ import { Loader2, Flame, Layers, Zap, Globe } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { ProductRow } from "@/src/components/ProductRow";
-import { MultiBannerGrid } from "@/src/components/home/MultiBannerGrid";
+import { PromoBanner } from "@/src/components/home/MultiBannerGrid";
 
 export default function HomeRegistry() {
   const { data, loading } = useStorefront();
@@ -69,7 +69,7 @@ export default function HomeRegistry() {
 
           {/* 🚀 INFOGRAPHIC GRID (Z-Pattern Banner) */}
           <div className="py-4">
-            <MultiBannerGrid />
+            <PromoBanner type="audio" />
           </div>
 
           {/* ⚡ SUBSIDIARY REGISTRY ROWS */}
