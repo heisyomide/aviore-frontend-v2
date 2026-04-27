@@ -4,9 +4,8 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container } from '../layout/Container';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Star } from 'lucide-react';
 
-// Updated to match your exact API response structure
 type Slide = {
   id: string;
   title: string;
@@ -14,15 +13,22 @@ type Slide = {
   tag: string;
   imageUrl: string;
   discount: string;
-  bgColor: string;
-  accentColor: string;
+  bgColor: string; 
+  accentColor: string; 
   isActive: boolean;
-  position: number;
 };
+
+const VENDOR_MESSAGES = [
+  "Join as a Vendor",
+  "Global Logistics Support",
+  "Secure Payouts 24/7",
+  "Luxury Brand Protection"
+];
 
 export function Hero() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [current, setCurrent] = useState(0);
+  const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
     const fetchSlides = async () => {
@@ -31,115 +37,97 @@ export function Hero() {
         const data = await res.json();
         setSlides(data);
       } catch (err) {
-        console.error("Failed to load AVIORÈ hero assets:", err);
+        console.error("AVIORÈ Hero Error:", err);
       }
     };
     fetchSlides();
   }, []);
 
   useEffect(() => {
-    if (slides.length <= 1) return;
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, 6000);
+      setMsgIndex((prev) => (prev + 1) % VENDOR_MESSAGES.length);
+    }, 3000);
     return () => clearInterval(timer);
-  }, [slides]);
+  }, []);
 
   if (!slides.length) return null;
   const activeSlide = slides[current];
 
   return (
-    <section className="bg-white pt-6 pb-12 md:py-20 overflow-hidden min-h-[500px] md:min-h-[700px] flex items-center">
+    <section className="relative bg-[#F9F9F9] overflow-hidden">
       <Container>
-        <div className="grid lg:grid-cols-12 gap-8 md:gap-12 items-center">
+        <div className="relative grid lg:grid-cols-12 gap-8 items-center py-10 md:py-20">
           
-          {/* DESKTOP PAGINATION (Hidden on Mobile) */}
-          <div className="hidden lg:flex lg:col-span-1 flex-col gap-6 items-center">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
-                  i === current ? 'bg-zinc-900 scale-[2.5]' : 'bg-zinc-200'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* CONTENT AREA: Dynamic spacing for mobile to prevent "too long" verticality */}
-          <div className="order-2 lg:order-1 lg:col-span-6 space-y-6 md:space-y-8">
+          {/* LEFT CONTENT AREA */}
+          <div className="z-20 lg:col-span-7 space-y-6 md:space-y-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeSlide.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.5 }}
               >
-                <span className={`text-[10px] md:text-xs font-black uppercase tracking-[0.3em] ${activeSlide.accentColor} mb-4 block`}>
-                  {activeSlide.tag}
-                </span>
-                
-                <h1 className="text-5xl md:text-[5.5rem] font-black text-zinc-900 leading-[0.9] tracking-tighter uppercase mb-6 md:mb-8">
-                  {activeSlide.title.split(' ').map((word, i) => (
-                    <span key={i} className="block">{word}</span>
-                  ))}
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-zinc-900 leading-tight uppercase tracking-tighter">
+                  {activeSlide.title}
                 </h1>
                 
-                <p className="text-zinc-500 text-sm md:text-lg max-w-xs md:max-w-sm leading-relaxed mb-8 md:mb-10">
-                  {activeSlide.subtitle} — crafted for the premium AVIORÈ aesthetic.
+                <p className="text-zinc-500 text-sm md:text-lg max-w-md mt-4 leading-relaxed">
+                  {activeSlide.subtitle}
                 </p>
 
-                <button className="group flex items-center gap-4 md:gap-6 px-6 md:px-8 py-3 md:py-4 rounded-full border border-zinc-200 hover:border-zinc-900 transition-all text-[10px] md:text-sm font-bold uppercase tracking-widest">
-                  Explore Hub
-                  <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
+                <button className="mt-8 px-8 py-3 rounded-md border border-zinc-900 text-zinc-900 text-xs font-bold uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all">
+                  View more
                 </button>
+
+                {/* MOBILE PRODUCT CARD (The white box from your reference) */}
+                <div className="mt-12 bg-white/60 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-zinc-100 max-w-[280px] relative">
+                   <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-widest">
+                     Featured Item
+                   </span>
+                   <h3 className="font-bold text-zinc-900 mt-1 text-sm">
+                     {activeSlide.tag}
+                   </h3>
+                   <div className="flex gap-1 mt-2">
+                     {[...Array(5)].map((_, i) => (
+                       <Star key={i} size={10} className="fill-orange-400 text-orange-400" />
+                     ))}
+                     <span className="text-[9px] text-zinc-400 ml-1">1245 reviews</span>
+                   </div>
+                   <div className="mt-4 flex items-baseline gap-2">
+                     <span className="text-lg font-black text-zinc-900">$125.00</span>
+                     <span className="text-xs text-zinc-400 line-through">$250.00</span>
+                   </div>
+                   <div className="mt-4 flex items-center text-[10px] font-bold uppercase cursor-pointer group">
+                     View more <ArrowRight size={12} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                   </div>
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* IMAGE AREA: Optimized for horizontal visual flow on mobile */}
-          <div className="order-1 lg:order-2 lg:col-span-5 relative h-[300px] md:h-[500px]">
+          {/* RIGHT IMAGE AREA (Floats on mobile, Grid on desktop) */}
+          <div className="absolute top-10 -right-10 md:relative md:top-0 md:right-0 lg:col-span-5 h-[300px] md:h-[500px] w-[250px] md:w-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeSlide.id}
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                transition={{ duration: 0.6 }}
-                className="relative w-full h-full flex items-center justify-center"
+                exit={{ opacity: 0, scale: 1.1 }}
+                className="relative w-full h-full"
               >
-                {/* Floating Detail Card (Hidden on very small screens to keep it horizontal) */}
-                <motion.div 
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="absolute hidden sm:block -left-6 bottom-10 bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/40 z-30 min-w-[200px]"
-                >
-                  <h4 className="font-bold text-zinc-900 text-sm mb-2 uppercase tracking-tighter">
-                    Featured Item
-                  </h4>
-                  <div className="flex items-center gap-3 mt-4 text-[10px] font-black uppercase tracking-widest cursor-pointer group">
-                    Details <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                    <div className="ml-auto w-8 h-[1px] bg-zinc-200 group-hover:bg-zinc-900 transition-colors" />
-                  </div>
-                </motion.div>
-
-                {/* Main Product Image */}
-                <div className="relative w-full h-full">
-                  <Image
-                    src={`${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`}
-                    alt={activeSlide.title}
-                    fill
-                    className="object-contain drop-shadow-2xl"
-                    priority
-                  />
-                </div>
-
-                {/* API-Driven Discount Badge */}
-                <div className={`absolute top-0 right-4 md:top-10 md:right-10 w-14 h-14 md:w-20 md:h-20 ${activeSlide.bgColor} rounded-full flex items-center justify-center text-white font-black text-[10px] md:text-sm shadow-lg rotate-12`}>
+                {/* Brand Accent Circle */}
+                <div className={`absolute top-0 right-10 w-16 h-16 rounded-full ${activeSlide.bgColor} flex items-center justify-center text-white font-bold text-xs shadow-lg z-10`}>
                   {activeSlide.discount}
                 </div>
+
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`}
+                  alt={activeSlide.title}
+                  fill
+                  className="object-contain drop-shadow-2xl z-0"
+                  priority
+                />
               </motion.div>
             </AnimatePresence>
           </div>
