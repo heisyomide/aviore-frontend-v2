@@ -127,6 +127,7 @@ export function Hero() {
                   fill
                   className="object-contain drop-shadow-2xl z-0"
                   priority
+                  unoptimized={true}
                 />
               </motion.div>
             </AnimatePresence>
