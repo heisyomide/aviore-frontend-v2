@@ -166,24 +166,28 @@ function MainHeroSlide({
         relative rounded-[2.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100 h-[480px]
       `}
     >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={slide.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 flex"
-        >
-          <HeroContent slide={slide} />
-          <HeroImage slide={slide} />
-
-          <div
-            className={`absolute inset-0 opacity-5 ${
-              slide.bgColor || 'bg-gray-100'
-            }`}
-          />
-        </motion.div>
-      </AnimatePresence>
+// ✅ NEW (Safe: multi-layered staggering)
+<AnimatePresence mode="wait">
+  <motion.div key={slide.id} className="relative inset-0 flex">
+    {/* Content: enters first from the left */}
+    <motion.div
+      initial={{ x: -60, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
+    >
+      <HeroContent slide={slide} />
+    </motion.div>
+    
+    {/* Image: enters slightly later and 'floats' */}
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: 0.4, duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
+    >
+      <HeroImage slide={slide} />
+    </motion.div>
+  </motion.div>
+</AnimatePresence>
 
       <ProgressIndicator
         current={current}
@@ -208,13 +212,21 @@ function HeroContent({
         {slide.tag}
       </span>
 
-      <motion.h2
-        initial={{ y: 30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-4"
-      >
-        {slide.title}
-      </motion.h2>
+ <div className="space-y-3">
+  {/* The minimal label */}
+  <motion.span className="block text-[11px] font-mono tracking-[0.3em] uppercase text-zinc-500">
+    {slide.tag}
+  </motion.span>
+  
+  {/* Editorial Headline */}
+  <motion.h2 className="text-5xl md:text-8xl font-light tracking-[-0.04em] text-white leading-[0.9] mb-4">
+    {slide.title.split(' ').map((word, i) => (
+      <span key={i} className={i === 0 ? 'font-light' : 'font-black italic'}>
+        {word}{' '}
+      </span>
+    ))}
+  </motion.h2>
+</div>
 
       <motion.p
         initial={{ scale: 0.9, opacity: 0 }}
