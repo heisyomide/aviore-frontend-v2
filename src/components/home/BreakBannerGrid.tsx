@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
 import { Section } from '../layout/Section';
 
 interface BreakoutItem {
@@ -14,65 +13,48 @@ interface BreakoutItem {
   discount?: string;
 }
 
-/**
- * Validates if the string is a usable Next.js Image source.
- * Prevents "Failed to parse src" runtime errors.
- */
-const isValidImage = (src: string): boolean => {
-  if (!src || src === "...") return false;
-  return src.startsWith('http') || src.startsWith('/');
-};
-
 export function BreakoutBannerGrid({ items }: { items: BreakoutItem[] }) {
   return (
-    <Section className="py-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <Section className="py-2">
+      <div className="flex gap-4 overflow-x-auto no-scrollbar">
         {items.map((item, idx) => (
-          <Link 
-            href={item.link} 
-            key={idx} 
-            className="group relative h-[220px] overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 transition-all hover:border-white/20 focus-visible:ring-2 focus-visible:ring-[#A4143D] outline-none"
+          <Link
+            href={item.link}
+            key={idx}
+            className="min-w-[280px] sm:min-w-[400px] h-[160px] flex-shrink-0 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition relative"
           >
-            {/* 1. BACKGROUND LAYER (SAFE IMAGE) */}
-            <div className="absolute inset-0 z-0 opacity-40 transition-transform duration-700 group-hover:scale-105">
-              {isValidImage(item.image) ? (
-                <Image 
-                  src={item.image} 
-                  alt={item.heading} 
-                  fill 
-                  className="object-cover" 
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  priority={idx < 3} // Priority load for top items
-                />
-              ) : (
-                <div className="h-full w-full bg-zinc-800 animate-pulse" />
-              )}
-              {/* Overlay Gradient for Text Legibility */}
-              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+            {/* Image */}
+            <div className="absolute right-0 top-0 h-full w-1/2">
+              <Image
+                src={item.image}
+                alt={item.heading}
+                fill
+                className="object-contain p-3"
+              />
             </div>
-            
-            {/* 2. CONTENT LAYER */}
-            <div className="relative z-10 flex h-full flex-col justify-between p-8">
-              <div className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40">
+
+            {/* Content */}
+            <div className="relative z-10 p-4 flex flex-col justify-between h-full w-[60%]">
+              <div>
+                <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">
                   {item.tag}
-                </span>
-                <h3 className="max-w-[150px] text-xl font-bold italic leading-tight text-white">
-                   {item.heading} 
-                   {item.discount && (
-                     <span className="ml-2 not-italic text-[#A4143D]">
-                       {item.discount}
-                     </span>
-                   )}
+                </p>
+
+                <h3 className="text-sm font-bold text-gray-900 leading-tight">
+                  {item.heading}{' '}
+                  {item.discount && (
+                    <span className="text-red-500">{item.discount}</span>
+                  )}
                 </h3>
-                <p className="text-[11px] font-medium text-zinc-500">
+
+                <p className="text-[10px] text-gray-500 mt-1">
                   {item.subtext}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white transition-colors group-hover:text-[#A4143D]">
-                Shop Now <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
-              </div>
+              <span className="inline-block text-[10px] font-semibold text-white bg-[#A4143D] px-2 py-1 rounded-md w-fit">
+                Shop Now
+              </span>
             </div>
           </Link>
         ))}

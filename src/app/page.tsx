@@ -203,9 +203,7 @@ export default function HomePage() {
           <TopDealsSection initialDeals={registry.topSaver} />
         </div>
 
-        <div className="py-12">
-           <VendorCTA />
-        </div>
+          <VendorCTA />
 
         {/* 5. DISCOVERY ENGINE */}
         <div id="discovery-feed">

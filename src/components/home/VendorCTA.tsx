@@ -6,8 +6,8 @@ import { Section } from '../layout/Section';
 
 export function VendorCTA() {
   return (
-    <Section className="py-8">
-      <div className="relative w-full overflow-hidden rounded-[2.5rem] bg-[#A4143D] p-12 md:p-20">
+    <Section className="py-2">
+      <div className="relative w-full overflow-hidden rounded-[2.5rem] bg-[#A4143D] p-5 md:p-5">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 opacity-10 mix-blend-overlay [background-image:url('https://grainy-gradients.vercel.app/noise.svg')]" />
         

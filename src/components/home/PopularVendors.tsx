@@ -67,7 +67,7 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
               {vendors.map((vendor) => (
                 <VendorCard key={vendor.id} vendor={vendor} />
               ))}
-              <BecomeVendorCTA />
+             
             </div>
           </div>
         )}
@@ -169,23 +169,3 @@ function LoadingSkeleton() {
   );
 }
 
-function BecomeVendorCTA() {
-  const router = useRouter();
-  return (
-    <div 
-      onClick={() => router.push('/become-a-vendor')}
-      className="group cursor-pointer bg-zinc-900 p-8 rounded-[3rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl transition-all duration-500 hover:scale-[1.02]"
-    >
-      <div className="absolute -right-4 -top-4 w-40 h-40 bg-[#A4143D]/30 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
-      <div className="relative z-10 space-y-4">
-        <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-[0.85]">
-          Become <br/> <span className="text-[#A4143D]">Vendor</span>
-        </h3>
-        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em]">
-          <span className="border-b-2 border-[#A4143D] pb-1">Apply_Now</span>
-          <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
-        </div>
-      </div>
-    </div>
-  );
-}
