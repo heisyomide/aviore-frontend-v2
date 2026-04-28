@@ -95,8 +95,8 @@ export function Hero() {
                      <span className="text-[9px] text-zinc-400 ml-1">1245 reviews</span>
                    </div>
                    <div className="mt-4 flex items-baseline gap-2">
-                     <span className="text-lg font-black text-zinc-900">$125.00</span>
-                     <span className="text-xs text-zinc-400 line-through">$250.00</span>
+                     <span className="text-lg font-black text-zinc-900">₦9000.00</span>
+                     <span className="text-xs text-zinc-400 line-through">₦60000.00</span>
                    </div>
                    <div className="mt-4 flex items-center text-[10px] font-bold uppercase cursor-pointer group">
                      View more <ArrowRight size={12} className="ml-2 group-hover:translate-x-1 transition-transform" />
