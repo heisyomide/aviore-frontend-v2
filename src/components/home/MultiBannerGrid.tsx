@@ -48,7 +48,7 @@ export function PromoBanner({ type }: { type: BannerType }) {
   const item = BANNER_CONFIGS[type];
 
   return (
-    <Section className="py-1 md:py-1">
+    <Section className="py-2 md:py-2">
       <Link href={item.link} className="group relative block w-full outline-none">
         {/* Adjusted height to be slimmer on desktop (h-[400px]) */}
         <div className="relative flex h-[450px] w-full items-center overflow-hidden rounded-[2rem] bg-zinc-950 md:h-[380px]">

@@ -100,7 +100,7 @@ export default function HomePage() {
         <Hero />
 
         {/* 3. URGENCY ZONE */}
-        <div className="mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
+        <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
           {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
         </div>
 
@@ -147,7 +147,7 @@ export default function HomePage() {
 
         <PromoBanner type="electronics" />
 
-        <div className="mt-12">
+        <div className="mt-6 md:mt-12">
           <TopDealsSection initialDeals={registry.topSaver} />
         </div>
 
@@ -157,7 +157,7 @@ export default function HomePage() {
 
         {/* 5. DISCOVERY ENGINE */}
         <div id="discovery-feed">
-          <Container className="mt-32">
+          <Container className="mt-22 md:mt-12">
             <header className="mb-16 flex flex-col justify-between gap-6 border-b border-gray-100 pb-10 md:flex-row md:items-end">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[#A4143D]">
@@ -174,7 +174,7 @@ export default function HomePage() {
               <>
                 <ProductGrid products={paginatedDiscovery} />
                 {hasMoreItems && (
-                  <div className="mt-24 flex flex-col items-center gap-8 text-center">
+                  <div className="mt-12 md:mt-12 flex flex-col items-center gap-8 text-center">
                     <button 
                       onClick={handleRegistrySync}
                       className="group relative overflow-hidden rounded-full border-2 border-black bg-white px-20 py-6 transition-all active:scale-95"
@@ -196,7 +196,7 @@ export default function HomePage() {
 
       {/* 🚀 THE FOOTER STACK: Pushed to bottom by flex-grow above */}
       <div className="mt-auto">
-        <div className="mt-32 w-full border-t border-slate-50 bg-white">
+        <div className="mt-16 md:mt-12 w-full border-t border-slate-50 bg-white">
           <div className="max-w-7xl mx-auto">
             <TrustBar />
           </div>
