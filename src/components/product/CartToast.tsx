@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, ShoppingBag, ArrowRight, Check } from 'lucide-react';
 import { useCartStore } from '@/src/store/useCartStore';
 import { safeNumber, safeString } from '@/src/utils/safe';
 
@@ -14,7 +14,6 @@ export function CartToast() {
     setShowToast(false);
   }, [setShowToast]);
 
-  // Auto-hide after 5 seconds
   useEffect(() => {
     if (!showToast) return;
     const timer = setTimeout(handleClose, 5000);
@@ -23,84 +22,77 @@ export function CartToast() {
 
   const safeData = useMemo(() => {
     if (!lastAddedItem) return null;
-
-    const price = safeNumber(lastAddedItem.price);
-    const qty = safeNumber(lastAddedItem.quantity, 1);
-
     return {
-      name: safeString(lastAddedItem.name, 'Product Added'),
+      name: safeString(lastAddedItem.name, 'Item Added'),
       image: safeString(lastAddedItem.image, '/placeholder.png'),
-      qty,
+      qty: safeNumber(lastAddedItem.quantity, 1),
       size: lastAddedItem.size,
-      total: price * qty,
+      total: safeNumber(lastAddedItem.price) * safeNumber(lastAddedItem.quantity, 1),
     };
   }, [lastAddedItem]);
 
   if (!showToast || !safeData) return null;
 
   return (
-    <div className="fixed bottom-8 right-4 sm:right-8 z-[100] w-[calc(100%-2rem)] sm:w-[400px] animate-in fade-in slide-in-from-right-8 duration-500">
-      <div className="bg-white rounded-[2rem] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-zinc-100 flex gap-4">
+    <div className="fixed bottom-6 right-4 sm:right-8 z-[100] w-[calc(100%-2rem)] sm:w-[380px] animate-in fade-in slide-in-from-bottom-10 duration-500">
+      {/* 🍷 PREMIUM GLASS CONTAINER */}
+      <div className="relative overflow-hidden bg-white/90 backdrop-blur-xl rounded-[2.5rem] p-4 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] border border-zinc-200/50">
         
-        {/* Status Icon */}
-        <div className="shrink-0 w-12 h-12 bg-emerald-50 text-emerald-600 flex items-center justify-center rounded-2xl">
-          <ShoppingBag size={20} />
+        <div className="flex gap-5">
+          {/* PRODUCT HERO IMAGE */}
+          <div className="relative w-20 h-24 rounded-2xl bg-zinc-100 overflow-hidden shrink-0 border border-zinc-100 shadow-sm">
+            <Image 
+              src={safeData.image} 
+              alt={safeData.name} 
+              fill 
+              sizes="80px"
+              className="object-cover"
+            />
+            {/* Minimal Check Badge */}
+            <div className="absolute top-1 right-1 w-5 h-5 bg-[#A4143D] text-white flex items-center justify-center rounded-full shadow-lg">
+              <Check size={10} strokeWidth={4} />
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col justify-between py-1">
+            <div className="space-y-1">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A4143D]">
+                  Added to Registry
+                </span>
+                <button onClick={handleClose} className="text-zinc-400 hover:text-zinc-900 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <h4 className="text-[13px] font-bold text-zinc-900 leading-tight pr-4 line-clamp-1">
+                {safeData.name}
+              </h4>
+              <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-tighter">
+                Qty: {safeData.qty} {safeData.size && `• Size: ${safeData.size}`}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-sm font-black text-zinc-900">
+                ₦{safeData.total.toLocaleString()}
+              </p>
+              <Link 
+                href="/cart" 
+                onClick={handleClose}
+                className="group flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#A4143D] hover:translate-x-1 transition-transform"
+              >
+                Checkout <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
         </div>
 
-        <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-0.5">
-                Successfully Added
-              </h4>
-              <p className="text-[13px] font-bold text-zinc-900 truncate pr-4">
-                {safeData.name}
-              </p>
-            </div>
-            <button 
-              onClick={handleClose}
-              className="p-1 hover:bg-zinc-100 rounded-full transition-colors"
-            >
-              <X size={16} className="text-zinc-400" />
-            </button>
-          </div>
-
-          {/* Product Details */}
-          <div className="flex items-center gap-3 py-3 border-y border-zinc-50">
-            <div className="relative w-12 h-12 rounded-xl bg-zinc-50 overflow-hidden shrink-0 border border-zinc-100">
-              <Image 
-                src={safeData.image} 
-                alt={safeData.name} 
-                fill 
-                sizes="48px"
-                className="object-cover"
-              />
-            </div>
-            <div className="flex-1">
-              <p className="text-[11px] text-zinc-500 font-medium">
-                Quantity: <span className="text-zinc-900">{safeData.qty}</span>
-                {safeData.size && (
-                  <> • Size: <span className="text-zinc-900">{safeData.size}</span></>
-                )}
-              </p>
-              <p className="text-sm font-bold text-[#A4143D]">
-                ₦{(safeData.total || 0).toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          {/* Footer Link */}
-          <div className="pt-3">
-            <Link 
-              href="/cart" 
-              onClick={handleClose}
-              className="group flex items-center justify-center gap-2 w-full py-3 bg-zinc-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-black transition-all"
-            >
-              View Cart & Checkout
-              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
+        {/* ⏳ PROGRESS TIMER BAR */}
+        <div className="absolute bottom-0 left-0 h-1 bg-[#A4143D]/10 w-full">
+          <div 
+            className="h-full bg-[#A4143D] animate-progress-shrink" 
+            style={{ animationDuration: '5000ms', animationTimingFunction: 'linear' }} 
+          />
         </div>
       </div>
     </div>
