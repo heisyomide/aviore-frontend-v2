@@ -121,14 +121,17 @@ export function Hero() {
                   {activeSlide.discount}
                 </div>
 
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`}
-                  alt={activeSlide.title}
-                  fill
-                  className="object-contain drop-shadow-2xl z-0"
-                  priority
-                  unoptimized={true}
-                />
+<Image
+  src={activeSlide.imageUrl.startsWith('http') 
+    ? activeSlide.imageUrl 
+    : `${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`
+  }
+  alt={activeSlide.title}
+  fill
+  className="object-contain drop-shadow-2xl z-0"
+  priority
+  // unoptimized={true} // Only keep this if your backend lacks an image optimizer
+/>
               </motion.div>
             </AnimatePresence>
           </div>
