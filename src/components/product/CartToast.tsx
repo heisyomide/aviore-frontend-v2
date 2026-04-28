@@ -58,7 +58,7 @@ export function CartToast() {
             <div className="space-y-1">
               <div className="flex justify-between items-start">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A4143D]">
-                  Added to Registry
+                  Added to Cart
                 </span>
                 <button onClick={handleClose} className="text-zinc-400 hover:text-zinc-900 transition-colors">
                   <X size={16} />

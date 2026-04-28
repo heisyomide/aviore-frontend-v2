@@ -51,7 +51,7 @@ export function PromoBanner({ type }: { type: BannerType }) {
     <Section className="py-2 md:py-2">
       <Link href={item.link} className="group relative block w-full outline-none">
         {/* Adjusted height to be slimmer on desktop (h-[400px]) */}
-        <div className="relative flex h-[450px] w-full items-center overflow-hidden rounded-[2rem] bg-zinc-950 md:h-[380px]">
+        <div className="relative flex h-[300px] w-full items-center overflow-hidden rounded-[1rem] bg-zinc-950 md:h-[320px]">
           
           {/* 1. BACKGROUND LAYER */}
           <div className="absolute inset-0 z-0 overflow-hidden">
