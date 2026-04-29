@@ -96,7 +96,7 @@ export function Footer() {
               title="Registry" 
               links={[
                 { label: "Track Shipments", href: "/track" },
-                { label: "New Arrivals", href: "/new" },
+                { label: "New Arrivals", href: "/shop?sort=newest" },
                 { label: "Top Vendors", href: "/vendors" },
                 { label: "Gift Cards", href: "/gifts" }
               ]} 
