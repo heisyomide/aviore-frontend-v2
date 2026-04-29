@@ -54,7 +54,7 @@ export function PopularVendorsSection({ initialVendors = [] }: PopularVendorsPro
               <motion.div 
                 className="flex gap-4 pr-4"
                 animate={{ x: ["0%", "-50%"] }}
-                transition={{ duration: 30, ease: "linear", repeat: Infinity }}
+                transition={{ duration: 45, ease: "linear", repeat: Infinity }}
               >
                 {marqueeItems.map((vendor, i) => (
                   <VendorCard key={`${vendor.id}-${i}`} vendor={vendor} />

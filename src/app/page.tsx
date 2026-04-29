@@ -138,21 +138,21 @@ export default function HomePage() {
       heading: "Save Up", 
       discount: "50% Off", 
       subtext: "Best price on the market", 
-      image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070", 
+      image: "/cta.jpg", 
       link: "/shop/women" 
     },
     { 
       tag: "New Arrivals", 
       heading: "B&O Beoplay", 
-      subtext: "Free delivery over $300", 
-      image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=80&w=2065", 
+      subtext: "Free delivery over ₦25000", 
+      image: "/cta2.png", 
       link: "/shop/audio" 
     },
     { 
       tag: "Top Seller", 
       heading: "Beauty on Your Wrist", 
       subtext: "Buy 1 get 1 free", 
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999", 
+      image: "/cta3.png", 
       link: "/shop/jewelry" 
     },
   ]} 
@@ -178,14 +178,14 @@ export default function HomePage() {
       tag: "Get Rewarded", 
       heading: "Super Cheap Price", 
       subtext: "Earn 20% Back", 
-      image: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=2001", 
+      image: "/cta1.png", 
       link: "/shop/electronics" 
     },
     { 
       tag: "Power", 
       heading: "Charger Power Bank", 
-      subtext: "Starting at $79.99", 
-      image: "https://images.unsplash.com/photo-1619119069152-a2b331eb392a?q=80&w=2070", 
+      subtext: "Starting at ₦14000.99", 
+      image: "/cta5.png", 
       link: "/shop/accessories" 
     },
     { 

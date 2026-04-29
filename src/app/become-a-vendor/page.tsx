@@ -8,6 +8,7 @@ import {
   ChevronRight, Percent, Landmark
 } from 'lucide-react';
 import { Navbar } from '@/src/components/navbar/Navbar';
+import { api } from '@/src/lib/api';
 
 // Define proper interfaces for TypeScript
 interface PriceCardProps {

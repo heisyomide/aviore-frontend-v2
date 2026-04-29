@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
+import { Toaster } from 'sonner';
 // Core Providers
 import { Providers } from "../components/providers/Provider";
 import { CartSyncProvider } from "../components/providers/CartSyncProvider";
@@ -70,6 +70,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="flex-1">
               {children}
               <CartToast />
+                    <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#18181b',
+            color: '#fff',
+            borderRadius: '12px',
+            fontSize: '12px',
+          },
+        }}
+      />
+
             </main>
 
             {/* Global Utilities */}

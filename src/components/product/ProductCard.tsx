@@ -8,6 +8,7 @@ import { ShoppingCart, Heart, Truck, ImageOff, Star } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { safeNumber, safeString, formatMoney } from '@/src/utils/safe';
+import toast from 'react-hot-toast';
 
 /* ====================== EXACT MATCH PRODUCT CARD ====================== */
 export function ProductCard({ product }: { product: any }) {
@@ -73,14 +74,16 @@ export function ProductCard({ product }: { product: any }) {
         </div>
 
         <button
-          onClick={(e) => { e.stopPropagation(); toggleWishlist(data); }}
+          onClick={(e) => { e.stopPropagation(); toggleWishlist(data);   toast.success(
+    isHearted ? 'Removed from wishlist' : 'Added to wishlist'
+  );}}
           className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-sm border border-zinc-50 transition-transform active:scale-90"
         >
           <Heart size={14} className={isHearted ? "fill-[#A4143D] text-[#A4143D]" : "text-zinc-400"} />
         </button>
 
         <button
-          onClick={(e) => { e.stopPropagation(); addItem({...data, quantity: 1}); }}
+          onClick={(e) => { e.stopPropagation(); addItem({...data, quantity: 1}); toast.success('Added to cart'); }}
           className="absolute bottom-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-sm border border-zinc-50 transition-transform active:scale-90 hover:text-[#A4143D]"
         >
           <ShoppingCart size={14} className="text-zinc-600" />
