@@ -19,7 +19,7 @@ export function ProductCard({ product }: { product: any }) {
 
   useEffect(() => setMounted(true), []);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
   const data = useMemo(() => {
     const price = safeNumber(product?.price);
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: any }) {
             alt={data.name}
             fill
             sizes="(max-width:768px) 50vw, 25vw"
-            className="object-cover"
+            className="object-contain"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-zinc-300"><ImageOff size={24} /></div>
