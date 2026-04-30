@@ -110,7 +110,7 @@ useEffect(() => {
   setIsFollowing((prev: boolean) => !prev);
 
   try {
-    await api.post(`/vendor/follow/${vendor.id}`);
+    await api.post(`/vendor/${vendor.id}/follow`);
 
     // ✅ update follower count too
 setIsFollowing((prev) => {
