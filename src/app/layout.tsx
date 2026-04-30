@@ -1,107 +1,115 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from 'sonner';
-// Core Providers
+
+import { Toaster } from "sonner";
+
+// Providers
 import { Providers } from "../components/providers/Provider";
 import { CartSyncProvider } from "../components/providers/CartSyncProvider";
-import { CartToast } from '@/src/components/product/CartToast';
-import { useEffect } from 'react';
-import { useWishlistStore } from '@/src/store/useWishlistStore';
+import { WishlistProvider } from "../components/providers/WishlistProvider";
 
-
-// UI Components
+// UI
 import { BackToTop } from "../components/ui/BackToTop";
+import { CartToast } from "@/src/components/product/CartToast";
 
-// Global Error Handler (NEW)
+// Error Handling
 import GlobalErrorHandler from "../components/GlobalErrorHandler";
 
-// Font Configuration
-const geistSans = Geist({ 
-  variable: "--font-geist-sans", 
+// Fonts
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  display: 'swap', 
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({ 
-  variable: "--font-geist-mono", 
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  display: 'swap',
+  display: "swap",
 });
 
 // Metadata
 export const metadata: Metadata = {
   title: {
     default: "Aviore Marketplace | Unique Artifacts & Global Deals",
-    template: "%s | Aviore"
+    template: "%s | Aviore",
   },
-  description: "Experience the ultimate discovery loop. Shop artifacts, electronics, and fashion with 90-day returns and secure payments.",
-  keywords: ["e-commerce", "marketplace", "artifacts", "deals", "industrial shopping", "Aviore"],
+  description:
+    "Experience the ultimate discovery loop. Shop artifacts, electronics, and fashion with 90-day returns and secure payments.",
+  keywords: [
+    "e-commerce",
+    "marketplace",
+    "artifacts",
+    "deals",
+    "industrial shopping",
+    "Aviore",
+  ],
   icons: { icon: "/favicon.ico" },
 };
 
-export function AppInitializer() {
-  const initWishlist = useWishlistStore((s) => s.initWishlist);
-
-  useEffect(() => {
-    initWishlist();
-  }, [initWishlist]);
-
-  return null;
-}
 // Viewport
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-  maximumScale: 1, 
+  maximumScale: 1,
   userScalable: false,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body 
+      <body
         className={`
-          ${geistSans.variable} 
-          ${geistMono.variable} 
-          antialiased 
-          bg-[#FAFAFA] 
+          ${geistSans.variable}
+          ${geistMono.variable}
+          antialiased
+          bg-[#FAFAFA]
           text-zinc-900
           selection:bg-blue-600 selection:text-white
         `}
       >
         <Providers>
-          {/* Global Error Logger - Captures ALL uncaught errors and promise rejections */}
+          {/* Global Error Handling */}
           <GlobalErrorHandler />
 
-          {/* Cart Sync Provider */}
-          <CartSyncProvider />
+          {/* Global State Providers (CLIENT SAFE) */}
+          <WishlistProvider>
+            <CartSyncProvider>
 
-          <AppInitializer/>
+              {/* App Layout */}
+              <div className="relative flex min-h-screen flex-col">
+                
+                {/* Main Content */}
+                <main className="flex-1">
+                  {children}
+                </main>
 
-          <div className="relative flex min-h-screen flex-col">
-            {/* Main Content */}
-            <main className="flex-1">
-              {children}
-              <CartToast />
-                    <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#18181b',
-            color: '#fff',
-            borderRadius: '12px',
-            fontSize: '12px',
-          },
-        }}
-      />
+                {/* Global UI */}
+                <CartToast />
+                <BackToTop />
+              </div>
 
-            </main>
+            </CartSyncProvider>
+          </WishlistProvider>
 
-            {/* Global Utilities */}
-            <BackToTop />
-          </div>
+          {/* Global Toast System */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: "#18181b",
+                color: "#fff",
+                borderRadius: "12px",
+                fontSize: "12px",
+              },
+            }}
+          />
         </Providers>
       </body>
     </html>
