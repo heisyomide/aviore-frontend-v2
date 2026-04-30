@@ -101,36 +101,43 @@ useEffect(() => {
     });
   }, [product, selectedVariant, selectedSize, qty, addItem]);
 
-  const handleFollow = async () => {
+ const handleFollow = async () => {
   if (!vendor?.id || followLoading) return;
 
   setFollowLoading(true);
 
-  // 🔥 Optimistic update
-  setIsFollowing((prev: boolean) => !prev);
+  const prev = isFollowing;
 
-  try {
-    await api.post(`/vendor/${vendor.id}/follow`);
+  // optimistic
+  setIsFollowing(!prev);
 
-    // ✅ update follower count too
-setIsFollowing((prev) => {
   setVendorState((v) => {
     if (!v) return v;
 
     return {
       ...v,
-      followers: prev
-        ? (v.followers || 1) - 1
-        : (v.followers || 0) + 1,
+      followers: !prev
+        ? (v.followers || 0) + 1
+        : (v.followers || 1) - 1,
     };
   });
 
-  return !prev;
-});
-
+  try {
+    await api.post(`/vendor/${vendor.id}/follow`);
   } catch (err) {
-    // ❌ rollback if failed
-    setIsFollowing(prev => !prev);
+    // rollback
+    setIsFollowing(prev);
+
+    setVendorState((v) => {
+      if (!v) return v;
+
+      return {
+        ...v,
+        followers: prev
+          ? (v.followers || 0) + 1
+          : (v.followers || 1) - 1,
+      };
+    });
   } finally {
     setFollowLoading(false);
   }
@@ -163,7 +170,7 @@ setIsFollowing((prev) => {
           
           {/* LEFT: GALLERY SECTION */}
           <div className="lg:col-span-7">
-             <ProductGallery images={galleryImages} title={product.title} />
+             <ProductGallery images={galleryImages} title={product.title} productId={product.id} price={product.price} />
              
              {/* Desktop Tabs at Bottom */}
              <div className="hidden lg:block mt-24">

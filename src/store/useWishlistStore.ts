@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '@/src/lib/axios';
+import { toast } from 'sonner';
 
 export interface WishlistItem {
   id: string;
@@ -14,11 +15,15 @@ export interface WishlistItem {
 interface WishlistStore {
   items: WishlistItem[];
   loading: boolean;
+  initialized: boolean;
+
+  initWishlist: () => Promise<void>;
+
   fetchWishlist: () => Promise<void>;
-  addToWishlist: (item: WishlistItem) => Promise<void>;
-  removeFromWishlist: (id: string) => Promise<void>;
   toggleWishlist: (item: WishlistItem) => Promise<void>;
+
   isWishlisted: (id: string) => boolean;
+
   clearWishlist: () => void;
 }
 
@@ -27,105 +32,91 @@ export const useWishlistStore = create<WishlistStore>()(
     (set, get) => ({
       items: [],
       loading: false,
+      initialized: false,
 
+      // 🚀 INIT (IMPORTANT - FIXES REFRESH ISSUE)
+      initWishlist: async () => {
+        if (get().initialized) return;
+
+        try {
+          await get().fetchWishlist();
+        } finally {
+          set({ initialized: true });
+        }
+      },
+
+      // 📡 FETCH FROM API
       fetchWishlist: async () => {
         try {
           set({ loading: true });
+
           const res = await api.get('/wishlist');
-          // Ensure we always save an array, even if API returns null/error
+
           const data = Array.isArray(res.data) ? res.data : [];
-          set({ items: data, loading: false });
+
+          const safeData: WishlistItem[] = data.map((item: any) => ({
+            id: String(item.id),
+            name: item.name || 'Product',
+            price: Number(item.price) || 0,
+            image: item.image || '/placeholder.png',
+          }));
+
+          set({ items: safeData });
         } catch (error) {
           console.error('Wishlist fetch failed', error);
+          toast.error('Failed to load wishlist');
+        } finally {
           set({ loading: false });
         }
       },
 
-      addToWishlist: async (item) => {
-        // Defensive check: Do not add if item or ID is missing
-        if (!item?.id) return;
-
-        const currentItems = get().items || [];
-        if (currentItems.some((p) => p?.id === item.id)) return;
-
-        const previousItems = [...currentItems];
-        
-        // Sanitize item data before adding to store
-        const safeItem: WishlistItem = {
-          id: String(item.id),
-          name: String(item.name || 'Product'),
-          price: Number(item.price) || 0,
-          image: String(item.image || '/placeholder.png'),
-        };
-
-        set({ items: [...previousItems, safeItem] });
-
-        try {
-          await api.post(`/wishlist/${safeItem.id}`);
-        } catch (error) {
-          console.error('Add to wishlist failed', error);
-          set({ items: previousItems }); // Rollback on failure
-        }
-      },
-
-      removeFromWishlist: async (id) => {
-        if (!id) return;
-        
-        const currentItems = get().items || [];
-        const previousItems = [...currentItems];
-        set({ items: currentItems.filter((p) => p?.id !== id) });
-
-        try {
-          await api.delete(`/wishlist/${id}`);
-        } catch (error) {
-          console.error('Remove from wishlist failed', error);
-          set({ items: previousItems }); // Rollback
-        }
-      },
-
+      // ❤️ TOGGLE (BEST METHOD — no need separate add/remove)
       toggleWishlist: async (item) => {
         if (!item?.id) return;
 
-        const currentItems = get().items || [];
-        const isCurrentlyWishlisted = currentItems.some((p) => p?.id === item.id);
+        const { items } = get();
+        const exists = items.some((p) => p.id === item.id);
 
-        if (isCurrentlyWishlisted) {
-          const previousItems = [...currentItems];
-          set({ items: currentItems.filter((p) => p?.id !== item.id) });
-          try {
+        const safeItem: WishlistItem = {
+          id: String(item.id),
+          name: item.name || 'Product',
+          price: Number(item.price) || 0,
+          image: item.image || '/placeholder.png',
+        };
+
+        // 🔥 OPTIMISTIC UPDATE
+        set({
+          items: exists
+            ? items.filter((p) => p.id !== item.id)
+            : [...items, safeItem],
+        });
+
+        try {
+          if (exists) {
             await api.delete(`/wishlist/${item.id}`);
-          } catch (error) {
-            set({ items: previousItems });
+            toast.success('Removed from wishlist');
+          } else {
+            await api.post(`/wishlist/${item.id}`);
+            toast.success('Added to wishlist');
           }
-        } else {
-          const previousItems = [...currentItems];
-          const safeItem: WishlistItem = {
-            id: String(item.id),
-            name: String(item.name || 'Product'),
-            price: Number(item.price) || 0,
-            image: String(item.image || '/placeholder.png'),
-          };
-          set({ items: [...previousItems, safeItem] });
-          try {
-            await api.post(`/wishlist/${safeItem.id}`);
-          } catch (error) {
-            set({ items: previousItems });
-          }
+        } catch (error) {
+          // ❌ ROLLBACK
+          set({ items });
+          toast.error('Something went wrong');
         }
       },
 
+      // 🔍 CHECK
       isWishlisted: (id) => {
         if (!id) return false;
-        const items = get().items || [];
-        return items.some((p) => p?.id === id);
+        return get().items.some((p) => p.id === id);
       },
 
-      clearWishlist: () => set({ items: [] }),
+      // 🧹 CLEAR (LOGOUT USE)
+      clearWishlist: () => set({ items: [], initialized: false }),
     }),
     {
       name: 'aviore-wishlist',
-      // Only rehydrate after mounting to avoid hydration mismatches
-      skipHydration: true, 
     }
   )
 );

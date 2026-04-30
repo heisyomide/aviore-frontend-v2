@@ -6,6 +6,9 @@ import { Toaster } from 'sonner';
 import { Providers } from "../components/providers/Provider";
 import { CartSyncProvider } from "../components/providers/CartSyncProvider";
 import { CartToast } from '@/src/components/product/CartToast';
+import { useEffect } from 'react';
+import { useWishlistStore } from '@/src/store/useWishlistStore';
+
 
 // UI Components
 import { BackToTop } from "../components/ui/BackToTop";
@@ -37,6 +40,15 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.ico" },
 };
 
+export function AppInitializer() {
+  const initWishlist = useWishlistStore((s) => s.initWishlist);
+
+  useEffect(() => {
+    initWishlist();
+  }, [initWishlist]);
+
+  return null;
+}
 // Viewport
 export const viewport: Viewport = {
   width: 'device-width',
@@ -64,6 +76,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Cart Sync Provider */}
           <CartSyncProvider />
+
+          <AppInitializer/>
 
           <div className="relative flex min-h-screen flex-col">
             {/* Main Content */}
