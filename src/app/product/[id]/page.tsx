@@ -18,11 +18,27 @@ import { VendorCard } from '@/src/components/product/VendorCard';
 import { DeliveryInfo } from '@/src/components/product/DeliveryInfo';
 import { ProductDescription } from '@/src/components/product/ProductDescription';
 import { RecommendedProducts } from '@/src/components/product/RecommendedProducts';
+import { api } from '@/src/lib/axios';
+
+type VendorType = {
+  id: string;
+  storeName: string;
+  logo?: string;
+  isVerified?: boolean;
+  rating?: number;
+  followers?: number;
+  productsCount?: number;
+  responseRate?: number;
+};
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
+const [followLoading, setFollowLoading] = useState(false);
+
 
   const { 
     product, vendor, recommended, loading, 
@@ -30,9 +46,29 @@ export default function ProductDetailsPage() {
     selectedSize, setSelectedSize,
     qty, setQty 
   } = useProductData(id as string);
+   const [vendorState, setVendorState] = useState<VendorType | null>(null);
+
+useEffect(() => {
+  setVendorState(vendor);
+}, [vendor]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+  if (!vendor?.id) return;
+
+  const fetchFollowState = async () => {
+    try {
+      const res = await api.get(`/vendor/${vendor.id}`);
+      setIsFollowing(res.data.isFollowing);
+    } catch (err) {
+      console.error("Failed to fetch follow state");
+    }
+  };
+
+  fetchFollowState();
+}, [vendor?.id]);
 
   // 🛒 HANDLERS
   const handleAddToCart = useCallback(async () => {
@@ -64,6 +100,41 @@ export default function ProductDetailsPage() {
       variant: selectedVariant 
     });
   }, [product, selectedVariant, selectedSize, qty, addItem]);
+
+  const handleFollow = async () => {
+  if (!vendor?.id || followLoading) return;
+
+  setFollowLoading(true);
+
+  // 🔥 Optimistic update
+  setIsFollowing((prev: boolean) => !prev);
+
+  try {
+    await api.post(`/vendor/follow/${vendor.id}`);
+
+    // ✅ update follower count too
+setIsFollowing((prev) => {
+  setVendorState((v) => {
+    if (!v) return v;
+
+    return {
+      ...v,
+      followers: prev
+        ? (v.followers || 1) - 1
+        : (v.followers || 0) + 1,
+    };
+  });
+
+  return !prev;
+});
+
+  } catch (err) {
+    // ❌ rollback if failed
+    setIsFollowing(prev => !prev);
+  } finally {
+    setFollowLoading(false);
+  }
+};
 
   const handleBuyNow = async () => {
     await handleAddToCart();
@@ -149,7 +220,11 @@ export default function ProductDetailsPage() {
             {/* 4. Vendor Section */}
             {vendor && (
               <div className="pt-4 border-t border-zinc-100">
-                <VendorCard vendor={vendor} isFollowing={false} onFollow={async () => {}} />
+<VendorCard 
+  vendor={vendorState || vendor} 
+  isFollowing={isFollowing} 
+  onFollow={handleFollow} 
+/>
               </div>
             )}
 
