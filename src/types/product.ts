@@ -6,16 +6,14 @@ export interface ProductImage {
 }
 
 export interface Variant {
-  id: string;
-  color?: string;
-
-  sizes?: string[]; // API may omit this
-  stock?: number;
-
-  price?: number | string;
-
-  images?: ProductImage[]; // ❗ make optional (this was crashing you)
+  id: string | null; // Use null for brand new variants
+  color: string;     // Required for the Matrix logic
+  size: string;      // 🔥 Singular 'size' for the Matrix row
+  stock: number;     // Changed to number for the backend
+  price: number | string; 
+  images: string[];  // 🔥 Changed to string[] to match Cloudinary URLs
 }
+
 
 export interface Product {
   id: string;

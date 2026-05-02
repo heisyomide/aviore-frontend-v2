@@ -6,7 +6,15 @@ import { uploadToCloudinary } from '@/src/lib/cloudinary';
 
 /* ---------------- TYPES ---------------- */
 type Category = { id: string; name: string; children?: Category[]; };
-type Variant = { color: string; sizes: string; images: string[]; };
+type Variant = {
+  id: string | null;
+  color: string;
+  size: string;      // 🔥 Must be singular 'size'
+  price: string;     // 🔥 Add this
+  stock: string;     // 🔥 Add this (string because inputs are strings)
+  images: string[];
+};
+
 type FormData = {
   title: string;
   description: string;
@@ -27,6 +35,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
   const [mainCategories, setMainCategories] = useState<Category[]>([]); 
   const [secondaryCategories, setSecondaryCategories] = useState<Category[]>([]);
   const [tertiaryCategories, setTertiaryCategories] = useState<Category[]>([]);
+  const [optionInputs, setOptionInputs] = useState({ colors: '', sizes: '' });
 
   const [mainCatId, setMainCatId] = useState('');
   const [secondaryCatId, setSecondaryCatId] = useState('');
@@ -91,16 +100,54 @@ const [formData, setFormData] = useState<FormData>({
     ));
   };
 
-  const addVariant = () => setVariants(prev => [...prev, { color: '', sizes: '', images: [] }]);
+  const addVariant = () => 
+  setVariants(prev => [
+    ...prev, 
+    { 
+      id: null, 
+      color: '', 
+      size: '',    // 🔥 Change sizes to size
+      price: '',   // 🔥 Add price
+      stock: '',   // 🔥 Add stock as string
+      images: [] 
+    }
+  ]);
+
   const removeVariant = (index: number) => setVariants(prev => prev.filter((_, i) => i !== index));
   const updateVariant = (index: number, field: keyof Variant, value: string) => {
     setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleGenerateMatrix = () => {
+  const colorArr = optionInputs.colors.split(',').map(c => c.trim()).filter(Boolean);
+  const sizeArr = optionInputs.sizes.split(',').map(s => s.trim()).filter(Boolean);
+
+  if (colorArr.length === 0 || sizeArr.length === 0) {
+    return alert("Registry Error: Enter at least one color and one size to generate nodes.");
+  }
+
+  // Generate individual Color/Size rows
+const newMatrix = colorArr.flatMap(color => 
+  sizeArr.map(size => ({
+    id: null,
+    color,
+    size,
+    price: formData.price, // Ensure this is a string from your form
+    stock: "0",            // 🔥 Change 0 to "0" (Must be a string)
+    images: []
+  }))
+);
+
+
+  setVariants(newMatrix);
+};
+
+// 3. Update the Submit Handler for the Matrix
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  if (!formData.categoryId) return alert("Select a Sub-Category node");
-  if (variants.length === 0) return alert("At least one configuration variant is required");
+  if (!formData.categoryId) return alert("Validation Error: Missing Category Node");
+  if (variants.length === 0) return alert("Validation Error: Matrix not initialized");
 
   setLoading(true);
   try {
@@ -108,22 +155,23 @@ const [formData, setFormData] = useState<FormData>({
       ...formData,
       price: Number(formData.price),
       stock: Number(formData.stock),
-      // Only send delivery range if INTERNATIONAL
       deliveryMin: formData.origin === 'INTERNATIONAL' ? Number(formData.deliveryMin) : 1,
       deliveryMax: formData.origin === 'INTERNATIONAL' ? Number(formData.deliveryMax) : 3,
-      variants: variants.map(v => ({
-        color: v.color,
-        // filter(Boolean) removes empty values from trailing commas
-        sizes: v.sizes.split(',').map(s => s.trim()).filter(Boolean),
-        images: v.images
-      }))
+      // 🔥 MATRIX DATA: Each variant is an independent object
+// Inside handleSubmit
+variants: variants.map(v => ({
+  color: v.color,
+  size: v.size,
+  price: Number(v.price), // 🛠️ Convert string to number for Backend
+  stock: Number(v.stock), // 🛠️ Convert string to number for Backend
+  images: v.images
+}))
     });
     
     onRefresh();
     onClose();
   } catch (error) {
-    console.error("PROTOCOL_REJECTION:", error);
-    alert("Protocol_Error: Check data integrity");
+    alert("Protocol_Error: Failed to sync matrix with cloud registry");
   } finally {
     setLoading(false);
   }
@@ -255,50 +303,155 @@ onChange={(e) =>
   )}
 </div>
 
-            {/* VARIANT SYSTEM */}
-            <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm space-y-4">
-              <div className="flex justify-between items-center">
-                <label className={labelClasses}>Variant Config</label>
-                <button type="button" onClick={addVariant} className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest"><Plus size={14} /> Add Variant</button>
-              </div>
+{/* VARIANT GENERATOR - The "Options" Phase */}
+<div className="p-6 bg-slate-900 rounded-[2.5rem] shadow-xl space-y-6 border border-slate-800">
+  <div className="flex justify-between items-center">
+    <h3 className="text-[10px] font-black uppercase text-blue-500 tracking-widest italic flex items-center gap-2">
+      <Layers size={14} /> Matrix Generator
+    </h3>
+  </div>
 
-              <div className="space-y-4">
-                {variants.map((v, i) => (
-                  <div key={i} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 relative group animate-in slide-in-from-right-4">
-                    <button type="button" onClick={() => removeVariant(i)} className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="relative">
-                        <Palette size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input placeholder="Color (e.g. Onyx)" className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold" value={v.color} onChange={e => updateVariant(i, 'color', e.target.value)} />
-                      </div>
-                      <div className="relative">
-                        <Layers size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input placeholder="Sizes (S, M, L)" className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold" value={v.sizes} onChange={e => updateVariant(i, 'sizes', e.target.value)} />
-                      </div>
-                    </div>
-                    {/* Variant Specific Images */}
-                    <div className="flex gap-2 items-center overflow-x-auto pb-1 scrollbar-hide">
-                      <label className="w-12 h-12 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer shrink-0">
-                        <ImageIcon size={14} className="text-slate-400" />
-                        <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
-                      </label>
-                      {v.images.map((img: string, idx: number) => (
-                        <img key={idx} src={img} className="w-12 h-12 rounded-lg object-cover border border-slate-200" alt="" />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Colors (Comma separated)</label>
+      <input 
+        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-xs font-bold text-white outline-none focus:border-blue-500 transition-all"
+        placeholder="Red, Blue, Black..."
+        value={optionInputs.colors}
+        onChange={e => setOptionInputs({...optionInputs, colors: e.target.value})}
+      />
+    </div>
+    <div>
+      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">Sizes (Comma separated)</label>
+      <input 
+        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-xs font-bold text-white outline-none focus:border-blue-500 transition-all"
+        placeholder="S, M, L, XL..."
+        value={optionInputs.sizes}
+        onChange={e => setOptionInputs({...optionInputs, sizes: e.target.value})}
+      />
+    </div>
+  </div>
+
+  <button 
+    type="button"
+    onClick={handleGenerateMatrix}
+    className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+  >
+    Generate Configuration Matrix
+  </button>
+</div>
+
+{/* THE MATRIX TABLE - Refactored for Density & Image Management */}
+{variants.length > 0 && (
+  <div className="mt-8 space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-hide">
+    <div className="flex justify-between items-center px-1">
+      <label className={labelClasses}>Active Configuration Nodes</label>
+      <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-md uppercase tracking-tighter">
+        {variants.length} Nodes Online
+      </span>
+    </div>
+
+    {variants.map((v, i) => (
+      <div key={i} className="p-4 bg-white border border-slate-200 rounded-[2rem] shadow-sm relative group animate-in slide-in-from-bottom-4 border-l-4 border-l-blue-600">
+        {/* Remove Action */}
+        <button 
+          type="button" 
+          onClick={() => removeVariant(i)} 
+          className="absolute -top-2 -right-2 bg-red-500 text-white p-2 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-10"
+        >
+          <Trash2 size={12} />
+        </button>
+
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Identity Badge */}
+          <div className="shrink-0">
+            <div className="px-4 py-2 bg-slate-900 rounded-xl border border-slate-800 min-w-[110px] text-center">
+              <span className="text-[10px] font-black uppercase text-blue-400 tracking-tighter">
+                {v.color} <span className="text-slate-600 mx-1">/</span> {v.size}
+              </span>
             </div>
+          </div>
+          
+          {/* Inputs Grid */}
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400">₦</span>
+              <input 
+                type="number" 
+                className="w-full pl-7 pr-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[11px] font-bold outline-none focus:border-blue-500 transition-all"
+                placeholder="Price"
+                value={v.price}
+                onChange={e => updateVariant(i, 'price', e.target.value)}
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400">QTY</span>
+              <input 
+                type="number" 
+                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[11px] font-bold outline-none focus:border-blue-500 transition-all"
+                placeholder="Stock"
+                value={v.stock}
+                onChange={e => updateVariant(i, 'stock', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Media Strip - Added Delete Functionality */}
+        <div className="flex gap-2 items-center overflow-x-auto mt-4 p-2 bg-slate-50 rounded-2xl border border-slate-100 scrollbar-hide">
+          <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer shrink-0 hover:bg-white hover:border-blue-400 transition-all group">
+            <Plus size={14} className="group-hover:scale-110 transition-transform" />
+            <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
+          </label>
+
+          {v.images.map((img: string, idx: number) => (
+            <div key={idx} className="relative w-12 h-12 rounded-xl overflow-hidden group/img shrink-0 border border-white shadow-sm">
+              <img src={img} className="w-full h-full object-cover" alt="" />
+              <button 
+                type="button"
+                onClick={() => {
+                  const updatedImages = v.images.filter((_, imgIdx) => imgIdx !== idx);
+                  updateVariant(i, 'images', updatedImages as any);
+                }}
+                className="absolute inset-0 bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+
+          {isUploading && (
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+              <Loader2 size={14} className="animate-spin text-blue-600" />
+            </div>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
 
             <div>
               <label className={labelClasses}>PRODUCT DESCRIPTION</label>
               <textarea required placeholder="Describe features..." className={inputClasses + " h-30 resize-none"} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
             </div>
 
-            <button type="submit" disabled={loading || isUploading} className="w-full bg-[#1E293B] text-white py-6 lg:py-7 rounded-3xl font-black uppercase tracking-[0.2em] text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-4 shadow-xl active:scale-95 disabled:bg-slate-300">
-              {loading ? <Loader2 size={24} className="animate-spin" /> : <><Box size={18} /> CONFIRM & PUBLISH</>}
-            </button>
+<button 
+  type="submit" 
+  disabled={loading || isUploading} 
+  className="w-full bg-[#1E293B] text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.4em] text-[10px] flex items-center justify-center gap-4 shadow-2xl hover:bg-blue-600 transition-all active:scale-95 disabled:bg-slate-300"
+>
+  {loading ? (
+    <span className="flex items-center gap-2">
+      <Loader2 className="animate-spin" size={16} /> 
+      SYNCING REGISTRY...
+    </span>
+  ) : (
+    <><Box size={18} /> CONFIRM & PUBLISH</>
+  )}
+</button>
+
           </div>
         </form>
       </div>
