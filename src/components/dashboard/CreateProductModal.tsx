@@ -98,29 +98,37 @@ const [formData, setFormData] = useState<FormData>({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.categoryId) return alert("Validation Error: Please select the target Sub-Category node");
+  e.preventDefault();
+  if (!formData.categoryId) return alert("Select a Sub-Category node");
+  if (variants.length === 0) return alert("At least one configuration variant is required");
+
+  setLoading(true);
+  try {
+    await api.post('/products', {
+      ...formData,
+      price: Number(formData.price),
+      stock: Number(formData.stock),
+      // Only send delivery range if INTERNATIONAL
+      deliveryMin: formData.origin === 'INTERNATIONAL' ? Number(formData.deliveryMin) : 1,
+      deliveryMax: formData.origin === 'INTERNATIONAL' ? Number(formData.deliveryMax) : 3,
+      variants: variants.map(v => ({
+        color: v.color,
+        // filter(Boolean) removes empty values from trailing commas
+        sizes: v.sizes.split(',').map(s => s.trim()).filter(Boolean),
+        images: v.images
+      }))
+    });
     
-    setLoading(true);
-    try {
- await api.post('/products', {
-  ...formData,
-  price: Number(formData.price),
-  stock: Number(formData.stock),
-  deliveryMin: formData.deliveryMin ? Number(formData.deliveryMin) : undefined,
-  deliveryMax: formData.deliveryMax ? Number(formData.deliveryMax) : undefined,
-  variants: variants.map(v => ({
-    color: v.color,
-    sizes: v.sizes.split(',').map(s => s.trim()),
-    images: v.images
-  }))
-});
-      onRefresh();
-      onClose();
-    } catch (error) {
-      alert("Protocol_Error: Failed to initialize product node");
-    } finally { setLoading(false); }
-  };
+    onRefresh();
+    onClose();
+  } catch (error) {
+    console.error("PROTOCOL_REJECTION:", error);
+    alert("Protocol_Error: Check data integrity");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 
 
