@@ -131,7 +131,7 @@ const isLiked = isWishlisted(productId); // ideally use product.id instead
 </button>
 <button 
   onClick={handleShare}
-  className="p-3 bg-white/90 backdrop-blur-md rounded-full shadow hover:bg-white transition active:scale-90"
+  className="p-3 bg-white/90 backdrop-blur-md text-zinc-900 rounded-full shadow hover:bg-white transition active:scale-90"
 >
   <Share2 size={20} />
 </button>
