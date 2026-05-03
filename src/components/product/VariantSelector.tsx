@@ -28,11 +28,13 @@ export function VariantSelector({
   
 const availableSizesForColor = variants
   .filter(v => v.color === selectedVariant?.color)
-  .map(v => ({
-    size: v.size,
-    stock: v.stock,
-    variant: v,
-  }));
+  .flatMap(v =>
+    v.size.split(',').map(size => ({
+      size: size.trim(),
+      stock: v.stock || 0,
+      variant: v,
+    }))
+  );
 
   return (
     <div className="space-y-8">
@@ -48,9 +50,7 @@ const availableSizesForColor = variants
               type="button"
               onClick={() => {
                 // When color changes, pick the first available variant of that color
-               const firstAvailable = variants.find(
-  v => v.color === color && v.stock > 0
-);
+                const firstAvailable = variants.find(v => v.color === color);
                 if (firstAvailable) onSelectVariant(firstAvailable);
               }}
               className={`px-6 py-3 rounded-full border-2 text-[11px] font-black uppercase transition-all active:scale-95 ${
@@ -80,7 +80,7 @@ const availableSizesForColor = variants
 
               return (
                 <button
-                  key={variant.id}
+                  key={size}
                   type="button"
                   disabled={isOutOfStock}
                   onClick={() => onSelectVariant(variant)}
