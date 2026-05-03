@@ -15,22 +15,21 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
 
-  const resolveImage = (p: any) => {
-  const img = p.images?.[0];
+const resolveImage = (p: any) => {
+  // 1. Check for main product images first
+  const mainImg = p.images?.[0]?.imageUrl || p.images?.[0];
+  
+  // 2. Fallback to the first variant's image if main is missing
+  const variantImg = p.variants?.[0]?.images?.[0]?.imageUrl || p.variants?.[0]?.images?.[0];
 
-  if (!img) return '/placeholder.png';
+  const path = mainImg || variantImg;
 
-  const path =
-    typeof img === 'string'
-      ? img
-      : img.imageUrl;
+  // 3. Professional placeholder for empty nodes
+  if (!path) return 'https://cloudinary.com';
 
-  if (!path) return '/placeholder.png';
-
-  return path.startsWith('http')
-    ? path
-    : `${process.env.NEXT_PUBLIC_API_URL}/uploads/${path.replace(/^\//, '')}`;
+  return path;
 };
+
 
   const fetchProducts = async () => {
     try {
