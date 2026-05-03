@@ -374,47 +374,104 @@ const inputClasses =
               </button>
             </div>
 
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-hide">
-              {variants.map((v, i) => (
-                <div key={i} className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm relative group animate-in slide-in-from-right-4">
-                  <button 
-                    onClick={() => removeVariant(i)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white p-2 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
-                  >
-                    <Trash2 size={12} />
-                  </button>
+<div className="space-y-4 max-h-125 overflow-y-auto pr-2 scrollbar-hide">
+  {variants.map((v, i) => (
+    <div key={i} className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm relative group animate-in slide-in-from-right-4">
+      {/* Remove Variant Button */}
+      <button 
+        type="button"
+        onClick={() => removeVariant(i)}
+        className="absolute -top-2 -right-2 bg-red-500 text-white p-2 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-10"
+      >
+        <Trash2 size={12} />
+      </button>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="relative">
-                      <Palette size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        value={v.color}
-                        onChange={e => updateVariant(i, 'color', e.target.value)}
-                        placeholder="Hex/Color"
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:border-blue-400"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Layers size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        value={v.sizes}
-                        onChange={e => updateVariant(i, 'sizes', e.target.value)}
-                        placeholder="Sizes"
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
+      {/* Input Fields */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="relative">
+          <Palette size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={v.color}
+            onChange={e => updateVariant(i, 'color', e.target.value)}
+            placeholder="Hex/Color"
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:border-blue-400"
+          />
+        </div>
+        <div className="relative">
+          <Layers size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={v.sizes}
+            onChange={e => updateVariant(i, 'sizes', e.target.value)}
+            placeholder="Sizes"
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:border-blue-400"
+          />
+        </div>
+      </div>
+
+      {/* 🔥 MEDIA STRIP (Now inside the scope of 'v' and 'i') */}
+      <div className="flex gap-2 items-center overflow-x-auto mt-4 p-2 bg-slate-50 rounded-2xl border border-slate-100 scrollbar-hide">
+        {/* Upload Trigger */}
+        <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer shrink-0 hover:bg-white hover:border-blue-400 transition-all group/upload">
+          <Plus size={14} className="group-hover/upload:scale-110 transition-transform text-slate-400" />
+          <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
+        </label>
+
+        {/* Existing Variant Images */}
+        {v.images?.map((img: string, idx: number) => (
+          <div key={idx} className="relative w-12 h-12 rounded-xl overflow-hidden group/img shrink-0 border border-white shadow-sm">
+            <img src={img} className="w-full h-full object-cover" alt="" />
+            <button 
+              type="button"
+              onClick={() => {
+                const updatedImages = v.images.filter((_: string, imgIdx: number) => imgIdx !== idx);
+                updateVariant(i, 'images', updatedImages as any);
+              }}
+              className="absolute inset-0 bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all"
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
+        ))}
+
+        {/* Uploading State */}
+        {isUploading && (
+          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0">
+            <Loader2 size={14} className="animate-spin text-blue-600" />
+          </div>
+        )}
+      </div>
+  
+
 
                   <div className="flex items-center gap-4">
-                    <label className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-slate-400 hover:text-blue-600 hover:border-blue-200">
-                      <ImageIcon size={14} />
-                      <span className="text-[10px] font-black uppercase">Upload Media</span>
-                      <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
-                    </label>
+                   <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800 transition-all">
+  <Plus size={18} className="text-slate-500" />
+  <input 
+    type="file" 
+    hidden 
+    multiple 
+    onChange={async (e) => {
+      const files = e.target.files;
+      if (!files) return;
+      setIsUploading(true);
+      try {
+        const urls = await Promise.all(
+          Array.from(files).map(file => uploadToCloudinary(file))
+        );
+        setImages(prev => [...prev, ...urls]);
+      } finally {
+        setIsUploading(false);
+      }
+    }}
+  />
+</label>
+
                   </div>
                 </div>
               ))}
             </div>
+
+            
 
             <button
               disabled={loading || isUploading}
