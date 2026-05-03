@@ -182,21 +182,27 @@ useEffect(() => {
           <aside className="lg:col-span-5 lg:sticky lg:top-24 space-y-10">
             
             {/* 1. Header Info (Price/Title/Rating) */}
-            <ProductInfo 
-              title={product.title}
-              price={product.price}
-              rating={product.rating}
-              reviewCount={product.reviewCount}
-            />
+<ProductInfo 
+  title={product.title}
+  price={product.price}
+  selectedVariant={selectedVariant} // Pass the state here
+  rating={product.averageRating}
+  reviewCount={product.reviewCount}
+/>
+
 
             {/* 2. Variant & Size Selection */}
-            <VariantSelector 
-              variants={product.variants}
-              selectedVariant={selectedVariant}
-              onSelectVariant={setSelectedVariant}
-              selectedSize={selectedSize}
-              onSelectSize={setSelectedSize}
-            />
+{/* 2. Variant & Size Selection */}
+<VariantSelector 
+  variants={product.variants}     // The flat array of Matrix rows from backend
+  selectedVariant={selectedVariant}
+  onSelectVariant={(v) => {
+    setSelectedVariant(v);
+    // Optional: if you still need the string 'S', 'M' for other logic
+    setSelectedSize(v.size); 
+  }}
+/>
+
 
             {/* 3. Action Box (Grey background match) */}
             <div className="p-8 rounded-[3rem] border border-zinc-100 bg-zinc-50/50 space-y-8">
