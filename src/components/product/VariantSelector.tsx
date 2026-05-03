@@ -26,10 +26,13 @@ export function VariantSelector({
   // 1. Extract unique colors and unique sizes available for the current selection
   const uniqueColors = Array.from(new Set(variants.map(v => v.color)));
   
-  // 2. Find sizes available for the currently picked color
-  const availableSizesForColor = variants
-    .filter(v => v.color === selectedVariant?.color)
-    .map(v => ({ size: v.size, stock: v.stock, variant: v }));
+const availableSizesForColor = variants
+  .filter(v => v.color === selectedVariant?.color)
+  .map(v => ({
+    size: v.size,
+    stock: v.stock,
+    variant: v,
+  }));
 
   return (
     <div className="space-y-8">
@@ -45,7 +48,9 @@ export function VariantSelector({
               type="button"
               onClick={() => {
                 // When color changes, pick the first available variant of that color
-                const firstAvailable = variants.find(v => v.color === color);
+               const firstAvailable = variants.find(
+  v => v.color === color && v.stock > 0
+);
                 if (firstAvailable) onSelectVariant(firstAvailable);
               }}
               className={`px-6 py-3 rounded-full border-2 text-[11px] font-black uppercase transition-all active:scale-95 ${
@@ -75,7 +80,7 @@ export function VariantSelector({
 
               return (
                 <button
-                  key={size}
+                  key={variant.id}
                   type="button"
                   disabled={isOutOfStock}
                   onClick={() => onSelectVariant(variant)}
