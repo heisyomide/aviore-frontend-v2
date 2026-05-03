@@ -26,15 +26,14 @@ export function VariantSelector({
   // 1. Extract unique colors and unique sizes available for the current selection
   const uniqueColors = Array.from(new Set(variants.map(v => v.color)));
   
+  // 2. Find sizes available for the currently picked color
 const availableSizesForColor = variants
   .filter(v => v.color === selectedVariant?.color)
-  .flatMap(v =>
-    v.size.split(',').map(size => ({
-      size: size.trim(),
-      stock: v.stock || 0,
-      variant: v,
-    }))
-  );
+  .map(v => ({
+    size: v.size,
+    stock: v.stock,
+    variant: v,
+  }));
 
   return (
     <div className="space-y-8">
