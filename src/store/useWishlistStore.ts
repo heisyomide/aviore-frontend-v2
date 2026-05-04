@@ -10,6 +10,8 @@ export interface WishlistItem {
   name: string;
   price: number;
   image: string;
+  color?: string;
+  size?: string;
 }
 
 interface WishlistStore {
@@ -18,12 +20,9 @@ interface WishlistStore {
   initialized: boolean;
 
   initWishlist: () => Promise<void>;
-
   fetchWishlist: () => Promise<void>;
-  toggleWishlist: (item: WishlistItem) => Promise<void>;
-
+  toggleWishlist: (item: Omit<WishlistItem, 'id'> & { id: string }) => Promise<void>;
   isWishlisted: (id: string) => boolean;
-
   clearWishlist: () => void;
 }
 
@@ -34,43 +33,38 @@ export const useWishlistStore = create<WishlistStore>()(
       loading: false,
       initialized: false,
 
-      // 🚀 INIT (IMPORTANT - FIXES REFRESH ISSUE)
+      // Initialize on app load / page mount
       initWishlist: async () => {
         if (get().initialized) return;
-
-        try {
-          await get().fetchWishlist();
-        } finally {
-          set({ initialized: true });
-        }
+        await get().fetchWishlist();
+        set({ initialized: true });
       },
 
-      // 📡 FETCH FROM API
       fetchWishlist: async () => {
         try {
           set({ loading: true });
-
           const res = await api.get('/wishlist');
 
-          const data = Array.isArray(res.data) ? res.data : [];
+          const data = Array.isArray(res.data) ? res.data : res.data?.items || [];
 
-          const safeData: WishlistItem[] = data.map((item: any) => ({
-            id: String(item.id),
-            name: item.name || 'Product',
-            price: Number(item.price) || 0,
-            image: item.image || '/placeholder.png',
+          const safeItems: WishlistItem[] = data.map((item: any) => ({
+            id: String(item.id || item.productId),
+            name: item.name || item.product?.title || 'Product',
+            price: Number(item.price || item.product?.price) || 0,
+            image: item.image || item.product?.images?.[0]?.imageUrl || '/placeholder.jpg',
+            color: item.color,
+            size: item.size,
           }));
 
-          set({ items: safeData });
+          set({ items: safeItems });
         } catch (error) {
-          console.error('Wishlist fetch failed', error);
-          toast.error('Failed to load wishlist');
+          console.error('Failed to fetch wishlist:', error);
+          toast.error('Could not load wishlist');
         } finally {
           set({ loading: false });
         }
       },
 
-      // ❤️ TOGGLE (BEST METHOD — no need separate add/remove)
       toggleWishlist: async (item) => {
         if (!item?.id) return;
 
@@ -81,10 +75,12 @@ export const useWishlistStore = create<WishlistStore>()(
           id: String(item.id),
           name: item.name || 'Product',
           price: Number(item.price) || 0,
-          image: item.image || '/placeholder.png',
+          image: item.image || '/placeholder.jpg',
+          color: item.color,
+          size: item.size,
         };
 
-        // 🔥 OPTIMISTIC UPDATE
+        // Optimistic Update
         set({
           items: exists
             ? items.filter((p) => p.id !== item.id)
@@ -96,27 +92,32 @@ export const useWishlistStore = create<WishlistStore>()(
             await api.delete(`/wishlist/${item.id}`);
             toast.success('Removed from wishlist');
           } else {
-            await api.post(`/wishlist/${item.id}`);
+            await api.post('/wishlist', { productId: item.id });
             toast.success('Added to wishlist');
           }
         } catch (error) {
-          // ❌ ROLLBACK
+          // Rollback on failure
           set({ items });
-          toast.error('Something went wrong');
+          toast.error('Action failed. Please try again.');
         }
       },
 
-      // 🔍 CHECK
-      isWishlisted: (id) => {
+      isWishlisted: (id: string) => {
         if (!id) return false;
         return get().items.some((p) => p.id === id);
       },
 
-      // 🧹 CLEAR (LOGOUT USE)
       clearWishlist: () => set({ items: [], initialized: false }),
     }),
+
     {
-      name: 'aviore-wishlist',
+      name: 'aviorè-wishlist-v2',
+      partialize: (state) => ({ items: state.items }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.initWishlist();   // Important: Auto fetch after rehydrate
+        }
+      },
     }
   )
 );

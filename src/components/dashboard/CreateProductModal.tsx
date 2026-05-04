@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2, Box, Tag, Zap, Palette, Layers, Image as ImageIcon } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { uploadToCloudinary } from '@/src/lib/cloudinary';
+import { toast } from 'sonner';
 
 /* ---------------- TYPES ---------------- */
 type Category = { id: string; name: string; children?: Category[]; };
@@ -36,6 +37,7 @@ export default function CreateProductModal({ isOpen, onClose, onRefresh }: any) 
   const [secondaryCategories, setSecondaryCategories] = useState<Category[]>([]);
   const [tertiaryCategories, setTertiaryCategories] = useState<Category[]>([]);
   const [optionInputs, setOptionInputs] = useState({ colors: '', sizes: '' });
+  const [generalImages, setGeneralImages] = useState<string[]>([]);
 
   const [mainCatId, setMainCatId] = useState('');
   const [secondaryCatId, setSecondaryCatId] = useState('');
@@ -59,6 +61,10 @@ const [formData, setFormData] = useState<FormData>({
       setMainCategories(res.data);
     } catch (e) { console.error("Registry_Fetch_Failure"); }
   };
+
+  const removeGeneralImage = (index: number) => {
+  setGeneralImages(prev => prev.filter((_, i) => i !== index));
+};
 
   /* ---------------- LOGIC HANDLERS ---------------- */
 
@@ -90,6 +96,11 @@ const [formData, setFormData] = useState<FormData>({
       return [];
     } finally { setIsUploading(false); }
   };
+
+  const handleGeneralImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const urls = await uploadFiles(e.target.files);
+  setGeneralImages(prev => [...prev, ...urls].slice(0, 8)); // max 8 general images
+};
 
 
 
@@ -146,32 +157,43 @@ const newMatrix = colorArr.flatMap(color =>
 // 3. Update the Submit Handler for the Matrix
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  if (!formData.categoryId) return alert("Validation Error: Missing Category Node");
-  if (variants.length === 0) return alert("Validation Error: Matrix not initialized");
+
+  if (!formData.categoryId) return alert("Please select a sub-category");
+  if (variants.length === 0) return alert("Please generate at least one variant");
 
   setLoading(true);
+
   try {
-    await api.post('/products', {
-      ...formData,
-      price: Number(formData.price),
-      stock: Number(formData.stock),
-      deliveryMin: formData.origin === 'INTERNATIONAL' ? Number(formData.deliveryMin) : 1,
-      deliveryMax: formData.origin === 'INTERNATIONAL' ? Number(formData.deliveryMax) : 3,
-      // 🔥 MATRIX DATA: Each variant is an independent object
-// Inside handleSubmit
-variants: variants.map(v => ({
-  color: v.color,
-  size: v.size,
-  price: Number(v.price), // 🛠️ Convert string to number for Backend
-  stock: Number(v.stock), // 🛠️ Convert string to number for Backend
-  images: v.images
-}))
-    });
-    
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      categoryId: formData.categoryId,
+      origin: formData.origin,
+      deliveryMin: Number(formData.deliveryMin) || 1,
+      deliveryMax: Number(formData.deliveryMax) || 3,
+
+      // 🔥 NEW: Send General Images
+      generalImages: generalImages,
+
+      // Variants
+      variants: variants.map(v => ({
+        color: v.color.trim(),
+        size: v.size.trim(),
+        price: Number(v.price) || Number(formData.price),
+        stock: Number(v.stock) || 0,
+        images: v.images || []
+      }))
+    };
+
+    await api.post('/products', payload);
+
+    toast.success("Product submitted for review!");
     onRefresh();
     onClose();
-  } catch (error) {
-    alert("Protocol_Error: Failed to sync matrix with cloud registry");
+
+  } catch (error: any) {
+    console.error(error);
+    toast.error(error.response?.data?.message || "Failed to create product");
   } finally {
     setLoading(false);
   }
@@ -237,6 +259,46 @@ variants: variants.map(v => ({
               </div>
             </div>
           </div>
+
+          {/* GENERAL IMAGES - Main Gallery (Temu Style) */}
+<div className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200">
+  <div className="flex items-center justify-between mb-4">
+    <div>
+      <h3 className="font-bold text-slate-900">General Product Images</h3>
+      <p className="text-xs text-slate-500">Default gallery shown before color selection (max 8)</p>
+    </div>
+    <span className="text-xs font-mono text-slate-400">{generalImages.length}/8</span>
+  </div>
+
+  <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+    {/* Upload Box */}
+    <label className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all shrink-0">
+      <ImageIcon size={28} className="text-slate-400 mb-1" />
+      <span className="text-[10px] font-bold text-slate-500">Add Photos</span>
+      <input 
+        type="file" 
+        multiple 
+        accept="image/*" 
+        hidden 
+        onChange={handleGeneralImageUpload} 
+      />
+    </label>
+
+    {/* Preview General Images */}
+    {generalImages.map((img, idx) => (
+      <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 shrink-0 group">
+        <img src={img} alt="" className="w-full h-full object-cover" />
+        <button
+          type="button"
+          onClick={() => removeGeneralImage(idx)}
+          className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    ))}
+  </div>
+</div>
 
           {/* RIGHT: DATA SPECIFICATIONS & VARIANTS */}
           <div className="space-y-6">

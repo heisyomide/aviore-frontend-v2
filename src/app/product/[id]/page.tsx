@@ -36,8 +36,7 @@ export default function ProductDetailsPage() {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
-  const [isFollowing, setIsFollowing] = useState<boolean>(false);
-const [followLoading, setFollowLoading] = useState(false);
+
 
 
   const { 
@@ -46,14 +45,28 @@ const [followLoading, setFollowLoading] = useState(false);
     selectedSize, setSelectedSize,
     qty, setQty 
   } = useProductData(id as string);
-   const [vendorState, setVendorState] = useState<VendorType | null>(null);
+
+
+const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [vendorState, setVendorState] = useState<VendorType | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Dynamic values
+  const currentPrice = selectedVariant?.price ?? product?.price ?? 0;
+  const currentStock = selectedVariant?.stock ?? product?.stock ?? 0;
+
+   const galleryImages = selectedVariant?.images?.length > 0 
+    ? selectedVariant.images 
+    : product?.images || [];
 
 useEffect(() => {
   setVendorState(vendor);
 }, [vendor]);
 
-  const [mounted, setMounted] = useState(false);
+ 
   useEffect(() => { setMounted(true); }, []);
+  
 
   useEffect(() => {
   if (!vendor?.id) return;
@@ -70,9 +83,12 @@ useEffect(() => {
   fetchFollowState();
 }, [vendor?.id]);
 
+
   // 🛒 HANDLERS
   const handleAddToCart = useCallback(async () => {
-    if (!product?.id) return;
+    if (!product || !selectedVariant){alert("Please select a color and size");
+     return;
+    }
     
     // ✅ FIXED TS7006: Added types (v: any, s: any) to the parameters
     const hasValidSizes = product.variants?.some((v: any) => 
@@ -88,18 +104,22 @@ useEffect(() => {
                     product.variants?.[0]?.images?.[0]?.imageUrl || 
                     '/placeholder.jpg';
 
-    addItem({
+addItem({
       id: product.id,
       name: product.title,
-      price: product.price, 
-      image: cartImg,
+      price: currentPrice,                    // ← Use dynamic price
+      image: selectedVariant.images?.[0]?.imageUrl || 
+             product.images?.[0]?.imageUrl || 
+             '/placeholder.jpg',
       vendorId: product.vendorId,
-      stock: product.stock,
+      stock: selectedVariant.stock,
       quantity: qty,
-      size: selectedSize || undefined,
-      variant: selectedVariant 
+      color: selectedVariant.color,
+      size: selectedVariant.size,
+      variantId: selectedVariant.id,          // Important for uniqueness
+      variant: selectedVariant,
     });
-  }, [product, selectedVariant, selectedSize, qty, addItem]);
+  }, [product, selectedVariant, qty, currentPrice, addItem]);
 
  const handleFollow = async () => {
   if (!vendor?.id || followLoading) return;
@@ -152,7 +172,7 @@ useEffect(() => {
     return <ProductSkeleton />;
   }
 
-  const galleryImages = selectedVariant?.images || product.variants?.[0]?.images || [];
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -170,7 +190,7 @@ useEffect(() => {
           
           {/* LEFT: GALLERY SECTION */}
           <div className="lg:col-span-7">
-             <ProductGallery images={galleryImages} title={product.title} productId={product.id} price={product.price} />
+             <ProductGallery images={galleryImages} title={product.title} productId={product.id} price={currentPrice} />
              
              {/* Desktop Tabs at Bottom */}
              <div className="hidden lg:block mt-24">
@@ -184,7 +204,7 @@ useEffect(() => {
             {/* 1. Header Info (Price/Title/Rating) */}
 <ProductInfo 
   title={product.title}
-  price={product.price}
+  price={currentPrice}
   selectedVariant={selectedVariant} // Pass the state here
   rating={product.averageRating}
   reviewCount={product.reviewCount}
@@ -206,23 +226,26 @@ useEffect(() => {
 
             {/* 3. Action Box (Grey background match) */}
             <div className="p-8 rounded-[3rem] border border-zinc-100 bg-zinc-50/50 space-y-8">
-              <QuantitySelector qty={qty} setQty={setQty} maxStock={product.stock} />
+              <QuantitySelector
+               qty={qty} 
+               setQty={setQty} 
+                maxStock={currentStock} />
               
               <div className="space-y-4">
                 <ProductActions 
-                  stockCount={product.stock} 
+                   stockCount={currentStock}  
                   onAddToCart={handleAddToCart}
                   onBuyNow={handleBuyNow}
                 />
                 
                 {/* Low Stock Indicator */}
-                {product.stock > 0 && product.stock <= 10 && (
+                {currentStock > 0 && currentStock <= 10 && (
                   <div className="space-y-2">
                     <p className="text-[11px] font-bold text-orange-600">Only {product.stock} items left!</p>
                     <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-orange-500" 
-                        style={{ width: `${(product.stock / 10) * 100}%` }} 
+                        style={{ width: `${(currentStock / 10) * 100}%` }} 
                       />
                     </div>
                   </div>

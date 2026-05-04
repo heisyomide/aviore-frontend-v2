@@ -1,9 +1,12 @@
+'use client';
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '@/src/lib/axios';
 
 export interface CartItem {
   id: string;
+  variantId?: string;
   name: string;
   price: number;
   image: string;
@@ -12,8 +15,9 @@ export interface CartItem {
   quantity: number;
   selected: boolean;
   isOutOfStock: boolean;
-  variant?: any; 
+  color?: string;
   size?: string;
+  variant?: any;
 }
 
 interface CartState {
@@ -24,16 +28,19 @@ interface CartState {
   showToast: boolean;
   _hasHydrated: boolean;
   isSyncing: boolean;
+  
+
   setHasHydrated: (state: boolean) => void;
-  setShowToast: (open: boolean) => void;
-  syncWithBackend: () => Promise<void>;
+  setShowToast: (show: boolean) => void;
   calculateTotals: () => void;
+
   addItem: (item: Omit<CartItem, 'selected' | 'isOutOfStock'>) => Promise<void>;
-  removeItem: (id: string) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
   toggleSelect: (id: string) => void;
   toggleSelectAll: (selected: boolean) => void;
   clearCart: () => void;
+  syncWithBackend: () => Promise<void>;
 }
 
 export const useCartStore = create<CartState>()(
@@ -48,51 +55,19 @@ export const useCartStore = create<CartState>()(
       isSyncing: false,
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
-      setShowToast: (open) => set({ showToast: open }),
-
-      syncWithBackend: async () => {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        if (!token || get().isSyncing) return;
-
-        set({ isSyncing: true });
-        try {
-          const { data } = await api.get('/cart');
-          const remoteItems = Array.isArray(data?.items) ? data.items : [];
-
-          const mappedItems: CartItem[] = remoteItems.map((item: any) => ({
-            id: String(item.productId || ''),
-            name: String(item.product?.title || 'Product'),
-            price: Number(item.product?.price) || 0,
-            image: item.product?.images?.[0]?.imageUrl || '/placeholder.jpg',
-            vendorId: String(item.product?.vendorId || ''),
-            stock: Number(item.product?.stock) || 0,
-            quantity: Number(item.quantity) || 1,
-            selected: true,
-            isOutOfStock: (Number(item.product?.stock) || 0) <= 0
-          })).filter((item: CartItem) => item.id); // Fixed TS7006 here
-
-          set({ items: mappedItems });
-          get().calculateTotals();
-        } catch (err) {
-          console.error("CART_SYNC_ERROR", err);
-        } finally {
-          set({ isSyncing: false });
-        }
-      },
+      setShowToast: (show) => set({ showToast: show }),
 
       calculateTotals: () => {
         const items = get().items || [];
-        const activeItems = items.filter((i) => i && i.selected && !i.isOutOfStock);
-        
+        const activeItems = items.filter((i) => i.selected && !i.isOutOfStock);
+
         const subtotal = activeItems.reduce((sum, i) => {
-          const itemPrice = Number(i.price) || 0;
-          const itemQty = Number(i.quantity) || 0;
-          return sum + (itemPrice * itemQty);
+          return sum + (Number(i.price) || 0) * (Number(i.quantity) || 0);
         }, 0);
 
-        const count = activeItems.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
-        
-        set({ subtotal, totalItems: count });
+        const totalItems = activeItems.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+
+        set({ subtotal, totalItems });
       },
 
       addItem: async (incomingItem) => {
@@ -101,49 +76,62 @@ export const useCartStore = create<CartState>()(
         const { items } = get();
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-        const existingItemIndex = items.findIndex((i) => i.id === incomingItem.id);
+        const existingIndex = items.findIndex((i) =>
+          (i.variantId && i.variantId === incomingItem.variantId) ||
+          (!i.variantId && i.id === incomingItem.id)
+        );
+
         let updatedItems = [...items];
         let targetItem: CartItem;
 
-        if (existingItemIndex > -1) {
-          const existingItem = items[existingItemIndex];
-          const safeStock = Number(existingItem.stock) || 0;
-          const newQty = Math.min(existingItem.quantity + incomingItem.quantity, safeStock);
-          targetItem = { ...existingItem, quantity: newQty };
-          updatedItems[existingItemIndex] = targetItem;
+        if (existingIndex > -1) {
+          const existing = items[existingIndex];
+          const newQty = Math.min(
+            existing.quantity + (incomingItem.quantity || 1),
+            Number(existing.stock) || 999
+          );
+          targetItem = { ...existing, quantity: newQty };
+          updatedItems[existingIndex] = targetItem;
         } else {
-          targetItem = { 
-            ...incomingItem, 
-            id: String(incomingItem.id),
-            price: Number(incomingItem.price) || 0,
-            selected: true, 
-            isOutOfStock: (Number(incomingItem.stock) || 0) <= 0 
+          targetItem = {
+            ...incomingItem,
+            selected: true,
+            isOutOfStock: (Number(incomingItem.stock) || 0) <= 0,
+            quantity: incomingItem.quantity || 1,
           };
           updatedItems.push(targetItem);
         }
 
-        set({ items: updatedItems, lastAddedItem: targetItem, showToast: true });
+        set({ 
+          items: updatedItems, 
+          lastAddedItem: targetItem, 
+          showToast: true 
+        });
+
         get().calculateTotals();
 
+        // Backend sync
         if (token) {
           try {
-            await api.post('/cart/add', { 
-              productId: incomingItem.id, 
-              quantity: incomingItem.quantity 
+            await api.post('/cart/add', {
+              productId: incomingItem.id,
+              variantId: incomingItem.variantId,
+              quantity: incomingItem.quantity || 1,
             });
           } catch (e) {
-            console.error("BACKEND_ADD_FAILED", e);
+            console.error("Failed to sync add to cart", e);
           }
         }
       },
 
-      updateQuantity: async (id, quantity) => {
-        if (!id) return;
+      updateQuantity: async (id: string, quantity: number) => {
         const { items } = get();
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-        const updatedItems = items.map((i) =>
-          i.id === id ? { ...i, quantity: Math.min(Math.max(1, Number(quantity) || 1), Number(i.stock) || 1) } : i
+        const updatedItems = items.map((item) =>
+          item.id === id
+            ? { ...item, quantity: Math.max(1, Math.min(quantity, Number(item.stock) || 999)) }
+            : item
         );
 
         set({ items: updatedItems });
@@ -152,57 +140,97 @@ export const useCartStore = create<CartState>()(
         if (token) {
           try {
             await api.patch(`/cart/item/${id}`, { quantity });
-          } catch (e) { console.error("QUANTITY_SYNC_FAILED", e); }
+          } catch (e) {
+            console.error("Quantity update failed", e);
+          }
         }
       },
 
-      removeItem: async (id) => {
-        if (!id) return;
+      removeItem: async (id: string) => {
         const { items } = get();
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        
+
         set({ items: items.filter((i) => i.id !== id) });
         get().calculateTotals();
 
         if (token) {
           try {
             await api.delete(`/cart/item/${id}`);
-          } catch (e) { console.error("REMOVAL_SYNC_FAILED", e); }
+          } catch (e) {
+            console.error("Remove item failed", e);
+          }
         }
       },
 
-      toggleSelect: (id) => {
+      toggleSelect: (id: string) => {
         set({
-          items: (get().items || []).map((i) =>
+          items: get().items.map((i) =>
             i.id === id ? { ...i, selected: !i.selected } : i
           ),
         });
         get().calculateTotals();
       },
 
-      toggleSelectAll: (selected) => {
+      toggleSelectAll: (selected: boolean) => {
         set({
-          items: (get().items || []).map((i) => ({ 
-            ...i, 
-            selected: i.isOutOfStock ? false : !!selected 
+          items: get().items.map((i) => ({
+            ...i,
+            selected: i.isOutOfStock ? false : selected,
           })),
         });
         get().calculateTotals();
       },
 
-      clearCart: () => set({ items: [], totalItems: 0, subtotal: 0, lastAddedItem: null, showToast: false }),
+      clearCart: () => set({ 
+        items: [], 
+        totalItems: 0, 
+        subtotal: 0, 
+        lastAddedItem: null, 
+        showToast: false 
+      }),
+
+      syncWithBackend: async () => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!token || get().isSyncing) return;
+
+        set({ isSyncing: true });
+        try {
+          const { data } = await api.get('/cart');
+          const mapped = (data?.items || []).map((item: any) => ({
+            id: String(item.productId || item.id),
+            variantId: item.variantId,
+            name: item.product?.title || 'Product',
+            price: Number(item.price || item.product?.price) || 0,
+            image: item.product?.images?.[0]?.imageUrl || '/placeholder.jpg',
+            vendorId: String(item.product?.vendorId || ''),
+            stock: Number(item.product?.stock) || 0,
+            quantity: Number(item.quantity) || 1,
+            selected: true,
+            isOutOfStock: Number(item.product?.stock) <= 0,
+            color: item.color,
+            size: item.size,
+          }));
+
+          set({ items: mapped });
+          get().calculateTotals();
+        } catch (err) {
+          console.error("Cart sync failed", err);
+        } finally {
+          set({ isSyncing: false });
+        }
+      },
     }),
-    { 
-      name: 'aviorè-registry-v1',
+
+    {
+      name: 'aviorè-cart-v2',
       partialize: (state) => ({
         items: state.items,
-        totalItems: state.totalItems,
-        subtotal: state.subtotal
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
         state?.calculateTotals();
-      }
+        state?.syncWithBackend();
+      },
     }
   )
 );
