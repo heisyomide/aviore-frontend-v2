@@ -22,25 +22,22 @@ export function ProductInfo({
 const data = useMemo(() => {
   const basePrice = Number(price) || 0;
 
-  const hasVariantPrice =
-    selectedVariant?.price !== undefined &&
-    selectedVariant?.price !== null;
-
-  const currentPrice = hasVariantPrice
-    ? Number(selectedVariant.price)
-    : basePrice;
+  const currentPrice =
+    selectedVariant?.price !== undefined
+      ? Number(selectedVariant.price)
+      : basePrice;
 
   const stock =
     selectedVariant?.stock ??
     0;
 
   return {
-    currentPrice: Math.max(0, currentPrice),
-    originalPrice: Math.max(0, basePrice),
-    isDiscounted: hasVariantPrice && basePrice > currentPrice,
-    savings: Math.max(0, basePrice - currentPrice),
+    currentPrice,
+    originalPrice: basePrice,
+    isDiscounted: basePrice > currentPrice,
+    savings: basePrice - currentPrice,
     percent:
-      basePrice > 0 && hasVariantPrice
+      basePrice > 0
         ? Math.round(((basePrice - currentPrice) / basePrice) * 100)
         : 0,
     isLowStock: stock > 0 && stock <= 5,

@@ -204,7 +204,7 @@ addItem({
             {/* 1. Header Info (Price/Title/Rating) */}
 <ProductInfo 
   title={product.title}
-  price={product.price}   // ✅ ALWAYS base price
+  price={product.displayPrice}   // ✅ ALWAYS base price
   selectedVariant={selectedVariant}
   rating={product.averageRating}
   reviewCount={product.reviewCount}
