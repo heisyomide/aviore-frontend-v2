@@ -5,6 +5,7 @@ import { Search, ShoppingCart, Menu } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
 import { useMemo } from 'react';
 import { AccountMenu } from './AccountMenu'; 
+import { SearchBar } from './SearchBar';
 
 export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
   const { items } = useCartStore();
@@ -29,14 +30,9 @@ export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
           </Link>
 
         {/* 2. SEARCH BAR (Flexible center) */}
-        <div className="flex-1 min-w-[80px] bg-gray-100 h-9 rounded-2xl flex items-center px-3 gap-1.5 transition-all focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-200">
-          <Search size={14} className="text-gray-400 shrink-0" strokeWidth={3} />
-          <input 
-            type="text"
-            placeholder="Search..." 
-            className="bg-transparent text-[11px] outline-none w-full font-bold text-zinc-800 placeholder:text-gray-400" 
-          />
-        </div>
+<div className="flex-1 min-w-[80px]">
+  <SearchBar />
+</div>
 
         {/* 3. SYSTEM ACTIONS (Right-aligned) */}
         <div className="flex items-center gap-1.5 shrink-0">

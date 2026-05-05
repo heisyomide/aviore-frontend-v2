@@ -11,6 +11,7 @@ import { SearchSuggestions } from './SearchSuggestions';
 import { AccountMenu } from './AccountMenu'; 
 // 🚀 IMPORT THE DEDICATED MEGA MENU COMPONENT
 import { CategoryMegaMenu } from './CategoryMegaMenu'; 
+import { SearchBar } from './SearchBar';
 
 export function DesktopHeader() {
   const { items } = useCartStore();
@@ -44,21 +45,9 @@ export function DesktopHeader() {
         </div>
 
         {/* 3. SEARCH BAR ENGINE */}
-        <div className="flex-1 max-w-[500px] relative">
-          <div className={`h-[48px] flex items-center bg-gray-50 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${searchFocused ? 'border-[#A4143D] bg-white shadow-xl shadow-[#A4143D]/5' : 'border-transparent'}`}>
-            <input 
-              type="text" 
-              placeholder="Search unique artifacts..." 
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-              className="flex-1 bg-transparent px-6 text-[14px] font-bold outline-none text-slate-900 placeholder:text-slate-400" 
-            />
-            <button className="mr-1.5 w-10 h-10 flex items-center justify-center bg-slate-900 text-white rounded-xl hover:bg-[#A4143D] transition-all shadow-md">
-              <Search size={18}/>
-            </button>
-          </div>
-          <SearchSuggestions isOpen={searchFocused} onClose={() => setSearchFocused(false)} />
-        </div>
+<div className="flex-1 max-w-[500px]">
+  <SearchBar />
+</div>
 
         {/* 4. ACTIONS: ACCOUNT, SUPPORT, CART */}
         <div className="flex items-center gap-3 shrink-0">
