@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 
 interface ProductInfoProps {
   title: string;
-  price: number | string;           // Base price (fallback)
+  price: number | string;           // Base product price (fallback)
   selectedVariant: any | null;
   rating?: number;
   reviewCount?: number;
@@ -20,21 +20,30 @@ export function ProductInfo({
 }: ProductInfoProps) {
 
   const data = useMemo(() => {
-    const variantPrice = Number(selectedVariant?.price) || 0;
-    const basePrice = Number(price) || 0;
-    const currentPrice = variantPrice > 0 ? variantPrice : basePrice;
+    // Priority 1: Use selected variant price
+    let currentPrice = 0;
 
-    const originalPrice = basePrice;
+    if (selectedVariant?.price) {
+      currentPrice = Number(selectedVariant.price);
+    } 
+    // Priority 2: Fallback to base product price
+    else if (price) {
+      currentPrice = Number(price);
+    }
+
+    const originalPrice = Number(price) || currentPrice;
     const isDiscounted = originalPrice > currentPrice && originalPrice > 0;
 
     return {
-      currentPrice,
-      originalPrice,
+      currentPrice: Math.max(0, currentPrice),
+      originalPrice: Math.max(0, originalPrice),
       isDiscounted,
-      savings: originalPrice - currentPrice,
-      percent: originalPrice > 0 ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0,
-      isLowStock: selectedVariant?.stock > 0 && selectedVariant?.stock <= 5,
-      isOutOfStock: selectedVariant?.stock === 0 || (!selectedVariant && basePrice === 0),
+      savings: Math.max(0, originalPrice - currentPrice),
+      percent: originalPrice > 0 
+        ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) 
+        : 0,
+      isLowStock: selectedVariant?.stock > 0 && selectedVariant.stock <= 5,
+      isOutOfStock: selectedVariant?.stock === 0 || (!selectedVariant && currentPrice === 0),
     };
   }, [price, selectedVariant]);
 
@@ -83,8 +92,8 @@ export function ProductInfo({
         )}
       </div>
 
-      {/* Price Display */}
-      <div className="flex items-baseline gap-4">
+      {/* Price */}
+      <div className="flex items-baseline gap-4 pt-2">
         <span className="text-5xl font-black text-[#A4143D] tracking-tighter">
           ₦{format(data.currentPrice)}
         </span>

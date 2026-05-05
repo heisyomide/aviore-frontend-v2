@@ -20,7 +20,6 @@ export interface UseProductDataReturn {
 }
 
 export function useProductData(productId: string): UseProductDataReturn {
-  // Data States with explicit type allowing both null and the object
   const [data, setData] = useState<{
     product: any | null;
     vendor: any | null;
@@ -30,6 +29,7 @@ export function useProductData(productId: string): UseProductDataReturn {
     vendor: null,
     recommended: [],
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
@@ -40,23 +40,19 @@ export function useProductData(productId: string): UseProductDataReturn {
 
   const loadData = useCallback(async () => {
     if (!productId) return;
-    
+
     currentIdRef.current = productId;
     setLoading(true);
     setError(null);
 
-    // ✅ UI Reset: Done once per load to prevent #310 loop
     setQty(1);
     setSelectedSize('');
     setSelectedVariant(null);
 
     try {
       const { data: rawProduct } = await api.get(`/products/${productId}`);
-      
-      // 🔥 CRASH-PROOF LAYER: Normalize the product immediately
       const cleanProduct = normalizeProduct(rawProduct);
 
-      // Fetch recommended in parallel
       const rRes = await api.get('/products', { 
         params: { category: cleanProduct?.category?.slug, limit: 8 } 
       }).catch(() => ({ data: { data: [] } }));
@@ -64,14 +60,35 @@ export function useProductData(productId: string): UseProductDataReturn {
       if (currentIdRef.current === productId && cleanProduct) {
         setData({
           product: cleanProduct,
-          vendor: cleanProduct.vendor, // Use normalized vendor from normalizer
+          vendor: cleanProduct.vendor,
           recommended: (rRes.data?.data || rRes.data || [])
             .filter((p: any) => p.id !== productId),
         });
 
-        // ✅ Initialize variant safely
+        // 🔥 FINAL SAFE VARIANT NORMALIZATION (bypassing strict typing)
         if (cleanProduct.variants && cleanProduct.variants.length > 0) {
-          setSelectedVariant(cleanProduct.variants[0]);
+          const rawVariant = cleanProduct.variants[0] as any;
+
+          let size = '';
+
+          // Handle different possible formats of sizes
+          if (Array.isArray(rawVariant.sizes) && rawVariant.sizes.length > 0) {
+            size = String(rawVariant.sizes[0] || '');
+          } 
+          else if (typeof rawVariant.sizes === 'string') {
+            size = rawVariant.sizes.split(',')[0]?.trim() || '';
+          } 
+          else if (rawVariant.size) {
+            size = String(rawVariant.size);
+          }
+
+          const normalizedVariant = {
+            ...rawVariant,
+            size: size || '',   // Guarantee 'size' exists
+          };
+
+          setSelectedVariant(normalizedVariant);
+          setSelectedSize(size);
         }
       }
     } catch (err: any) {
@@ -82,11 +99,11 @@ export function useProductData(productId: string): UseProductDataReturn {
         setLoading(false);
       }
     }
-  }, [productId]); 
+  }, [productId]);
 
   useEffect(() => {
     loadData();
-  }, [productId]); // 🔥 Only react to ID changes to kill the infinite loop
+  }, [loadData]);
 
   return {
     ...data,

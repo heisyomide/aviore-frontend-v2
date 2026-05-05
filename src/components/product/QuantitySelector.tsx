@@ -40,12 +40,12 @@ export function QuantitySelector({
           type="button"
           onClick={handleDecrement}
           disabled={safeQty <= 1 || isOutOfStock}
-          className="p-3 bg-white rounded-xl shadow-sm hover:bg-zinc-100 transition disabled:opacity-30 disabled:shadow-none"
+          className="p-3 bg-white rounded-xl shadow-sm text-zinc-900 hover:bg-zinc-100 transition disabled:opacity-30 disabled:shadow-none"
         >
           <Minus size={16} />
         </button>
         
-        <span className="w-16 text-center font-bold text-lg select-none">
+        <span className="w-16 text-center text-zinc-900 font-bold text-lg select-none">
           {isOutOfStock ? 0 : safeQty}
         </span>
         
@@ -53,7 +53,7 @@ export function QuantitySelector({
           type="button"
           onClick={handleIncrement}
           disabled={safeQty >= safeStock || isOutOfStock}
-          className="p-3 bg-white rounded-xl shadow-sm hover:bg-zinc-100 transition disabled:opacity-30 disabled:shadow-none"
+          className="p-3 bg-white rounded-xl text-zinc-400 shadow-sm hover:bg-zinc-100 transition disabled:opacity-30 disabled:shadow-none"
         >
           <Plus size={16} />
         </button>
