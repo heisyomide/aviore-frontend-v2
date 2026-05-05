@@ -204,7 +204,9 @@ addItem({
             {/* 1. Header Info (Price/Title/Rating) */}
 <ProductInfo 
   title={product.title}
-  price={product.displayPrice}   // ✅ ALWAYS base price
+  basePrice={product.price}        // The original price (often 0 in your JSON)
+  displayPrice={product.displayPrice} // The actual price to show (1280)
+  totalStock={product.totalStock}     // The total stock (24)
   selectedVariant={selectedVariant}
   rating={product.averageRating}
   reviewCount={product.reviewCount}
