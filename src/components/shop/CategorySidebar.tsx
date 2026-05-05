@@ -106,7 +106,7 @@ export function CategorySidebar({ activeCategory, onSelect, onPriceChange }: any
                 : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
             }`}
           >
-            All Artifacts
+            All Categories
             <ChevronRight size={12} className={activeCategory === "" ? "opacity-100" : "opacity-0 group-hover:opacity-100"} />
           </button>
 
