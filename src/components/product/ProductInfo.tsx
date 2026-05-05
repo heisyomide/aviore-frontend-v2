@@ -19,33 +19,31 @@ export function ProductInfo({
   reviewCount = 0,
 }: ProductInfoProps) {
 
-  const data = useMemo(() => {
-    // Priority 1: Use selected variant price
-    let currentPrice = 0;
+const data = useMemo(() => {
+  const basePrice = Number(price) || 0;
 
-    if (selectedVariant?.price) {
-      currentPrice = Number(selectedVariant.price);
-    } 
-    // Priority 2: Fallback to base product price
-    else if (price) {
-      currentPrice = Number(price);
-    }
+  const currentPrice =
+    selectedVariant?.price !== undefined
+      ? Number(selectedVariant.price)
+      : basePrice;
 
-    const originalPrice = Number(price) || currentPrice;
-    const isDiscounted = originalPrice > currentPrice && originalPrice > 0;
+  const stock = selectedVariant?.stock ?? 0;
 
-    return {
-      currentPrice: Math.max(0, currentPrice),
-      originalPrice: Math.max(0, originalPrice),
-      isDiscounted,
-      savings: Math.max(0, originalPrice - currentPrice),
-      percent: originalPrice > 0 
-        ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) 
+  const isDiscounted = basePrice > currentPrice;
+
+  return {
+    currentPrice: Math.max(0, currentPrice),
+    originalPrice: Math.max(0, basePrice),
+    isDiscounted,
+    savings: Math.max(0, basePrice - currentPrice),
+    percent:
+      basePrice > 0
+        ? Math.round(((basePrice - currentPrice) / basePrice) * 100)
         : 0,
-      isLowStock: selectedVariant?.stock > 0 && selectedVariant.stock <= 5,
-      isOutOfStock: selectedVariant?.stock === 0 || (!selectedVariant && currentPrice === 0),
-    };
-  }, [price, selectedVariant]);
+    isLowStock: stock > 0 && stock <= 5,
+    isOutOfStock: stock === 0,
+  };
+}, [price, selectedVariant]);
 
   const format = (num: number) => num.toLocaleString('en-NG');
 
@@ -85,11 +83,13 @@ export function ProductInfo({
         <h1 className="text-4xl font-black tracking-tighter text-zinc-900 leading-none uppercase">
           {title}
         </h1>
-        {selectedVariant && (
-          <div className="inline-block px-3 py-1 bg-blue-50 border border-blue-100 rounded text-xs font-bold text-blue-600">
-            {selectedVariant.color} • {selectedVariant.size}
-          </div>
-        )}
+{selectedVariant && (
+  <div className="inline-block px-3 py-1 bg-blue-50 border border-blue-100 rounded text-xs font-bold text-blue-600">
+    {[selectedVariant.color, selectedVariant.size]
+      .filter(Boolean)
+      .join(' • ')}
+  </div>
+)}
       </div>
 
       {/* Price */}
