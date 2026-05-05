@@ -53,13 +53,13 @@ const [isFollowing, setIsFollowing] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
 
   // Dynamic values
-  const currentPrice = selectedVariant?.price ?? product?.price ?? 0;
-  const currentStock = selectedVariant?.stock ?? product?.stock ?? 0;
-
-   const galleryImages = selectedVariant?.images?.length > 0 
+const currentPrice = selectedVariant?.price ?? product?.displayPrice ?? 0;
+  const currentStock = selectedVariant?.stock ?? product?.totalStock ?? 0;
+  const galleryImages = selectedVariant?.images?.length > 0 
     ? selectedVariant.images 
     : product?.images || [];
 
+    
 useEffect(() => {
   setVendorState(vendor);
 }, [vendor]);
@@ -204,11 +204,11 @@ addItem({
             {/* 1. Header Info (Price/Title/Rating) */}
 <ProductInfo 
   title={product.title}
-  basePrice={product.price}        // The original price (often 0 in your JSON)
-  displayPrice={product.displayPrice} // The actual price to show (1280)
-  totalStock={product.totalStock}     // The total stock (24)
+  basePrice={product.basePrice}
+  displayPrice={product.displayPrice}
+  totalStock={product.totalStock}
   selectedVariant={selectedVariant}
-  rating={product.averageRating}
+  rating={product.rating}
   reviewCount={product.reviewCount}
 />
 
@@ -242,7 +242,7 @@ addItem({
                 {/* Low Stock Indicator */}
                 {currentStock > 0 && currentStock <= 10 && (
                   <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-orange-600">Only {product.stock} items left!</p>
+                    <p className="text-[11px] font-bold text-orange-600">Only {selectedVariant?.stock ?? product.totalStock} Left!</p>
                     <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-orange-500" 

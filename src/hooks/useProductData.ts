@@ -4,7 +4,22 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/src/lib/axios';
 import { normalizeProduct } from '../utils/normalizer';
 
-export function useProductData(productId: string) {
+export interface UseProductDataReturn {
+  product: any;
+  vendor: any;
+  recommended: any[];
+  loading: boolean;
+  error: string | null;
+  selectedVariant: any;
+  setSelectedVariant: (variant: any) => void;
+  selectedSize: string;
+  setSelectedSize: (size: string) => void;
+  qty: number;
+  setQty: (qty: number) => void;
+  refresh: () => Promise<void>;
+}
+
+export function useProductData(productId: string): UseProductDataReturn {
   const [data, setData] = useState<{
     product: any | null;
     vendor: any | null;
@@ -18,6 +33,7 @@ export function useProductData(productId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [selectedSize, setSelectedSize] = useState('');
   const [qty, setQty] = useState(1);
 
   const currentIdRef = useRef(productId);
@@ -29,17 +45,19 @@ export function useProductData(productId: string) {
     setLoading(true);
     setError(null);
 
+    setQty(1);
+    setSelectedSize('');
+    setSelectedVariant(null);
+
     try {
-      // 1. Fetch Product (The "Find One" API Call)
       const { data: rawProduct } = await api.get(`/products/${productId}`);
       const cleanProduct = normalizeProduct(rawProduct);
 
-      if (currentIdRef.current === productId && cleanProduct) {
-        // 2. Fetch Recommended Products
-        const rRes = await api.get('/products', { 
-          params: { category: cleanProduct?.category?.slug, limit: 8 } 
-        }).catch(() => ({ data: { data: [] } }));
+      const rRes = await api.get('/products', { 
+        params: { category: cleanProduct?.category?.slug, limit: 8 } 
+      }).catch(() => ({ data: { data: [] } }));
 
+      if (currentIdRef.current === productId && cleanProduct) {
         setData({
           product: cleanProduct,
           vendor: cleanProduct.vendor,
@@ -47,16 +65,19 @@ export function useProductData(productId: string) {
             .filter((p: any) => p.id !== productId),
         });
 
-        // 3. Matrix Selection: Auto-pick the first variant if available
-        if (cleanProduct.variants && cleanProduct.variants.length > 0) {
-          const defaultVariant = cleanProduct.variants[0];
-          setSelectedVariant(defaultVariant);
-          setQty(1);
-        }
+        // 🔥 FINAL SAFE VARIANT NORMALIZATION (bypassing strict typing)
+// inside loadData()
+
+if (cleanProduct?.variants?.length > 0) {
+  const firstVariant = cleanProduct.variants[0];
+
+  setSelectedVariant(firstVariant);
+  setSelectedSize(firstVariant.size || '');
+}
       }
     } catch (err: any) {
       console.error("PRODUCT_HOOK_ERROR:", err);
-      setError("Product not found or currently unavailable.");
+      setError("Product not found or unavailable.");
     } finally {
       if (currentIdRef.current === productId) {
         setLoading(false);
@@ -74,6 +95,8 @@ export function useProductData(productId: string) {
     error,
     selectedVariant,
     setSelectedVariant,
+    selectedSize,
+    setSelectedSize,
     qty,
     setQty,
     refresh: loadData

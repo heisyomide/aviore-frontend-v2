@@ -1,52 +1,62 @@
+// src/utils/normalizer.ts
 import { safeNumber, safeString, safeArray } from './safe';
 
 export const normalizeProduct = (raw: any) => {
   if (!raw) return null;
 
-  // 1. Clean variants with Matrix fields (price/stock/size)
-  const cleanVariants = safeArray(raw.variants).map((v: any) => ({
+  const variants = safeArray(raw.variants).map((v: any) => ({
     id: safeString(v.id),
     color: safeString(v.color, 'Default'),
-    // Support both the new Matrix 'size' and the old 'sizes' array
-    size: safeString(v.size || (v.sizes && v.sizes[0]) || ''), 
-    price: safeNumber(v.price, 0),
-    stock: safeNumber(v.stock, 0),
+    size: safeString(v.size, ''), // ✅ FIXED
+    price: safeNumber(v.price, 0), // ✅ KEEP PRICE
+    stock: safeNumber(v.stock, 0), // ✅ KEEP STOCK
     images: safeArray(v.images).map((img: any) => ({
       id: safeString(img.id),
-      imageUrl: safeString(img.imageUrl || img.url, '/placeholder.jpg')
-    }))
+      imageUrl: safeString(img.imageUrl || img.url, '/placeholder.jpg'),
+    })),
   }));
+
+  // ✅ COMPUTE CORE VALUES
+  const prices = variants.map(v => v.price).filter(p => p > 0);
+  const displayPrice = prices.length ? Math.min(...prices) : 0;
+
+  const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
 
   return {
     id: safeString(raw.id),
     title: safeString(raw.title || raw.name, 'Unnamed Product'),
-    description: safeString(raw.description, 'No description available.'),
-    
-    // 2. ROOT PRICING: Priority to displayPrice to avoid the ₦0 bug
-    displayPrice: safeNumber(raw.displayPrice || raw.price, 0),
+    description: safeString(raw.description, ''),
+
+    // ❌ DON'T TRUST THESE ANYMORE
     basePrice: safeNumber(raw.price, 0),
-    
-    // 3. ROOT STOCK: Use totalStock so it doesn't show "Out of Stock" immediately
-    totalStock: safeNumber(raw.totalStock ?? raw.stock, 0),
-    
+
+    // ✅ USE THESE
+    displayPrice,
+    totalStock,
+
     origin: safeString(raw.origin, 'LOCAL').toUpperCase(),
     deliveryMin: safeNumber(raw.deliveryMin, 3),
     deliveryMax: safeNumber(raw.deliveryMax, 7),
-    rating: safeNumber(raw.averageRating || raw.rating, 0),
+
+    rating: safeNumber(raw.averageRating, 0),
     reviewCount: safeNumber(raw.reviewCount, 0),
-    variants: cleanVariants,
-    vendor: raw.vendor ? {
-      id: safeString(raw.vendor.id),
-      storeName: safeString(raw.vendor.storeName, 'Unknown Store'),
-      logo: safeString(raw.vendor.imageUrl || raw.vendor.logo, ''),
-      isVerified: !!raw.vendor.isVerified,
-      followers: safeNumber(raw.vendor._count?.followers || raw.vendor.followers, 0),
-      productsCount: safeNumber(raw.vendor._count?.products || raw.vendor.productsCount, 0),
-      rating: safeNumber(raw.vendor.rating, 0),
-    } : null,
+
+    variants,
+
+    vendor: raw.vendor
+      ? {
+          id: safeString(raw.vendor.id),
+          storeName: safeString(raw.vendor.storeName),
+          logo: safeString(raw.vendor.imageUrl, ''),
+          isVerified: !!raw.vendor.isVerified,
+          followers: safeNumber(raw.vendor._count?.followers, 0),
+          productsCount: safeNumber(raw.vendor._count?.products, 0),
+        }
+      : null,
+
     category: {
       name: safeString(raw.category?.name, 'General'),
-      slug: safeString(raw.category?.slug, '')
-    }
+      slug: safeString(raw.category?.slug, ''),
+    },
   };
 };
