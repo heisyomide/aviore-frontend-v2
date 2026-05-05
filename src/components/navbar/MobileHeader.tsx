@@ -30,7 +30,7 @@ export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
           </Link>
 
         {/* 2. SEARCH BAR (Flexible center) */}
-<div className="relative w-full z-[9999] overflow-visible">
+<div className="flex-1 min-w-[80px]">
   <SearchBar />
 </div>
 
