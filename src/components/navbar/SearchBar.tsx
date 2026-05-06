@@ -1,183 +1,253 @@
 'use client';
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Loader2, X, ArrowRight, TrendingUp } from "lucide-react";
+import { Search, Loader2, X, ArrowRight, TrendingUp, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api } from "@/src/lib/axios";
-import { AnimatePresence, motion } from "framer-motion"; // Highly recommended for premium feel
+import { AnimatePresence, motion } from "framer-motion";
+
+const TRENDING = ["Luxury Watches", "Artifacts", "Silk Shirts", "Minimalist Decor"];
 
 export function SearchBar() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState({ products: [], suggestions: [], categories: [] });
+  const [recent, setRecent] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
 
+  // 🔥 LOAD RECENT SEARCHES
+  useEffect(() => {
+    const stored = localStorage.getItem("recent_searches");
+    if (stored) setRecent(JSON.parse(stored));
+  }, []);
+
+  const saveRecent = (q: string) => {
+    let updated = [q, ...recent.filter(r => r !== q)].slice(0, 6);
+    setRecent(updated);
+    localStorage.setItem("recent_searches", JSON.stringify(updated));
+  };
+
+  // 🔥 DEBOUNCE SEARCH
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (query.trim().length < 2) return;
+
       setLoading(true);
       try {
         const res = await api.get(`/products/search/preview?q=${query}`);
-        setResults({
-          products: res.data.products || [],
-          suggestions: res.data.suggestions || [],
-          categories: res.data.categories || []
-        });
-        setIsOpen(true);
+        setResults(res.data);
       } catch (err) {
-        console.error("Search failed", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }, 300);
+
     return () => clearTimeout(timer);
   }, [query]);
 
+  // 🔥 CLICK OUTSIDE
+  useEffect(() => {
+    const handle = (e: any) => {
+      if (!ref.current?.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
   const handleSearch = (q?: string) => {
-    const finalQuery = q || query;
-    if (!finalQuery.trim()) return;
+    const final = q || query;
+    if (!final.trim()) return;
+
+    saveRecent(final);
     setIsOpen(false);
-    router.push(`/search?q=${encodeURIComponent(finalQuery)}`);
+    router.push(`/search?q=${encodeURIComponent(final)}`);
   };
 
   return (
-    <div className="relative w-full max-w-xl font-sans" ref={ref}>
-      {/* PREMIUM INPUT BOX */}
-      <div className={`flex items-center bg-white border-2 transition-all duration-300 rounded-full px-4 py-2 ${isOpen ? 'border-black shadow-lg' : 'border-zinc-100'}`}>
-        <Search size={20} className="text-zinc-400" />
+    <div ref={ref} className="relative w-full max-w-lg">
+
+      {/* 🔥 INPUT (CLEAN + SMALL) */}
+      <div className={`flex items-center bg-white border rounded-xl px-3 py-2 transition-all ${
+        isOpen ? "border-black shadow-md" : "border-gray-200"
+      }`}>
+        <Search size={16} className="text-gray-400" />
+
         <input
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            if(e.target.value.length > 0) setIsOpen(true);
+            setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder="Search for artifacts..."
-          className="flex-1 bg-transparent px-3 text-base outline-none placeholder:text-zinc-400"
+          placeholder="Search artifacts..."
+          className="flex-1 px-2 text-sm outline-none bg-transparent"
         />
-        {loading && <Loader2 size={18} className="animate-spin text-zinc-400 mr-2" />}
+
+        {loading && <Loader2 size={14} className="animate-spin text-gray-400" />}
+
         {query && !loading && (
-          <button onClick={() => { setQuery(""); setIsOpen(false); }} className="p-1 hover:bg-zinc-100 rounded-full transition-colors">
-            <X size={18} className="text-zinc-500" />
+          <button onClick={() => setQuery("")}>
+            <X size={14} className="text-gray-400" />
           </button>
         )}
       </div>
 
-      {/* SEARCH OVERLAY / DROPDOWN */}
+      {/* 🔥 DROPDOWN */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Mobile Fullscreen / Desktop Dropdown */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
+            {/* DESKTOP */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="fixed inset-0 z-[100] bg-white md:absolute md:inset-auto md:top-full md:left-0 md:right-0 md:mt-3 md:rounded-3xl md:shadow-2xl md:border md:overflow-hidden md:h-auto overflow-y-auto"
+              exit={{ opacity: 0, y: 8 }}
+              className="hidden md:block absolute top-full mt-2 w-full bg-white border rounded-2xl shadow-xl z-50 overflow-hidden"
             >
-              {/* Mobile Header (Hidden on Desktop) */}
-              <div className="flex items-center p-4 border-b md:hidden">
-                <button onClick={() => setIsOpen(false)} className="mr-4 p-2"><X size={24}/></button>
-                <input 
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search..."
-                  className="flex-1 text-lg outline-none"
-                />
-              </div>
+              <div className="p-4 space-y-5">
 
-              <div className="p-6 space-y-8">
-                {/* PRE-SEARCH STATE (Trending) */}
+                {/* TRENDING */}
                 {query.length < 2 && (
-                  <div>
-                    <div className="flex items-center gap-2 text-zinc-900 font-bold mb-4 uppercase tracking-widest text-xs">
-                      <TrendingUp size={14}/> Trending Searches
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {['Luxury Watches', 'Silk Shirts', 'Artifacts', 'Minimalist Home'].map(tag => (
-                        <button 
-                          key={tag}
-                          onClick={() => { setQuery(tag); handleSearch(tag); }}
-                          className="px-4 py-2 bg-zinc-50 hover:bg-black hover:text-white transition-all rounded-full text-sm border border-zinc-100"
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <Section title="Trending">
+                    {TRENDING.map(tag => (
+                      <Tag key={tag} onClick={() => handleSearch(tag)}>
+                        🔥 {tag}
+                      </Tag>
+                    ))}
+                  </Section>
                 )}
 
-                {/* RESULTS: PRODUCTS */}
-                {results.products.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-4">Suggested Artifacts</p>
-                    <div className="grid grid-cols-1 gap-4">
-                      {results.products.map((p: any) => (
-                        <button
-                          key={p.id}
-                          onClick={() => { router.push(`/product/${p.id}`); setIsOpen(false); }}
-                          className="flex items-center gap-4 group text-left"
-                        >
-                          <div className="w-14 h-14 overflow-hidden rounded-xl bg-zinc-100">
-                            <img src={p.imageUrl || "/placeholder.jpg"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-zinc-900 group-hover:underline">{p.title}</p>
-                            <p className="text-xs font-bold mt-1">₦{p.displayPrice.toLocaleString()}</p>
-                          </div>
-                          <ArrowRight size={16} className="text-zinc-300 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {/* RECENT */}
+                {recent.length > 0 && query.length < 2 && (
+                  <Section title="Recent">
+                    {recent.map(r => (
+                      <Tag key={r} onClick={() => handleSearch(r)}>
+                        <Clock size={12}/> {r}
+                      </Tag>
+                    ))}
+                  </Section>
                 )}
 
-                {/* RESULTS: CATEGORIES */}
-                {results.categories.length > 0 && (
-                  <div className="pt-4 border-t border-zinc-50">
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Categories</p>
-                    <div className="flex flex-wrap gap-2">
-                      {results.categories.map((c: any) => (
-                        <button 
-                          key={c.id} 
-                          onClick={() => { router.push(`/search?category=${c.slug}`); setIsOpen(false); }}
-                          className="text-sm font-medium hover:text-blue-600 px-3 py-1 bg-zinc-50 rounded-lg"
-                        >
-                          {c.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {/* PRODUCTS */}
+                {results.products?.length > 0 && (
+                  <Section title="Products">
+                    {results.products.map((p: any) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          router.push(`/product/${p.id}`);
+                          setIsOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full hover:bg-gray-50 p-2 rounded-lg"
+                      >
+                        <img
+                          src={p.imageUrl || "/placeholder.jpg"}
+                          className="w-10 h-10 rounded object-cover"
+                        />
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-medium">{p.title}</p>
+                          <p className="text-xs text-gray-500">
+                            ₦{p.displayPrice.toLocaleString()}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </Section>
                 )}
 
-                {/* NO RESULTS VIEW */}
-                {query.length >= 2 && !loading && results.products.length === 0 && (
-                  <div className="py-10 text-center">
-                    <p className="text-zinc-400 text-sm">No artifacts matching "{query}"</p>
-                  </div>
-                )}
-                
+                {/* SEE ALL */}
                 {query.length >= 2 && (
-                   <button 
+                  <button
                     onClick={() => handleSearch()}
-                    className="w-full py-4 mt-4 bg-black text-white rounded-2xl font-bold text-sm hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2"
+                    className="w-full text-sm font-bold bg-black text-white py-3 rounded-xl"
                   >
-                    View All Results <ArrowRight size={16}/>
+                    View all results
                   </button>
                 )}
               </div>
             </motion.div>
 
-            {/* DARK BACKDROP (Desktop Only) */}
-            <div 
-              className="hidden md:block fixed inset-0 bg-black/20 backdrop-blur-sm z-[90]" 
+            {/* 🔥 MOBILE (BOTTOM SHEET STYLE) */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="fixed md:hidden bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-[100] max-h-[75vh] overflow-y-auto"
+            >
+              <div className="p-4 space-y-5">
+
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-sm">Search</span>
+                  <X onClick={() => setIsOpen(false)} />
+                </div>
+
+                {query.length < 2 && (
+                  <Section title="Trending">
+                    {TRENDING.map(tag => (
+                      <Tag key={tag} onClick={() => handleSearch(tag)}>
+                        🔥 {tag}
+                      </Tag>
+                    ))}
+                  </Section>
+                )}
+
+                {results.products?.map((p: any) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      router.push(`/product/${p.id}`);
+                      setIsOpen(false);
+                    }}
+                    className="flex gap-3 w-full"
+                  >
+                    <img
+                      src={p.imageUrl || "/placeholder.jpg"}
+                      className="w-12 h-12 rounded object-cover"
+                    />
+                    <div>
+                      <p className="text-sm">{p.title}</p>
+                      <p className="text-xs text-gray-500">
+                        ₦{p.displayPrice.toLocaleString()}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* BACKDROP */}
+            <div
+              className="fixed inset-0 bg-black/20 z-40"
               onClick={() => setIsOpen(false)}
             />
           </>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/* 🔥 SMALL COMPONENTS */
+
+function Section({ title, children }: any) {
+  return (
+    <div>
+      <p className="text-xs font-bold text-gray-400 mb-2 uppercase">{title}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+function Tag({ children, onClick }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-black hover:text-white text-xs rounded-full transition"
+    >
+      {children}
+    </button>
   );
 }
