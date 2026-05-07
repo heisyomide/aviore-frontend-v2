@@ -53,25 +53,45 @@ export default function AdminPaymentsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleAction = async (id: string, action: 'approve' | 'reject') => {
-    const confirmMsg = action === 'approve' 
-      ? "AUTHORIZE_SETTLEMENT: Finalize fund migration to vendor node?"
-      : "REJECT_SETTLEMENT: Return funds to vendor's pending balance?";
-    
-    if (!window.confirm(confirmMsg)) return;
+  const handleAction = async (
+  id: string,
+  action: 'approve' | 'reject'
+) => {
+  const confirmMsg =
+    action === 'approve'
+      ? 'AUTHORIZE_SETTLEMENT: Finalize fund migration to vendor node?'
+      : 'REJECT_SETTLEMENT: Return funds to vendor balance?';
 
-    try {
-      setIsProcessing(id);
-      await api.patch(`/admin/payments/withdrawals/${id}/${action}`);
-      toast.success(`SETTLEMENT_${action.toUpperCase()}: Registry updated.`);
-      setViewingBank(null);
-      fetchData();
-    } catch (error: any) {
-      toast.error(`COMMAND_FAILED: ${error.response?.data?.message || "Signal lost."}`);
-    } finally {
-      setIsProcessing(null);
-    }
-  };
+  const confirmed = window.confirm(confirmMsg);
+
+  if (!confirmed) return;
+
+  try {
+    setIsProcessing(id);
+
+    // ✅ CORRECT ROUTE
+    await api.patch(
+      `/admin/withdrawals/${id}/${action}`
+    );
+
+    toast.success(
+      `SETTLEMENT_${action.toUpperCase()}: Registry updated.`
+    );
+
+    setViewingBank(null);
+
+    await fetchData();
+  } catch (error: any) {
+    toast.error(
+      `COMMAND_FAILED: ${
+        error?.response?.data?.message ||
+        'Signal lost.'
+      }`
+    );
+  } finally {
+    setIsProcessing(null);
+  }
+};
 
   const filteredWithdrawals = withdrawals.filter(w => 
     w.vendor.storeName.toLowerCase().includes(search.toLowerCase()) ||
