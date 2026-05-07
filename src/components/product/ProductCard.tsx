@@ -21,40 +21,87 @@ export function ProductCard({ product }: { product: any }) {
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
-  const data = useMemo(() => {
-    const variantPrices = (product?.variants || []).map((v: any) => 
-      Number(v?.price) || 0
-    ).filter((p: number) => p > 0);
+const data = useMemo(() => {
+  const variants = product?.variants || [];
 
-    const displayPrice = variantPrices.length > 0 
-      ? Math.min(...variantPrices) 
-      : Number(product?.price) || 0;
+  // PRICE
+  const variantPrices = variants
+    .map((v: any) => Number(v?.price) || 0)
+    .filter((p: number) => p > 0);
 
+  const displayPrice =
+    variantPrices.length > 0
+      ? Math.min(...variantPrices)
+      : Number(product?.price || 0);
 
-   const firstVariantImage = product?.variants?.[0]?.images?.[0]?.imageUrl;
-    const generalImage = product?.images?.[0]?.imageUrl || product?.image;
+  // STOCK
+  const totalStock =
+    variants.length > 0
+      ? variants.reduce(
+          (sum: number, v: any) =>
+            sum + (Number(v?.stock) || 0),
+          0
+        )
+      : Number(product?.stock || 0);
 
-    const imageUrl = firstVariantImage || generalImage;
-    const finalImage = imageUrl 
-      ? (imageUrl.startsWith('http') 
-          ? imageUrl 
-          : `${apiBase}/uploads/${imageUrl.replace(/^\//, '')}`)
-      : '/placeholder.png';
-    return {
-      id: safeString(product?.id),
-      name: safeString(product?.title || product?.name, 'Product Name'),
-      subTitle: safeString(product?.subTitle || "Premium Quality"),
-      origin: safeString(product?.origin || "Local"),
-      price: displayPrice,
-      oldPrice: safeNumber(product?.oldPrice || displayPrice * 1.2),
-      stock: safeNumber(product?.stock, 0),
-      rating: safeNumber(product?.averageRating || product?.rating, 0),
-      reviewCount: safeNumber(product?.reviewCount, 0),
-      discount: safeNumber(product?.discount, 15), // fallback to 15 if missing
-      image: finalImage,
-      vendorId: safeString(product?.vendorId),
-    };
-  }, [product, apiBase]);
+  // IMAGE
+  const firstVariantImage =
+    variants?.[0]?.images?.[0]?.imageUrl;
+
+  const generalImage =
+    product?.images?.[0]?.imageUrl ||
+    product?.image;
+
+  const imageUrl =
+    firstVariantImage || generalImage;
+
+  const finalImage = imageUrl
+    ? imageUrl.startsWith('http')
+      ? imageUrl
+      : `${apiBase}/uploads/${imageUrl.replace(/^\//, '')}`
+    : '/placeholder.png';
+
+  return {
+    id: safeString(product?.id),
+    name: safeString(
+      product?.title || product?.name,
+      'Product Name'
+    ),
+    subTitle: safeString(
+      product?.subTitle || 'Premium Quality'
+    ),
+    origin: safeString(
+      product?.origin || 'LOCAL'
+    ),
+
+    // ✅ FIXED
+    price: displayPrice,
+    stock: totalStock,
+
+    oldPrice: safeNumber(
+      product?.oldPrice || displayPrice * 1.2
+    ),
+
+    rating: safeNumber(
+      product?.averageRating ||
+      product?.rating,
+      0
+    ),
+
+    reviewCount: safeNumber(
+      product?.reviewCount,
+      0
+    ),
+
+    discount: safeNumber(
+      product?.discount,
+      15
+    ),
+
+    image: finalImage,
+    vendorId: safeString(product?.vendorId),
+  };
+}, [product, apiBase]);
 
   const isHearted = mounted && data.id ? isWishlisted?.(data.id) : false;
 

@@ -113,7 +113,7 @@ function LoginFormContent() {
             {registered ? 'Verify to Continue' : 'Welcome Back'}
           </h1>
           <p className="text-xs text-slate-400 uppercase tracking-widest mt-1">
-            Aviore Marketplace
+            Aviorè Marketplace
           </p>
         </div>
 
@@ -161,7 +161,7 @@ function LoginFormContent() {
               onClick={() => router.push('/register')}
               className="text-orange-600 cursor-pointer hover:underline"
             >
-              Join Aviore
+              Join Aviorè
             </span>
           </div>
         </form>

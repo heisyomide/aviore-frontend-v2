@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { 
   ShieldCheck, Zap, Globe, BarChart3, 
   ArrowRight, Check, HelpCircle, FileText, 
-  ChevronRight, Percent, Landmark
+  ChevronRight, Percent, Landmark,
+  BarChart4,
+  ChartColumnStacked
 } from 'lucide-react';
 import { Navbar } from '@/src/components/navbar/Navbar';
 import { api } from '@/src/lib/api';
@@ -36,7 +38,7 @@ export default function VendorOnboardingLanding() {
         
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
           <span className="inline-block py-1 px-3 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs font-bold tracking-widest uppercase mb-6">
-            Aviore Merchant Program 2026
+            Aviorè Merchant Program 2026
           </span>
           <h1 className="text-5xl md:text-7xl font-black text-white leading-tight mb-8">
             Scale your business <br /> 
@@ -45,7 +47,7 @@ export default function VendorOnboardingLanding() {
             </span>
           </h1>
           <p className="text-slate-400 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
-            Stop worrying about logistics and payments. Join 5,000+ active vendors using Aviore’s 
+            Stop worrying about logistics and payments. Join 5,000+ active vendors using Aviorè’s 
             advanced infrastructure to reach 1.2M+ buyers monthly.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -80,7 +82,7 @@ export default function VendorOnboardingLanding() {
           </div>
           <div className="relative">
             <div className="aspect-square bg-slate-100 rounded-[2.5rem] overflow-hidden border border-slate-200 shadow-2xl flex items-center justify-center">
-              <BarChart3 size={120} className="text-orange-500 opacity-20" />
+              <ChartColumnStacked size={120} className="text-orange-500 opacity-20" />
             </div>
           </div>
         </div>
@@ -145,11 +147,11 @@ export default function VendorOnboardingLanding() {
               <p className="text-slate-400 text-sm">Please review and accept our Merchant Guidelines:</p>
               
               <div className="bg-white/5 border border-white/10 rounded-xl p-6 h-48 overflow-y-auto text-sm text-slate-400 leading-relaxed scrollbar-thin scrollbar-thumb-white/20">
-                <h4 className="text-white font-bold mb-2">Aviore Terms of Service (Abridged)</h4>
+                <h4 className="text-white font-bold mb-2">Aviorè Terms of Service (Abridged)</h4>
                 <p className="mb-4">1. Product Authenticity: Vendors must strictly list only 100% original products. Counterfeit goods result in permanent bans.</p>
                 <p className="mb-4">2. KYC Requirements: You must provide a valid Government ID and proof of business registration to initiate withdrawals.</p>
                 <p className="mb-4">3. Shipping: Orders must be marked as "Ready to Ship" within 48 hours. Excessive delays lower your store rating.</p>
-                <p className="mb-4">4. Payouts: Aviore holds a 10% commission on Standard plans. Settlements occur after delivery confirmation.</p>
+                <p className="mb-4">4. Payouts: Aviorè holds a 10% commission on Standard plans. Settlements occur after delivery confirmation.</p>
                 <p>5. Conduct: Professional communication is mandatory. Harassment of customers will not be tolerated.</p>
               </div>
 
@@ -158,7 +160,7 @@ export default function VendorOnboardingLanding() {
                   <input type="checkbox" className="hidden" onChange={(e) => setAgreed(e.target.checked)} />
                   {agreed && <Check size={16} />}
                 </div>
-                <span className="text-sm text-slate-300 select-none">I have read, understood, and agree to the Aviore Merchant Terms.</span>
+                <span className="text-sm text-slate-300 select-none">I have read, understood, and agree to the Aviorè Merchant Terms.</span>
               </label>
             </div>
 

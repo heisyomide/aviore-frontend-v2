@@ -90,7 +90,7 @@ export default function RegisterVendor() {
           <div className="bg-orange-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3 shadow-sm">
             <Store className="text-orange-600" size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Join Aviore</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Join Aviorè</h1>
           <p className="text-slate-500 text-sm mt-1">
             Create your store account to continue
           </p>
@@ -108,7 +108,7 @@ export default function RegisterVendor() {
               label="First Name" 
               name="firstName"
               icon={<User size={18}/>} 
-              placeholder="John" 
+              placeholder="Akin" 
               value={formData.firstName}
               onChange={handleChange} 
             />
@@ -116,7 +116,7 @@ export default function RegisterVendor() {
               label="Last Name" 
               name="lastName"
               icon={<User size={18}/>} 
-              placeholder="Doe"
+              placeholder="Samson"
               value={formData.lastName}
               onChange={handleChange} 
             />
@@ -126,7 +126,7 @@ export default function RegisterVendor() {
             label="Store Name" 
             name="storeName"
             icon={<Store size={18}/>} 
-            placeholder="e.g. Classic Aviore Store"
+            placeholder="e.g. Classic Aviorè Store"
             value={formData.storeName}
             onChange={handleChange} 
           />
