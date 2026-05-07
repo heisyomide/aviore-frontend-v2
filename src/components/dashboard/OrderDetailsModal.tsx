@@ -10,38 +10,103 @@ interface OrderDetailsModalProps {
 export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalProps) {
   if (!order) return null;
 
-  return (
-    // Fixed: Changed items-center to items-start + py-8 for better mobile clearance
-    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 bg-gray-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-500">
+return (
+  <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md overflow-y-auto">
+    
+    {/* CENTER WRAPPER */}
+    <div className="min-h-full flex items-center justify-center px-4 py-10 md:py-16">
       
-      {/* Modal Container: Added margin-top to prevent "too close to top" feel */}
-      <div className="bg-[#FDFCFB] w-full max-w-2xl my-8 relative rounded-[3rem] shadow-2xl border border-white/20 animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
-        
-        {/* HEADER: Made purely sticky with consistent height */}
-        <div className="sticky top-0 bg-white/90 backdrop-blur-xl p-8 rounded-t-[3rem] border-b border-gray-100 flex justify-between items-center z-30">
+      {/* MODAL */}
+      <div
+        className="
+          relative
+          w-full
+          max-w-2xl
+          bg-[#FDFCFB]
+          rounded-[2.5rem]
+          md:rounded-[3rem]
+          border border-white/20
+          shadow-[0_20px_80px_rgba(0,0,0,0.12)]
+          overflow-hidden
+          animate-in
+          fade-in
+          zoom-in-95
+          duration-300
+        "
+      >
+
+        {/* HEADER */}
+        <div
+          className="
+            sticky
+            top-0
+            z-30
+            flex
+            items-center
+            justify-between
+            px-5
+            md:px-8
+            py-5
+            bg-white/90
+            backdrop-blur-xl
+            border-b
+            border-zinc-100
+          "
+        >
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#A4143D]">
-              <Sparkles size={12} className="animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em]">Fulfillment_Manifest</span>
+              <Sparkles size={12} />
+              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.35em]">
+                Fulfillment_Manifest
+              </span>
             </div>
-            <h2 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter leading-none">
+
+            <h2
+              className="
+                text-xl
+                md:text-2xl
+                font-black
+                text-gray-900
+                uppercase
+                italic
+                tracking-tight
+                leading-none
+              "
+            >
               Order Summary
             </h2>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+
+            <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest">
               ID: {order.orderNumber || order.id?.slice(-12).toUpperCase()}
             </p>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-4 bg-gray-50 rounded-full hover:bg-[#A4143D] hover:text-white transition-all duration-300 active:scale-95"
+
+          <button
+            onClick={onClose}
+            className="
+              h-11
+              w-11
+              rounded-full
+              bg-zinc-100
+              hover:bg-[#A4143D]
+              hover:text-white
+              transition-all
+              duration-300
+              flex
+              items-center
+              justify-center
+              active:scale-95
+            "
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* CONTENT BODY: Ensuring vertical spacing is generous */}
-        <div className="p-8 md:p-10 space-y-10 pb-20">
-          
+        {/* BODY */}
+        <div className="px-5 md:px-8 py-6 md:py-8 space-y-8 md:space-y-10 pb-14">
+         
+        </div>
+      
           {/* 1. ORIGIN & LOGISTICS HUB */}
           <div className="grid md:grid-cols-2 gap-4">
             <section className="bg-white p-6 rounded-[2.5rem] border border-[#A4143D]/10 shadow-sm flex items-center gap-4">
