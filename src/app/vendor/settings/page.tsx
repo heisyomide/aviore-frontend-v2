@@ -15,6 +15,32 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState<any>(null);
   const [isEditingBank, setIsEditingBank] = useState(false);
 
+
+  const NIGERIAN_BANKS = [
+  { name: 'Access Bank', code: '044' },
+  { name: 'Citibank', code: '023' },
+  { name: 'Ecobank', code: '050' },
+  { name: 'Fidelity Bank', code: '070' },
+  { name: 'First Bank', code: '011' },
+  { name: 'FCMB', code: '214' },
+  { name: 'GTBank', code: '058' },
+  { name: 'Heritage Bank', code: '030' },
+  { name: 'Keystone Bank', code: '082' },
+  { name: 'Kuda Bank', code: '090267' },
+  { name: 'Moniepoint', code: '50515' },
+  { name: 'Opay', code: '100004' },
+  { name: 'Palmpay', code: '999991' },
+  { name: 'Polaris Bank', code: '076' },
+  { name: 'Providus Bank', code: '101' },
+  { name: 'Stanbic IBTC', code: '221' },
+  { name: 'Sterling Bank', code: '232' },
+  { name: 'UBA', code: '033' },
+  { name: 'Union Bank', code: '032' },
+  { name: 'Unity Bank', code: '215' },
+  { name: 'Wema Bank', code: '035' },
+  { name: 'Zenith Bank', code: '057' },
+];
+
   // 🚀 UNIFIED DATA FETCH ENGINE
   const fetchRegistryData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -203,18 +229,32 @@ export default function SettingsPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Institution</label>
-                        <select 
-                          value={formData.bankName} 
-                          onChange={(e) => setFormData({...formData, bankName: e.target.value})}
-                          className="w-full p-5 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase text-slate-900 outline-none focus:border-blue-600 transition-all"
-                        >
-                          <option value="">Choose Bank</option>
-                          <option value="GTBank">Guaranty Trust Bank</option>
-                          <option value="Zenith">Zenith Bank</option>
-                          <option value="Kuda">Kuda Microfinance</option>
-                          <option value="Opay">Opay</option>
-                          <option value="Palmpay">Palmpay</option>
-                        </select>
+<select
+  value={formData.bankCode || ''}
+  onChange={(e) => {
+    const selectedBank = NIGERIAN_BANKS.find(
+      (bank) => bank.code === e.target.value
+    );
+
+    setFormData({
+      ...formData,
+      bankCode: selectedBank?.code,
+      bankName: selectedBank?.name,
+    });
+  }}
+  className="w-full p-5 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase text-slate-900 outline-none focus:border-blue-600 transition-all"
+>
+  <option value="">Choose Bank</option>
+
+  {NIGERIAN_BANKS.map((bank) => (
+    <option
+      key={bank.code}
+      value={bank.code}
+    >
+      {bank.name}
+    </option>
+  ))}
+</select>
                       </div>
                       <SettingsInput label="Account Number" value={formData.accountNumber} onChange={(v: string) => setFormData({...formData, accountNumber: v})} />
                         <SettingsInput
