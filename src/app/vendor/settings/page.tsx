@@ -212,9 +212,21 @@ export default function SettingsPage() {
                           <option value="GTBank">Guaranty Trust Bank</option>
                           <option value="Zenith">Zenith Bank</option>
                           <option value="Kuda">Kuda Microfinance</option>
+                          <option value="Opay">Opay</option>
+                          <option value="Palmpay">Palmpay</option>
                         </select>
                       </div>
                       <SettingsInput label="Account Number" value={formData.accountNumber} onChange={(v: string) => setFormData({...formData, accountNumber: v})} />
+                        <SettingsInput
+  label="Account Name"
+  value={formData.accountName}
+  onChange={(v: string) =>
+    setFormData({
+      ...formData,
+      accountName: v,
+    })
+  }
+/>
                     </div>
                     <button onClick={() => setIsEditingBank(false)} className="bg-[#1E293B] text-white px-12 py-4 rounded-xl font-black uppercase text-[10px] hover:bg-blue-600 transition-all shadow-xl">Confirm Registry Update</button>
                   </div>
