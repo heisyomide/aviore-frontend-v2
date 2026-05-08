@@ -139,12 +139,38 @@ export default function PayoutsPage() {
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(t.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
-                   <p className={`text-sm font-black italic tracking-tighter ${t.type === 'WITHDRAW' ? 'text-red-500' : 'text-slate-900'}`}>
-                     {t.type === 'WITHDRAW' ? '-' : '+'}₦{t.amount.toLocaleString()}
-                   </p>
-                   <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md ${
-                     t.status === 'COMPLETED' ? 'bg-slate-100 text-slate-500' : 'bg-orange-50 text-orange-600'
-                   }`}>{t.status}</span>
+             <p
+  className={`text-sm font-black italic tracking-tighter ${
+    t.type === 'WITHDRAW'
+      ? 'text-red-500'
+      : 'text-slate-900'
+  }`}
+>
+  {t.type === 'WITHDRAW' ? '-' : '+'}
+  ₦{Math.abs(t.amount).toLocaleString()}
+</p>
+<span
+  className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md ${
+    t.status === 'COMPLETED'
+      ? 'bg-emerald-50 text-emerald-600'
+
+      : t.status === 'PROCESSING'
+      ? 'bg-blue-50 text-blue-600'
+
+      : t.status === 'PENDING'
+      ? 'bg-orange-50 text-orange-600'
+
+      : t.status === 'FAILED'
+      ? 'bg-red-50 text-red-600'
+
+      : t.status === 'REJECTED'
+      ? 'bg-red-100 text-red-700'
+
+      : 'bg-slate-100 text-slate-500'
+  }`}
+>
+  {t.status}
+</span>
                 </div>
               </div>
             ))}
