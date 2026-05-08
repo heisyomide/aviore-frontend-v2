@@ -14,9 +14,16 @@ interface WithdrawalRequest {
   amount: number;
   status: "PENDING" | "COMPLETED" | "REJECTED";
   createdAt: string;
+
+  bankDetails?: {
+    bankName?: string;
+    accountNumber?: string;
+    accountName?: string;
+  };
+
   vendor: {
-    id: string; storeName: string;
-    bankName?: string; accountNumber?: string; accountName?: string;
+    id: string;
+    storeName: string;
   };
 }
 
@@ -213,15 +220,24 @@ export default function AdminPaymentsPage() {
             </div>
             
             <div className="p-6 space-y-5">
-              <DetailBox label="Financial_Institution" value={viewingBank.vendor.bankName} />
+              <DetailBox
+  label="Financial_Institution"
+  value={viewingBank.bankDetails?.bankName}
+/>
               <div className="space-y-1">
                 <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">NUBAN_Account</p>
                 <div className="bg-black border border-zinc-900 p-3 rounded-lg flex justify-between items-center">
-                  <p className="text-lg font-mono font-black text-white tracking-[0.2em]">{viewingBank.vendor.accountNumber || "----------"}</p>
+                  <p className="text-lg font-mono font-black text-white tracking-[0.2em]">{viewingBank.bankDetails?.accountNumber || "----------"}</p>
                   <ShieldCheck size={16} className="text-emerald-500" />
                 </div>
               </div>
-              <DetailBox label="Registry_Identity" value={viewingBank.vendor.accountName || "PENDING_VERIFICATION"} />
+              <DetailBox
+  label="Registry_Identity"
+  value={
+    viewingBank.bankDetails?.accountName ||
+    "PENDING_VERIFICATION"
+  }
+/>
             </div>
 
             <div className="p-4 bg-zinc-900/30 border-t border-zinc-900 flex gap-3">
