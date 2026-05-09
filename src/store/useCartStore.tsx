@@ -190,46 +190,64 @@ export const useCartStore = create<CartState>()(
         showToast: false 
       }),
 
-      syncWithBackend: async () => {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        if (!token || get().isSyncing) return;
+// Replace your syncWithBackend with this version
+syncWithBackend: async () => {
+  if (typeof window === 'undefined') return;
+  const token = localStorage.getItem('token');
+  if (!token || get().isSyncing) return;
 
-        set({ isSyncing: true });
-        try {
-          const { data } = await api.get('/cart');
-          const mapped = (data?.items || []).map((item: any) => ({
-            id: String(item.id),
-productId: String(item.productId),
-            variantId: item.variantId,
-            name: item.product?.title || 'Product',
-            price:
-  Number(item.variant?.price) ||
-  Number(item.price) ||
-  Number(item.product?.price) ||
-  0,
-            image: item.product?.images?.[0]?.imageUrl || '/placeholder.jpg',
-            vendorId: String(item.product?.vendorId || ''),
-            stock:
-  Number(item.variant?.stock) ||
-  Number(item.product?.stock) ||
-  0,
-            quantity: Number(item.quantity) || 1,
-            selected: true,
-            isOutOfStock: Number(item.product?.stock) <= 0,
-            color: item.color,
-            size: item.size,
-          }));
+  set({ isSyncing: true });
+  try {
+    const { data } = await api.get('/cart');
+    
+    // Using a more robust mapping to ensure no zeros
+    const mapped = (data?.items || []).map((item: any) => {
+      const product = item.product;
+      const variants = product?.variants || [];
 
-          set((state) => ({
-  items: mapped.length ? mapped : state.items,
-}));
-          get().calculateTotals();
-        } catch (err) {
-          console.error("Cart sync failed", err);
-        } finally {
-          set({ isSyncing: false });
-        }
-      },
+      // Look for the CHEAPEST variant price, fallback to product price
+      const variantPrices = variants
+        .map((v: any) => Number(v?.price) || 0)
+        .filter((p: number) => p > 0);
+
+      const calculatedPrice = variantPrices.length > 0
+        ? Math.min(...variantPrices)
+        : Number(product?.price || 0);
+
+      // Sum all variant stock
+      const totalStock = variants.length > 0
+        ? variants.reduce((sum: number, v: any) => sum + (Number(v?.stock) || 0), 0)
+        : Number(product?.stock || 0);
+
+      return {
+        id: String(item.id),
+        productId: String(item.productId),
+        variantId: item.variantId,
+        name: product?.title || 'Product Name',
+        price: calculatedPrice || 0,
+        image: product?.images?.[0]?.imageUrl || '/placeholder.jpg',
+        vendorId: String(product?.vendorId || ''),
+        stock: totalStock,
+        quantity: Number(item.quantity) || 1,
+        selected: true,
+        isOutOfStock: totalStock <= 0,
+        color: item.color,
+        size: item.size,
+      };
+    });
+
+    // Only update if we actually got data back to prevent flashing zeros
+    if (mapped.length > 0) {
+      set({ items: mapped });
+    }
+    
+    get().calculateTotals();
+  } catch (err) {
+    console.error("Cart sync failed:", err);
+  } finally {
+    set({ isSyncing: false });
+  }
+},
     }),
 
     {
