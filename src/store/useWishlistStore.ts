@@ -22,7 +22,14 @@ interface WishlistStore {
 
   initWishlist: () => Promise<void>;
   fetchWishlist: () => Promise<void>;
-  toggleWishlist: (item: Omit<WishlistItem, 'id'> & { id: string }) => Promise<void>;
+  toggleWishlist: (item: {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  color?: string;
+  size?: string;
+}) => Promise<void>;
   isWishlisted: (id: string) => boolean;
   clearWishlist: () => void;
 }
@@ -77,7 +84,7 @@ toggleWishlist: async (item) => {
   );
 
   const safeItem: WishlistItem = {
-    id: String(item.id),
+    id: crypto.randomUUID(),
     productId: String(item.id),
     name: item.name || 'Product',
     price: Number(item.price) || 0,
@@ -86,7 +93,7 @@ toggleWishlist: async (item) => {
     size: item.size,
   };
 
-  // Optimistic update
+  // optimistic update
   set({
     items: exists
       ? items.filter((p) => p.productId !== item.id)
@@ -96,13 +103,15 @@ toggleWishlist: async (item) => {
   try {
     if (exists) {
       await api.delete(`/wishlist/${item.id}`);
-
       toast.success('Removed from wishlist');
     } else {
       await api.post(`/wishlist/${item.id}`);
-
       toast.success('Added to wishlist');
     }
+
+    // sync real DB state
+    await get().fetchWishlist();
+
   } catch (error) {
     console.error(error);
 

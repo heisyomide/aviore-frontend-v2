@@ -136,45 +136,30 @@ const userInitials = useMemo(() => {
 </header>
 
       {/* Saved Items Section */}
- <section className="mt-4 bg-white py-8">
-  <div className="flex items-center justify-between px-5 mb-6">
-    <div className="flex items-center gap-2">
-      <div className="w-1.5 h-1.5 rounded-full bg-[#A4143D] animate-pulse" />
-      <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
-        Saved <span className="text-zinc-300">Artifacts</span>
-      </h2>
-    </div>
-    
-    <Link 
-      href="/wishlist" 
-      className="text-[10px] font-black uppercase text-[#A4143D] hover:text-black transition-colors flex items-center gap-1 group"
-    >
-      View Registry 
-      <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-    </Link>
-  </div>
-
-  {wishlistItems.length > 0 ? (
-    <div className="flex gap-5 overflow-x-auto px-5 pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory">
-      {wishlistItems.map((item: any) => (
-        <div key={item.id} className="snap-start shrink-0">
-          <SavedItemCard item={item} />
+      <section className="mt-4 bg-white py-6">
+        <div className="flex items-center justify-between px-4 mb-5">
+          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
+            Saved <span className="text-zinc-300">Products</span>
+          </h2>
+          <Link href="/wishlist" className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1">
+            See all <ChevronRight size={12} />
+          </Link>
         </div>
-      ))}
-      {/* Decorative spacer for the end of horizontal scroll */}
-      <div className="shrink-0 w-1" />
-    </div>
-  ) : (
-    <div className="px-5">
-      <div className="py-10 border border-zinc-100 bg-zinc-50/50 rounded-3xl text-center group">
-        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] italic mb-1 group-hover:text-zinc-500 transition-colors">
-          Your Curated Collection is Empty
-        </p>
-        <div className="w-10 h-[1px] bg-zinc-200 mx-auto" />
-      </div>
-    </div>
-  )}
-</section>
+
+        {wishlistItems.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
+            {wishlistItems.map((item: any) => (
+              <SavedItemCard key={item.id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="px-4">
+             <div className="py-6 border-2 border-dashed border-gray-100 rounded-2xl text-center">
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">No Saved Items</p>
+             </div>
+          </div>
+        )}
+      </section>
 
       {/* Recent Manifests Section */}
       <section className="mt-4 bg-white px-4 py-6">

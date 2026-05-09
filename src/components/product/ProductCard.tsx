@@ -136,7 +136,7 @@ const data = useMemo(() => {
 
     toggleWishlist({
       id: data.id,
-      productId: data.id,
+      
       name: data.name,
       price: data.price,
       image: data.image,

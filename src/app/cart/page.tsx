@@ -187,7 +187,9 @@ function CartItemRow({ item, onToggle, onRemove, onUpdate }: any) {
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-gray-900 mb-2 truncate">{item.name}</h3>
             <p className="text-xs text-gray-400 mb-4 uppercase font-mono">
-              ID: {item.id.slice(-8)}
+              ID: {String(item?.id || '')
+  .slice(-8)
+  .toUpperCase()}
             </p>
             <div className="flex items-center gap-3">
               <div className="flex items-center border border-gray-200 rounded-lg bg-white overflow-hidden">
