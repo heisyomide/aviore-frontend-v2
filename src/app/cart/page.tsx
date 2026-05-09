@@ -48,7 +48,7 @@ export default function CartPage() {
     updateQuantity,
   } = useCartStore();
 
-  if (!hydrated) return null;
+  
   
   const availableItems = useMemo(
     () => items.filter((item) => !item.isOutOfStock),
@@ -65,7 +65,7 @@ export default function CartPage() {
     availableItems.every((item) => item.selected);
 
   const isProceedDisabled = selectedItems.length === 0;
-
+if (!hydrated) return null;
   useEffect(() => {
     const token =
       typeof window !== 'undefined'

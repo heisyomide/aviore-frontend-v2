@@ -67,43 +67,51 @@ const safeItems: WishlistItem[] = data.map((item: any) => ({
         }
       },
 
-      toggleWishlist: async (item) => {
-        if (!item?.id) return;
+toggleWishlist: async (item) => {
+  if (!item?.id) return;
 
-        const { items } = get();
-       const exists = items.some((p) => p.productId === item.id);
+  const { items } = get();
 
-        const safeItem: WishlistItem = {
-          id: String(item.id),
-          name: item.name || 'Product',
-          price: Number(item.price) || 0,
-          image: item.image || '/placeholder.jpg',
-          color: item.color,
-          size: item.size,
-          productId: ''
-        };
+  const exists = items.some(
+    (p) => p.productId === item.id
+  );
 
-        // Optimistic Update
-set({
-  items: exists
-    ? items.filter((p) => p.productId !== item.id)
-    : [...items, safeItem],
-});
+  const safeItem: WishlistItem = {
+    id: String(item.id),
+    productId: String(item.id),
+    name: item.name || 'Product',
+    price: Number(item.price) || 0,
+    image: item.image || '/placeholder.jpg',
+    color: item.color,
+    size: item.size,
+  };
 
-        try {
-          if (exists) {
-            await api.delete(`/wishlist/${item.productId}`);
-            toast.success('Removed from wishlist');
-          } else {
-            await api.post('/wishlist', { productId: item.id });
-            toast.success('Added to wishlist');
-          }
-        } catch (error) {
-          // Rollback on failure
-          set({ items });
-          toast.error('Action failed. Please try again.');
-        }
-      },
+  // Optimistic update
+  set({
+    items: exists
+      ? items.filter((p) => p.productId !== item.id)
+      : [...items, safeItem],
+  });
+
+  try {
+    if (exists) {
+      await api.delete(`/wishlist/${item.id}`);
+
+      toast.success('Removed from wishlist');
+    } else {
+      await api.post(`/wishlist/${item.id}`);
+
+      toast.success('Added to wishlist');
+    }
+  } catch (error) {
+    console.error(error);
+
+    // rollback
+    set({ items });
+
+    toast.error('Action failed. Please try again.');
+  }
+},
 
       isWishlisted: (id: string) => {
         if (!id) return false;
