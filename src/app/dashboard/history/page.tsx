@@ -69,7 +69,6 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FDFCFB]">
-        <Navbar />
         <Container className="pt-32 text-center">
           <div className="w-10 h-10 border-2 border-[#A4143D] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Retrieving Registry...</p>
@@ -80,7 +79,6 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
-      <Navbar />
       
       <Container className="pt-12 pb-24">
         {/* Header Section */}
