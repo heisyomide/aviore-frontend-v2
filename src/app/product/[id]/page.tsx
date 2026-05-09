@@ -83,6 +83,34 @@ useEffect(() => {
   fetchFollowState();
 }, [vendor?.id]);
 
+useEffect(() => {
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('token')
+      : null;
+
+  // only logged in users
+  if (!token) return;
+
+  // must have product id
+  if (!product?.id) return;
+
+  const recordHistory = async () => {
+    try {
+      await api.post(
+        `/user/history/${product.id}`
+      );
+    } catch (error) {
+      console.error(
+        'History record failed:',
+        error
+      );
+    }
+  };
+
+  recordHistory();
+}, [product?.id]);
+
 
   // 🛒 HANDLERS
   const handleAddToCart = useCallback(async () => {

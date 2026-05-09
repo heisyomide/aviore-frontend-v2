@@ -279,8 +279,8 @@ function PaymentTrustSection() {
         <ShieldCheck size={16} />
         <span className="text-[10px] font-bold uppercase tracking-widest">Secure Checkout</span>
       </div>
-      <div className="flex justify-center gap-2 flex-wrap opacity-50">
-        {['Visa', 'Mastercard', 'Verve', 'Paystack'].map((card) => (
+      <div className="flex justify-center text-zinc-900 gap-2 flex-wrap opacity-50">
+        {['Visa', 'Mastercard', 'Verve', 'Flutterwave'].map((card) => (
           <span key={card} className="px-2 py-1 border border-gray-200 rounded text-[10px] font-bold uppercase">{card}</span>
         ))}
       </div>
