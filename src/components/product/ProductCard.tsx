@@ -117,6 +117,7 @@ const data = useMemo(() => {
     addItem({
       id: data.id,
       name: data.name,
+      productId: data.id,
       price: data.price,
       image: data.image,
       vendorId: String(product?.vendorId || ''),
@@ -135,6 +136,7 @@ const data = useMemo(() => {
 
     toggleWishlist({
       id: data.id,
+      productId: data.id,
       name: data.name,
       price: data.price,
       image: data.image,

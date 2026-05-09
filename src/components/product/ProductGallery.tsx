@@ -53,6 +53,7 @@ export function ProductGallery({
   const handleWishlist = () => {
     toggleWishlist({
       id: productId,
+      productId: productId,
       name: title,
       price: price,                    // Now using real price
       image: currentImage,
