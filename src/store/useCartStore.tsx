@@ -6,6 +6,7 @@ import { api } from '@/src/lib/axios';
 
 export interface CartItem {
   id: string;
+  productId: string;
   variantId?: string;
   name: string;
   price: number;
@@ -114,7 +115,7 @@ export const useCartStore = create<CartState>()(
         if (token) {
           try {
             await api.post('/cart/add', {
-              productId: incomingItem.id,
+              productId: incomingItem.productId,
               variantId: incomingItem.variantId,
               quantity: incomingItem.quantity || 1,
             });
@@ -197,13 +198,21 @@ export const useCartStore = create<CartState>()(
         try {
           const { data } = await api.get('/cart');
           const mapped = (data?.items || []).map((item: any) => ({
-            id: String(item.productId || item.id),
+            id: String(item.id),
+productId: String(item.productId),
             variantId: item.variantId,
             name: item.product?.title || 'Product',
-            price: Number(item.price || item.product?.price) || 0,
+            price:
+  Number(item.variant?.price) ||
+  Number(item.price) ||
+  Number(item.product?.price) ||
+  0,
             image: item.product?.images?.[0]?.imageUrl || '/placeholder.jpg',
             vendorId: String(item.product?.vendorId || ''),
-            stock: Number(item.product?.stock) || 0,
+            stock:
+  Number(item.variant?.stock) ||
+  Number(item.product?.stock) ||
+  0,
             quantity: Number(item.quantity) || 1,
             selected: true,
             isOutOfStock: Number(item.product?.stock) <= 0,
@@ -211,7 +220,9 @@ export const useCartStore = create<CartState>()(
             size: item.size,
           }));
 
-          set({ items: mapped });
+          set((state) => ({
+  items: mapped.length ? mapped : state.items,
+}));
           get().calculateTotals();
         } catch (err) {
           console.error("Cart sync failed", err);

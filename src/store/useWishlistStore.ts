@@ -6,7 +6,8 @@ import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
 
 export interface WishlistItem {
-  id: string;
+  id: string;         // wishlist row id
+  productId: string;  // product id
   name: string;
   price: number;
   image: string;
@@ -47,14 +48,15 @@ export const useWishlistStore = create<WishlistStore>()(
 
           const data = Array.isArray(res.data) ? res.data : res.data?.items || [];
 
-          const safeItems: WishlistItem[] = data.map((item: any) => ({
-            id: String(item.id || item.productId),
-            name: item.name || item.product?.title || 'Product',
-            price: Number(item.price || item.product?.price) || 0,
-            image: item.image || item.product?.images?.[0]?.imageUrl || '/placeholder.jpg',
-            color: item.color,
-            size: item.size,
-          }));
+const safeItems: WishlistItem[] = data.map((item: any) => ({
+  id: String(item.id),          // wishlist row ID
+  productId: String(item.productId), // product ID
+  name: item.product?.title || 'Product',
+  price: Number(item.product?.price) || 0,
+  image: item.product?.images?.[0]?.imageUrl || '/placeholder.jpg',
+  color: item.color,
+  size: item.size,
+}));
 
           set({ items: safeItems });
         } catch (error) {
@@ -69,7 +71,7 @@ export const useWishlistStore = create<WishlistStore>()(
         if (!item?.id) return;
 
         const { items } = get();
-        const exists = items.some((p) => p.id === item.id);
+       const exists = items.some((p) => p.productId === item.id);
 
         const safeItem: WishlistItem = {
           id: String(item.id),
@@ -78,18 +80,19 @@ export const useWishlistStore = create<WishlistStore>()(
           image: item.image || '/placeholder.jpg',
           color: item.color,
           size: item.size,
+          productId: ''
         };
 
         // Optimistic Update
-        set({
-          items: exists
-            ? items.filter((p) => p.id !== item.id)
-            : [...items, safeItem],
-        });
+set({
+  items: exists
+    ? items.filter((p) => p.productId !== item.id)
+    : [...items, safeItem],
+});
 
         try {
           if (exists) {
-            await api.delete(`/wishlist/${item.id}`);
+            await api.delete(`/wishlist/${item.productId}`);
             toast.success('Removed from wishlist');
           } else {
             await api.post('/wishlist', { productId: item.id });
@@ -104,7 +107,9 @@ export const useWishlistStore = create<WishlistStore>()(
 
       isWishlisted: (id: string) => {
         if (!id) return false;
-        return get().items.some((p) => p.id === id);
+        return get().items.some(
+  (p) => p.productId === id
+);
       },
 
       clearWishlist: () => set({ items: [], initialized: false }),

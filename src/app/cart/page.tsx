@@ -36,6 +36,8 @@ const itemVariants: Variants = {
 
 export default function CartPage() {
   const router = useRouter();
+  const hydrated = useCartStore((s) => s._hasHydrated);
+  
 
   const {
     items,
@@ -46,6 +48,8 @@ export default function CartPage() {
     updateQuantity,
   } = useCartStore();
 
+  if (!hydrated) return null;
+  
   const availableItems = useMemo(
     () => items.filter((item) => !item.isOutOfStock),
     [items]
