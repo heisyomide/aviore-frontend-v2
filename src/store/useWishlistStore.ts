@@ -5,8 +5,7 @@ import { persist } from 'zustand/middleware';
 import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
 
-export interface WishlistItem {
-  id: string;         // wishlist row id
+export interface WishlistItem {     // wishlist row id
   productId: string;  // product id
   name: string;
   price: number;
@@ -74,42 +73,43 @@ const safeItems: WishlistItem[] = data.map((item: any) => ({
         }
       },
 
-toggleWishlist: async (item) => {
-  if (!item?.id) return;
+toggleWishlist: async (product) => {
+  if (!product?.id) return;
 
   const { items } = get();
 
   const exists = items.some(
-    (p) => p.productId === item.id
+    (p) => p.productId === product.id
   );
 
-  const safeItem: WishlistItem = {
-    id: crypto.randomUUID(),
-    productId: String(item.id),
-    name: item.name || 'Product',
-    price: Number(item.price) || 0,
-    image: item.image || '/placeholder.jpg',
-    color: item.color,
-    size: item.size,
+  const optimisticItem: WishlistItem = {
+    productId: product.id,
+    name: product.name || 'Product',
+    price: Number(product.price) || 0,
+    image: product.image || '/placeholder.jpg',
+    color: product.color,
+    size: product.size,
   };
 
-  // optimistic update
+  // optimistic UI
   set({
     items: exists
-      ? items.filter((p) => p.productId !== item.id)
-      : [...items, safeItem],
+      ? items.filter(
+          (p) => p.productId !== product.id
+        )
+      : [...items, optimisticItem],
   });
 
   try {
     if (exists) {
-      await api.delete(`/wishlist/${item.id}`);
+      await api.delete(`/wishlist/${product.id}`);
       toast.success('Removed from wishlist');
     } else {
-      await api.post(`/wishlist/${item.id}`);
+      await api.post(`/wishlist/${product.id}`);
       toast.success('Added to wishlist');
     }
 
-    // sync real DB state
+    // IMPORTANT
     await get().fetchWishlist();
 
   } catch (error) {
@@ -118,10 +118,9 @@ toggleWishlist: async (item) => {
     // rollback
     set({ items });
 
-    toast.error('Action failed. Please try again.');
+    toast.error('Wishlist sync failed');
   }
 },
-
       isWishlisted: (id: string) => {
         if (!id) return false;
         return get().items.some(
