@@ -105,20 +105,31 @@ useEffect(() => {
                     '/placeholder.jpg';
 
 addItem({
-      id: product.id,
-      name: product.title,
-      price: currentPrice,                    // ← Use dynamic price
-      image: selectedVariant.images?.[0]?.imageUrl || 
-             product.images?.[0]?.imageUrl || 
-             '/placeholder.jpg',
-      vendorId: product.vendorId,
-      stock: selectedVariant.stock,
-      quantity: qty,
-      color: selectedVariant.color,
-      size: selectedVariant.size,
-      variantId: selectedVariant.id,          // Important for uniqueness
-      variant: selectedVariant,
-    });
+  id: product.id,
+
+  // ✅ REQUIRED
+  productId: product.id,
+
+  name: product.title,
+  price: currentPrice,
+
+  image:
+    selectedVariant.images?.[0]?.imageUrl ||
+    product.images?.[0]?.imageUrl ||
+    '/placeholder.jpg',
+
+  vendorId: product.vendorId,
+  stock: selectedVariant.stock,
+  quantity: qty,
+
+  color: selectedVariant.color,
+  size: selectedVariant.size,
+
+  // ✅ Variant uniqueness
+  variantId: selectedVariant.id,
+
+  variant: selectedVariant,
+});
   }, [product, selectedVariant, qty, currentPrice, addItem]);
 
  const handleFollow = async () => {
