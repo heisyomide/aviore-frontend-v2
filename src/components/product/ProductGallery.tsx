@@ -71,6 +71,7 @@ const resolvedImages = useMemo(() => {
   return [...new Set(normalized)];
 }, [images, apiBase]);
 
+
   useEffect(() => {
     if (
       activeImg >= resolvedImages.length

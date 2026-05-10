@@ -67,13 +67,6 @@ export function useProductData(productId: string): UseProductDataReturn {
 
         // 🔥 FINAL SAFE VARIANT NORMALIZATION (bypassing strict typing)
 // inside loadData()
-
-if (cleanProduct?.variants?.length > 0) {
-  const firstVariant = cleanProduct.variants[0];
-
-  setSelectedVariant(firstVariant);
-  setSelectedSize(firstVariant.size || '');
-}
       }
     } catch (err: any) {
       console.error("PRODUCT_HOOK_ERROR:", err);

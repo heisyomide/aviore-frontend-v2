@@ -533,13 +533,13 @@ onSelectVariant={(v) => {
                 selectedVariant={
                   selectedVariant
                 }
-                onSelectVariant={(v) => {
-                  setSelectedVariant(v);
+onSelectVariant={(v) => {
+  setHasSelectedVariant(true);
 
-                  setSelectedSize(
-                    v.size
-                  );
-                }}
+  setSelectedVariant(v);
+
+  setSelectedSize(v.size);
+}}
               />
 
               {/* ACTIONS */}
