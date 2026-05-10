@@ -101,9 +101,6 @@ export default function ProductDetailsPage() {
    * user selects a variant with images.
    */
 
-// src/app/product/[id]/page.tsx
-
-// src/app/product/[id]/page.tsx
 
 const galleryImages = useMemo(() => {
   if (!product) return [];
@@ -117,17 +114,18 @@ const galleryImages = useMemo(() => {
   // 2. Normalize Base Images
   const baseImages = (product.images || []).map(getUrl).filter(Boolean);
 
-  // 3. If no variant selected, just show main product images
-  if (!selectedVariant) return baseImages;
+  // 3. Normalize Variant Images (if any)
+  const variantImages = (selectedVariant?.images || []).map(getUrl).filter(Boolean);
 
-  // 4. Normalize Variant Images
-  const variantImages = (selectedVariant.images || []).map(getUrl).filter(Boolean);
-
-  // 5. Combine: Variant images FIRST, then base images
+  // 4. Logic: If we have variant images, show them first. 
+  // Then append base images so the gallery isn't empty.
   const combined = [...variantImages, ...baseImages];
   
-  // 6. Final Clean: Remove duplicates
-  return [...new Set(combined)];
+  // 5. If for some reason everything is empty, return empty array 
+  // (ProductGallery will handle the placeholder)
+  const finalImages = [...new Set(combined)];
+
+  return finalImages.length > 0 ? finalImages : baseImages;
 }, [product, selectedVariant]);
 
   // =========================

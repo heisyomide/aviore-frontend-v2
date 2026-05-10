@@ -19,63 +19,40 @@ export function ProductGallery({
   price,
 }: GalleryProps) {
   const [activeImg, setActiveImg] = useState(0);
-
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
-
-  const { toggleWishlist, isWishlisted } =
-    useWishlistStore();
-
+  const { toggleWishlist, isWishlisted } = useWishlistStore();
   const isLiked = isWishlisted(productId);
 
-// src/components/product/ProductGallery.tsx
+  const resolvedImages = useMemo(() => {
+    const list = Array.isArray(images) ? images : [];
+    if (!list.length) return ['/placeholder.jpg'];
 
-const resolvedImages = useMemo(() => {
-  const list = Array.isArray(images) ? images : [];
+    const normalized = list
+      .map((img) => {
+        if (!img) return null;
+        const path = typeof img === 'string' ? img : (img?.imageUrl || img?.url || '');
+        if (!path) return null;
 
-  if (!list.length) return ['/placeholder.jpg'];
+        // 1. If it's a full URL (Cloudinary/S3), return as is
+        if (path.startsWith('http')) return path;
 
-  const normalized = list
-    .map((img) => {
-      if (!img) return null;
+        // 2. Handle absolute local paths
+        if (path.startsWith('/uploads')) return `${apiBase}${path}`;
 
-      // Extract the path string
-      let path = typeof img === 'string' ? img : (img?.imageUrl || img?.url || '');
-      if (!path) return null;
+        // 3. Fallback for relative filenames
+        return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+      })
+      .filter((img): img is string => Boolean(img));
 
-      // Return full URLs as is
-      if (path.startsWith('http')) return path;
+    return [...new Set(normalized)];
+  }, [images, apiBase]);
 
-      // Handle relative uploads
-      if (path.startsWith('/uploads')) {
-        return `${apiBase}${path}`;
-      }
+  // Reset to first image whenever the source list changes (e.g., variant selected)
+  useEffect(() => {
+    setActiveImg(0);
+  }, [images]);
 
-      // Handle plain filenames (standard for your backend)
-      return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
-    })
-    .filter((img): img is string => Boolean(img));
-
-  return [...new Set(normalized)];
-}, [images, apiBase]);
-
-
-useEffect(() => {
-  setActiveImg(0);
-}, [images]);
-
-
-  const currentImage =
-    resolvedImages[activeImg] ||
-    '/placeholder.jpg';
-
-  const handleWishlist = () => {
-    toggleWishlist({
-      id: productId,
-      name: title,
-      price,
-      image: currentImage,
-    });
-  };
+  const currentImage = resolvedImages[activeImg] || '/placeholder.jpg';
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
@@ -83,20 +60,13 @@ useEffect(() => {
       <div className="order-2 lg:order-1 flex lg:flex-col gap-3 overflow-x-auto lg:overflow-y-auto no-scrollbar lg:w-24">
         {resolvedImages.map((img, idx) => (
           <button
-            key={idx}
+            key={`${img}-${idx}`}
             onClick={() => setActiveImg(idx)}
             className={`relative w-16 h-20 lg:w-20 lg:h-24 overflow-hidden rounded-2xl border transition-all shrink-0 ${
-              activeImg === idx
-                ? 'border-black'
-                : 'border-zinc-100 opacity-60'
+              activeImg === idx ? 'border-black' : 'border-zinc-100 opacity-60'
             }`}
           >
-            <Image
-              src={img}
-              alt=""
-              fill
-              className="object-cover"
-            />
+            <Image src={img} alt={`${title} thumb ${idx}`} fill className="object-cover" />
           </button>
         ))}
       </div>
@@ -115,30 +85,19 @@ useEffect(() => {
         {/* FLOATING ACTIONS */}
         <div className="absolute top-4 right-4 flex flex-col gap-3">
           <button
-            onClick={handleWishlist}
+            onClick={() => toggleWishlist({ id: productId, name: title, price, image: currentImage })}
             className="h-11 w-11 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
           >
-            <Heart
-              size={18}
-              className={
-                isLiked
-                  ? 'fill-red-500 text-red-500'
-                  : 'text-black'
-              }
-            />
+            <Heart size={18} className={isLiked ? 'fill-red-500 text-red-500' : 'text-black'} />
           </button>
-
-          <button
-            className="h-11 w-11 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
-          >
+          <button className="h-11 w-11 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md">
             <Share2 size={18} />
           </button>
         </div>
 
         {/* IMAGE COUNT */}
         <div className="absolute bottom-4 right-4 px-3 py-1 rounded-full bg-black/70 text-white text-xs font-bold">
-          {activeImg + 1}/
-          {resolvedImages.length}
+          {activeImg + 1}/{resolvedImages.length}
         </div>
       </div>
     </div>
