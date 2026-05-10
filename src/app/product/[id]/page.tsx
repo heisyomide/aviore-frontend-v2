@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from 'react';
 
 import {
@@ -100,10 +101,26 @@ export default function ProductDetailsPage() {
    * user selects a variant with images.
    */
 
-const galleryImages =
-  selectedVariant?.images?.length
-    ? selectedVariant.images
-    : product?.images || [];
+// src/app/product/[id]/page.tsx
+
+const galleryImages = useMemo(() => {
+  if (!product) return [];
+  
+  // If no variant selected, just show main product images
+  if (!selectedVariant) return product.images || [];
+
+  // If variant selected, put its images FIRST, then the rest of the product images
+  const combined = [...(selectedVariant.images || []), ...(product.images || [])];
+  
+  // Remove duplicates based on image URL
+  const seen = new Set();
+  return combined.filter(img => {
+    const url = typeof img === 'string' ? img : img?.imageUrl;
+    if (!url || seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
+}, [product, selectedVariant]);
 
   // =========================
   // EFFECTS

@@ -32,6 +32,8 @@ export function useProductData(productId: string): UseProductDataReturn {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // ✅ Blueprint: Start as null. No auto-selection.
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedSize, setSelectedSize] = useState('');
   const [qty, setQty] = useState(1);
@@ -45,28 +47,37 @@ export function useProductData(productId: string): UseProductDataReturn {
     setLoading(true);
     setError(null);
 
+    // Reset interaction state when switching products
     setQty(1);
     setSelectedSize('');
     setSelectedVariant(null);
 
     try {
+      // 1. Fetch main product
       const { data: rawProduct } = await api.get(`/products/${productId}`);
       const cleanProduct = normalizeProduct(rawProduct);
 
+      if (!cleanProduct) throw new Error("Product normalization failed");
+
+      // 2. Fetch recommendations (silent fail to allow product view)
       const rRes = await api.get('/products', { 
         params: { category: cleanProduct?.category?.slug, limit: 8 } 
       }).catch(() => ({ data: { data: [] } }));
 
-      if (currentIdRef.current === productId && cleanProduct) {
+      // 3. Update State
+      if (currentIdRef.current === productId) {
         setData({
           product: cleanProduct,
           vendor: cleanProduct.vendor,
           recommended: (rRes.data?.data || rRes.data || [])
             .filter((p: any) => p.id !== productId),
         });
-
-        // 🔥 FINAL SAFE VARIANT NORMALIZATION (bypassing strict typing)
-// inside loadData()
+        
+        /**
+         * 🚨 GRANDMASTER PROTOCOL: 
+         * We REMOVED the auto-selection of the first variant here.
+         * The page now initializes with product.images.
+         */
       }
     } catch (err: any) {
       console.error("PRODUCT_HOOK_ERROR:", err);
