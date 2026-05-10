@@ -1,32 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { ProductCard } from '../../components/product/ProductCard';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { TrendingUp, Trophy, Award, Flame } from 'lucide-react';
 import { Navbar } from '@/src/components/navbar/Navbar';
-
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  images: { url: string }[];
-  averageRating: number;
-  reviewCount: number;
-  vendor: { storeName: string };
-  category?: { name: string };
-}
+import { normalizeProduct } from '@/src/utils/normalizer';
 
 const BestSellersPage = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [rawProducts, setRawProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBestSellers = async () => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/storefront/best-sellers`);
-        setProducts(response.data);
+        setRawProducts(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("🔥 Bestsellers Load Error:", error);
       } finally {
@@ -36,12 +26,23 @@ const BestSellersPage = () => {
     fetchBestSellers();
   }, []);
 
+  /**
+   * ✅ GRANDMASTER FIX: 
+   * Use .flatMap or a boolean filter to ensure TypeScript knows the array 
+   * only contains valid Product objects and zero nulls.
+   */
+  const products = useMemo(() => {
+    return rawProducts
+      .map(p => normalizeProduct(p))
+      .filter((p): p is NonNullable<ReturnType<typeof normalizeProduct>> => p !== null);
+  }, [rawProducts]);
+
   if (loading) return <BestsellersLoadingState />;
 
   return (
     <div className="bg-[#fcfcfc] min-h-screen pb-20">
-       <Navbar />
-      {/* 🚀 SECTION 1: HEADER & STATS */}
+      <Navbar />
+      
       <section className="bg-white border-b border-gray-100 mb-12">
         <div className="max-w-7xl mx-auto px-6 py-16 text-center lg:text-left lg:flex items-center justify-between">
           <div className="lg:max-w-2xl">
@@ -50,7 +51,7 @@ const BestSellersPage = () => {
               <span className="uppercase">Real-Time Rankings</span>
             </div>
             <h1 className="text-5xl lg:text-6xl font-black text-gray-900 leading-tight mb-6">
-              Aviorè <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">Bestsellers</span>
+              Aviorè <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-600 to-red-600">Bestsellers</span>
             </h1>
             <p className="text-gray-500 text-lg lg:text-xl font-medium leading-relaxed">
               Based on the last 24 hours of sales across Nigeria. These are the pieces moving the culture right now.
@@ -62,7 +63,7 @@ const BestSellersPage = () => {
               <p className="text-2xl font-black text-gray-900">Top 100</p>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Live Ranking</p>
             </div>
-            <div className="w-[1px] h-12 bg-gray-200" />
+            <div className="w-px h-12 bg-gray-200" /> {/* Updated w-[1px] to w-px */}
             <div className="text-center">
               <p className="text-2xl font-black text-gray-900">Hourly</p>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Data Updates</p>
@@ -77,18 +78,17 @@ const BestSellersPage = () => {
             {products.map((product, index) => (
               <div key={product.id} className="relative group">
                 
-                {/* 🏅 RANKING LOGIC */}
                 <div className="absolute -top-4 -left-4 z-20 pointer-events-none">
                   {index === 0 ? (
-                    <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-3 rounded-2xl shadow-xl ring-4 ring-white">
+                    <div className="bg-linear-to-br from-yellow-400 to-orange-500 p-3 rounded-2xl shadow-xl ring-4 ring-white">
                       <Trophy className="text-white" size={24} />
                     </div>
                   ) : index === 1 ? (
-                    <div className="bg-gradient-to-br from-gray-300 to-gray-500 p-2.5 rounded-xl shadow-lg ring-4 ring-white">
+                    <div className="bg-linear-to-br from-gray-300 to-gray-500 p-2.5 rounded-xl shadow-lg ring-4 ring-white">
                       <Award className="text-white" size={20} />
                     </div>
                   ) : index === 2 ? (
-                    <div className="bg-gradient-to-br from-orange-400 to-red-600 p-2.5 rounded-xl shadow-lg ring-4 ring-white">
+                    <div className="bg-linear-to-br from-orange-400 to-red-600 p-2.5 rounded-xl shadow-lg ring-4 ring-white">
                       <Flame className="text-white" size={20} />
                     </div>
                   ) : (
@@ -98,7 +98,6 @@ const BestSellersPage = () => {
                   )}
                 </div>
 
-                {/* THE CARD */}
                 <div className="transition-transform duration-300 group-hover:-translate-y-2">
                   <ProductCard product={product} />
                 </div>
@@ -115,7 +114,6 @@ const BestSellersPage = () => {
   );
 };
 
-// 🧊 Clean Shimmer Loading State
 const BestsellersLoadingState = () => (
   <div className="max-w-7xl mx-auto px-6 py-20">
     <div className="space-y-4 mb-16">
@@ -125,7 +123,7 @@ const BestsellersLoadingState = () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-10">
       {[...Array(8)].map((_, i) => (
         <div key={i} className="space-y-4">
-          <Skeleton className="h-[400px] w-full rounded-[30px]" />
+          <Skeleton className="h-100 w-full rounded-[30px]" /> {/* Updated h-[400px] to h-100 */}
           <Skeleton className="h-4 w-1/2" />
           <Skeleton className="h-6 w-3/4" />
         </div>

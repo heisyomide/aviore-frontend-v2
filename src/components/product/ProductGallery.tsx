@@ -129,7 +129,7 @@ useEffect(() => {
           </button>
 
           <button
-            className="h-11 w-11 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
+            className="h-11 w-11 rounded-full text-zinc-900 bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
           >
             <Share2 size={18} />
           </button>
