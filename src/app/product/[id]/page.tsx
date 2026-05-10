@@ -106,7 +106,11 @@ const galleryImages =
   hasSelectedVariant &&
   selectedVariant?.images?.length > 0
     ? selectedVariant.images
-    : product?.images || [];
+    : (
+        product?.images?.length
+          ? product.images
+          : selectedVariant?.images || []
+      );
 
   // =========================
   // EFFECTS

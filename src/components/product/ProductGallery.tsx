@@ -46,13 +46,17 @@ export function ProductGallery({
 
         if (!path) return null;
 
-        if (path.startsWith('http'))
-          return path;
+if (path.startsWith('http')) {
+  return path;
+}
 
-        const cleanPath =
-          path.replace(/^\//, '');
+if (path.startsWith('/uploads')) {
+  return `${apiBase}${path}`;
+}
 
-        return `${apiBase}/uploads/${cleanPath}`;
+const cleanPath = path.replace(/^\//, '');
+
+return `${apiBase}/uploads/${cleanPath}`;
       })
       .filter(Boolean);
   }, [images, apiBase]);
