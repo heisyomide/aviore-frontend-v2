@@ -102,15 +102,28 @@ export default function ProductDetailsPage() {
    * user selects a variant with images.
    */
 
-const galleryImages =
-  hasSelectedVariant &&
-  selectedVariant?.images?.length > 0
-    ? selectedVariant.images
-    : (
-        product?.images?.length
-          ? product.images
-          : selectedVariant?.images || []
-      );
+const galleryImages = hasSelectedVariant
+  ? [
+      ...(selectedVariant?.images || []),
+      ...(product?.images || []),
+    ].filter(
+      (img, index, self) =>
+        index ===
+        self.findIndex((i) => {
+          const url =
+            typeof i === 'string'
+              ? i
+              : i?.imageUrl;
+
+          const current =
+            typeof img === 'string'
+              ? img
+              : img?.imageUrl;
+
+          return url === current;
+        })
+    )
+  : product?.images || [];
 
   // =========================
   // EFFECTS
