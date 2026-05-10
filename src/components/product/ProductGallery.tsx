@@ -27,49 +27,37 @@ export function ProductGallery({
 
   const isLiked = isWishlisted(productId);
 
-const resolvedImages = useMemo(() => {
-  const list = Array.isArray(images)
-    ? images
-    : [];
+// src/components/product/ProductGallery.tsx
 
-  if (!list.length) {
-    return ['/placeholder.jpg'];
-  }
+const resolvedImages = useMemo(() => {
+  const list = Array.isArray(images) ? images : [];
+
+  if (!list.length) return ['/placeholder.jpg'];
 
   const normalized = list
     .map((img) => {
       if (!img) return null;
 
-      let path = '';
-
-      if (typeof img === 'string') {
-        path = img;
-      } else if (img?.imageUrl) {
-        path = img.imageUrl;
-      } else if (img?.url) {
-        path = img.url;
-      }
-
+      // Extract the path string
+      let path = typeof img === 'string' ? img : (img?.imageUrl || img?.url || '');
       if (!path) return null;
 
-      // Full URL already
-      if (path.startsWith('http')) {
-        return path;
-      }
+      // Return full URLs as is
+      if (path.startsWith('http')) return path;
 
-      // Already contains uploads
+      // Handle relative uploads
       if (path.startsWith('/uploads')) {
         return `${apiBase}${path}`;
       }
 
-      // Plain filename
+      // Handle plain filenames (standard for your backend)
       return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
     })
     .filter((img): img is string => Boolean(img));
 
-  // remove duplicates
   return [...new Set(normalized)];
 }, [images, apiBase]);
+
 
 useEffect(() => {
   setActiveImg(0);

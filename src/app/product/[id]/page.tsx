@@ -103,23 +103,31 @@ export default function ProductDetailsPage() {
 
 // src/app/product/[id]/page.tsx
 
+// src/app/product/[id]/page.tsx
+
 const galleryImages = useMemo(() => {
   if (!product) return [];
   
-  // If no variant selected, just show main product images
-  if (!selectedVariant) return product.images || [];
+  // 1. Helper to extract URL from various image formats
+  const getUrl = (img: any) => {
+    if (typeof img === 'string') return img;
+    return img?.imageUrl || img?.url || '';
+  };
 
-  // If variant selected, put its images FIRST, then the rest of the product images
-  const combined = [...(selectedVariant.images || []), ...(product.images || [])];
+  // 2. Normalize Base Images
+  const baseImages = (product.images || []).map(getUrl).filter(Boolean);
+
+  // 3. If no variant selected, just show main product images
+  if (!selectedVariant) return baseImages;
+
+  // 4. Normalize Variant Images
+  const variantImages = (selectedVariant.images || []).map(getUrl).filter(Boolean);
+
+  // 5. Combine: Variant images FIRST, then base images
+  const combined = [...variantImages, ...baseImages];
   
-  // Remove duplicates based on image URL
-  const seen = new Set();
-  return combined.filter(img => {
-    const url = typeof img === 'string' ? img : img?.imageUrl;
-    if (!url || seen.has(url)) return false;
-    seen.add(url);
-    return true;
-  });
+  // 6. Final Clean: Remove duplicates
+  return [...new Set(combined)];
 }, [product, selectedVariant]);
 
   // =========================
