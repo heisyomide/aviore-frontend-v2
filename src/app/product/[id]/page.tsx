@@ -226,7 +226,7 @@ addItem({
           <span className="text-zinc-900">{product.title}</span>
         </nav>
 
-        <div className="hidden lg:grid lg:grid-cols-[1.1fr_0.9fr] gap-0 h-[calc(100vh-80px)] overflow-hidden">
+        <div className="flex flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-0 lg:h-[calc(100vh-80px)] lg:overflow-hidden">
           
           {/* LEFT: GALLERY SECTION */}
           <div className="h-full overflow-y-auto pr-8 scrollbar-hide">

@@ -52,7 +52,7 @@ const availableSizesForColor = variants
                 const firstAvailable = variants.find(v => v.color === color);
                 if (firstAvailable) onSelectVariant(firstAvailable);
               }}
-              className={`px-6 py-3 rounded-full border-2 text-[11px] font-black uppercase transition-all active:scale-95 ${
+              className={`px-4 h-10 rounded-x1 border-2 text-[11px] font-black uppercase transition-all active:scale-95 ${
                 selectedVariant?.color === color
                   ? 'border-black bg-black text-white shadow-xl shadow-black/10'
                   : 'border-zinc-100 bg-white text-zinc-500 hover:border-zinc-300'
@@ -83,7 +83,7 @@ const availableSizesForColor = variants
                   type="button"
                   disabled={isOutOfStock}
                   onClick={() => onSelectVariant(variant)}
-                  className={`h-14 flex flex-col items-center justify-center rounded-2xl border-2 font-black transition-all relative ${
+                  className={`h-11 flex flex-col items-center justify-center rounded-xl border-2 font-black transition-all relative ${
                     isSelected
                       ? 'border-black bg-black text-white'
                       : isOutOfStock

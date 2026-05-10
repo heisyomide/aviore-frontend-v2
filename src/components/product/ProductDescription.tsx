@@ -54,10 +54,10 @@ export function ProductDescription({ description, specifications }: ProductDescr
       <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-2 duration-500 min-h-[200px]">
         {activeTab === 'details' && (
           <div className="prose prose-zinc prose-sm">
-            <p className="text-zinc-600 leading-relaxed italic text-lg mb-4">
+            <p className="text-zinc-600 leading-relaxed italic text-[13px] mb-3">
               Elevating the everyday through intentional design.
             </p>
-            <p className="text-zinc-500 leading-relaxed whitespace-pre-line">
+            <p className="text-[13px] leading-7 text-zinc-600 whitespace-pre-line">
               {description || "No description available for this product."}
             </p>
           </div>

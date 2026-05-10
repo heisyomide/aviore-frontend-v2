@@ -9,124 +9,137 @@ interface GalleryProps {
   images?: any[];
   title?: string;
   productId: string;
-  price: number;           // Required by your component
+  price: number;
 }
 
-export function ProductGallery({ 
-  images = [], 
-  title = "Product Image", 
-  productId, 
-  price 
+export function ProductGallery({
+  images = [],
+  title = 'Product Image',
+  productId,
+  price,
 }: GalleryProps) {
-  
   const [activeImg, setActiveImg] = useState(0);
+
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
-  const { toggleWishlist, isWishlisted } = useWishlistStore();
+  const { toggleWishlist, isWishlisted } =
+    useWishlistStore();
+
   const isLiked = isWishlisted(productId);
 
   const resolvedImages = useMemo(() => {
-    const list = Array.isArray(images) ? images : [];
-    if (list.length === 0) return ['/placeholder.jpg'];
+    const list = Array.isArray(images)
+      ? images
+      : [];
+
+    if (list.length === 0)
+      return ['/placeholder.jpg'];
 
     return list
       .map((img) => {
         if (!img) return null;
-        const path = typeof img === 'string' ? img : (img?.imageUrl || img?.url);
-        if (!path || typeof path !== 'string') return null;
 
-        if (path.startsWith('http')) return path;
-        const cleanPath = path.replace(/^\//, '');
+        const path =
+          typeof img === 'string'
+            ? img
+            : img?.imageUrl || img?.url;
+
+        if (!path) return null;
+
+        if (path.startsWith('http'))
+          return path;
+
+        const cleanPath =
+          path.replace(/^\//, '');
+
         return `${apiBase}/uploads/${cleanPath}`;
       })
-      .filter((url): url is string => url !== null);
+      .filter(Boolean);
   }, [images, apiBase]);
 
   useEffect(() => {
-    if (activeImg >= resolvedImages.length) {
+    if (
+      activeImg >= resolvedImages.length
+    ) {
       setActiveImg(0);
     }
-  }, [resolvedImages]);
+  }, [resolvedImages, activeImg]);
 
-  const currentImage = resolvedImages[activeImg] || resolvedImages[0] || '/placeholder.jpg';
+  const currentImage =
+    resolvedImages[activeImg] ||
+    '/placeholder.jpg';
 
   const handleWishlist = () => {
     toggleWishlist({
       id: productId,
-    
       name: title,
-      price: price,                    // Now using real price
+      price,
       image: currentImage,
     });
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, text: "Check out this product on Aviorè", url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        alert("Link copied to clipboard");
-      }
-    } catch (err) {
-      console.error("Share failed", err);
-    }
-  };
-
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      {/* Thumbnails */}
-      <div className="flex md:flex-col gap-3 order-2 md:order-1 overflow-x-auto no-scrollbar py-2">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
+      {/* THUMBNAILS */}
+      <div className="order-2 lg:order-1 flex lg:flex-col gap-3 overflow-x-auto lg:overflow-y-auto no-scrollbar lg:w-24">
         {resolvedImages.map((img, idx) => (
           <button
-            key={`thumb-${idx}`}
+            key={idx}
             onClick={() => setActiveImg(idx)}
-            className={`relative w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 ${
-              activeImg === idx 
-                ? 'border-black scale-95 shadow-md' 
-                : 'border-transparent opacity-60 hover:opacity-100'
+            className={`relative w-16 h-20 lg:w-20 lg:h-24 overflow-hidden rounded-2xl border transition-all shrink-0 ${
+              activeImg === idx
+                ? 'border-black'
+                : 'border-zinc-100 opacity-60'
             }`}
           >
-            <Image 
-              src={img} 
-              alt={`${title} thumbnail ${idx + 1}`} 
-              fill 
-              sizes="(max-width: 768px) 64px, 80px"
-              className="object-cover" 
+            <Image
+              src={img}
+              alt=""
+              fill
+              className="object-cover"
             />
           </button>
         ))}
       </div>
 
-      {/* Main Image */}
-      <div className="flex-1 relative aspect-square md:aspect-[4/5] rounded-2xl bg-white border border-zinc-100 overflow-hidden p-6">
+      {/* MAIN IMAGE */}
+      <div className="relative flex-1 bg-[#f5f5f5] overflow-hidden rounded-none lg:rounded-[2rem] aspect-[4/5]">
         <Image
           src={currentImage}
           alt={title}
           fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-contain"
           priority
+          className="object-cover"
+          sizes="(max-width:768px) 100vw, 60vw"
         />
 
-        {/* Floating Actions */}
-        <div className="absolute bottom-6 right-6 flex flex-col gap-3">
-          <button 
+        {/* FLOATING ACTIONS */}
+        <div className="absolute top-4 right-4 flex flex-col gap-3">
+          <button
             onClick={handleWishlist}
-            className="p-3 bg-white/90 backdrop-blur-md rounded-full shadow hover:bg-white transition active:scale-90"
+            className="h-11 w-11 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
           >
-            <Heart 
-              size={20} 
-              className={isLiked ? "fill-red-500 text-red-500" : "text-zinc-900"} 
+            <Heart
+              size={18}
+              className={
+                isLiked
+                  ? 'fill-red-500 text-red-500'
+                  : 'text-black'
+              }
             />
           </button>
-          <button 
-            onClick={handleShare}
-            className="p-3 bg-white/90 backdrop-blur-md text-zinc-900 rounded-full shadow hover:bg-white transition active:scale-90"
+
+          <button
+            className="h-11 w-11 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
           >
-            <Share2 size={20} />
+            <Share2 size={18} />
           </button>
+        </div>
+
+        {/* IMAGE COUNT */}
+        <div className="absolute bottom-4 right-4 px-3 py-1 rounded-full bg-black/70 text-white text-xs font-bold">
+          {activeImg + 1}/
+          {resolvedImages.length}
         </div>
       </div>
     </div>
