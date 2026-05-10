@@ -58,71 +58,123 @@ export function ProductInfo({
 
   const format = (num: number) => num.toLocaleString('en-NG');
 
-  return (
-    <div className="space-y-6">
-      
-      {/* Stock Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
-          {data.isOutOfStock ? (
-            <span className="text-red-500 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500" /> Out of Stock
-            </span>
-          ) : data.isLowStock ? (
-            <span className="text-orange-500 flex items-center gap-2 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-orange-500" />
-              Only {data.stock} Left
-            </span>
-          ) : (
-            <span className="text-emerald-600 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" /> In Stock
-            </span>
-          )}
-        </div>
+return (
+  <div className="space-y-5">
 
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-50 rounded-full border border-zinc-100">
-          <Star size={12} className="fill-yellow-400 text-yellow-400" />
-          <span className="text-[11px] font-bold text-zinc-900">
-            {Number(rating).toFixed(1)}
+    {/* STOCK + REVIEWS */}
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide">
+        {data.isOutOfStock ? (
+          <span className="text-red-500 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            Out of Stock
           </span>
-          <span className="text-[11px] text-zinc-400">
-            ({reviewCount} reviews)
+        ) : data.isLowStock ? (
+          <span className="text-orange-500 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-orange-500" />
+            Only {data.stock} Left
           </span>
-        </div>
+        ) : (
+          <span className="text-emerald-600 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            In Stock
+          </span>
+        )}
       </div>
 
-      {/* Title */}
-      <div className="space-y-2">
-        <h1 className="text-4xl font-black tracking-tighter text-zinc-900 leading-none uppercase">
-          {title}
-        </h1>
+      <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-50 rounded-full border border-zinc-100">
+        <Star
+          size={12}
+          className="fill-yellow-400 text-yellow-400"
+        />
 
-        {selectedVariant && (
-          <div className="inline-block px-3 py-1 bg-blue-50 border border-blue-100 rounded text-xs font-bold text-blue-600">
+        <span className="text-[11px] font-semibold text-zinc-900">
+          {Number(rating).toFixed(1)}
+        </span>
+
+        <span className="text-[11px] text-zinc-400">
+          ({reviewCount} reviews)
+        </span>
+      </div>
+    </div>
+
+    {/* DELIVERY STRIP */}
+    <div className="bg-[#F7F8F9] border border-zinc-200 rounded-2xl overflow-hidden">
+
+      <button
+        className="w-full flex items-center justify-between px-4 py-3"
+      >
+        <div className="flex items-center gap-3">
+
+          {/* MOVING TRUCK */}
+          <div className="text-emerald-600 text-lg animate-bounce">
+            🚚
+          </div>
+
+          <div className="text-left">
+            <p className="text-sm font-bold text-zinc-900">
+              Arrives in NG in as little as 7 days
+            </p>
+
+            <p className="text-xs text-zinc-500">
+              Fast nationwide delivery
+            </p>
+          </div>
+        </div>
+
+        <span className="text-zinc-400 text-lg">
+          ›
+        </span>
+      </button>
+    </div>
+
+    {/* TITLE */}
+    <div className="space-y-3">
+
+      <h1
+        className="
+          text-[28px]
+          lg:text-[34px]
+          font-extrabold
+          leading-[1.05]
+          tracking-[-0.03em]
+          text-zinc-900
+          break-words
+        "
+      >
+        {title}
+      </h1>
+
+      {selectedVariant && (
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full">
+          <span className="text-xs font-semibold text-blue-700">
             {[selectedVariant.color, selectedVariant.size]
               .filter(Boolean)
               .join(' • ')}
-          </div>
-        )}
-      </div>
-
-      {/* Price */}
-      <div className="flex items-baseline gap-4 pt-2">
-        <span className="text-5xl font-black text-[#A4143D] tracking-tighter">
-          ₦{format(data.currentPrice)}
-        </span>
-
-        {data.isDiscounted && (
-          <div className="flex flex-col">
-            <span className="text-sm text-zinc-400 line-through">
-              ₦{format(data.originalPrice)}
-            </span>
-            <span className="text-xs font-bold text-emerald-600">
-              Save {data.percent}%
-            </span>
-          </div>
-        )}
-      </div>
+          </span>
+        </div>
+      )}
     </div>
-  );
+
+    {/* PRICE */}
+    <div className="flex items-end gap-3 pt-1 flex-wrap">
+
+      <span className="text-[42px] leading-none font-black text-[#A4143D] tracking-tight">
+        ₦{format(data.currentPrice)}
+      </span>
+
+      {data.isDiscounted && (
+        <div className="pb-1">
+          <div className="text-sm text-zinc-400 line-through">
+            ₦{format(data.originalPrice)}
+          </div>
+
+          <div className="text-xs font-bold text-emerald-600">
+            Save {data.percent}%
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
 }

@@ -275,25 +275,88 @@ export default function EditProductModal({
                 </button>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold">Color</label>
-                    <input
-                      value={variant.color}
-                      onChange={(e) => updateVariant(i, 'color', e.target.value)}
-                      className={inputClasses}
-                      placeholder="Red, Blue..."
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold">Size</label>
-                    <input
-                      value={variant.size}
-                      onChange={(e) => updateVariant(i, 'size', e.target.value)}
-                      className={inputClasses}
-                      placeholder="S, M, L, 41, 42..."
-                    />
-                  </div>
-                </div>
+  {/* COLOR */}
+  <div>
+    <label className="text-xs font-bold">
+      Color
+    </label>
+
+    <input
+      value={variant.color}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'color',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="Red, Blue..."
+    />
+  </div>
+
+  {/* SIZE */}
+  <div>
+    <label className="text-xs font-bold">
+      Size
+    </label>
+
+    <input
+      value={variant.size}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'size',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="S, M, L..."
+    />
+  </div>
+
+  {/* PRICE */}
+  <div>
+    <label className="text-xs font-bold">
+      Price
+    </label>
+
+    <input
+      type="number"
+      value={variant.price || ''}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'price',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="15000"
+    />
+  </div>
+
+  {/* STOCK */}
+  <div>
+    <label className="text-xs font-bold">
+      Stock
+    </label>
+
+    <input
+      type="number"
+      value={variant.stock || ''}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'stock',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="10"
+    />
+  </div>
+</div>
 
                 {/* Variant Images */}
                 <div className="mt-6">
