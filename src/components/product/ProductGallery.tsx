@@ -36,38 +36,45 @@ const resolvedImages = useMemo(() => {
     return ['/placeholder.jpg'];
   }
 
-  return list
+  const normalized = list
     .map((img) => {
       if (!img) return null;
 
-      // get raw path
-      const path =
-        typeof img === 'string'
-          ? img
-          : img?.imageUrl || img?.url;
+      let path = '';
+
+      if (typeof img === 'string') {
+        path = img;
+      } else if (img?.imageUrl) {
+        path = img.imageUrl;
+      } else if (img?.url) {
+        path = img.url;
+      }
 
       if (!path) return null;
 
-      // already full url
+      // Full URL already
       if (path.startsWith('http')) {
         return path;
       }
 
-      // backend already returns /uploads/...
-      return `${process.env.NEXT_PUBLIC_API_URL}${path}`;
+      // Already contains uploads
+      if (path.startsWith('/uploads')) {
+        return `${apiBase}${path}`;
+      }
+
+      // Plain filename
+      return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
     })
-    .filter(Boolean);
+    .filter((img): img is string => Boolean(img));
+
+  // remove duplicates
+  return [...new Set(normalized)];
+}, [images, apiBase]);
+
+useEffect(() => {
+  setActiveImg(0);
 }, [images]);
-console.log(resolvedImages);
 
-
-  useEffect(() => {
-    if (
-      activeImg >= resolvedImages.length
-    ) {
-      setActiveImg(0);
-    }
-  }, [resolvedImages, activeImg]);
 
   const currentImage =
     resolvedImages[activeImg] ||
