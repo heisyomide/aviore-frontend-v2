@@ -27,39 +27,49 @@ export function ProductGallery({
 
   const isLiked = isWishlisted(productId);
 
-  const resolvedImages = useMemo(() => {
-    const list = Array.isArray(images)
-      ? images
-      : [];
+const resolvedImages = useMemo(() => {
+  const list = Array.isArray(images)
+    ? images
+    : [];
 
-    if (list.length === 0)
-      return ['/placeholder.jpg'];
+  if (!list.length) {
+    return ['/placeholder.jpg'];
+  }
 
-    return list
-      .map((img) => {
-        if (!img) return null;
+  const normalized = list
+    .map((img) => {
+      if (!img) return null;
 
-        const path =
-          typeof img === 'string'
-            ? img
-            : img?.imageUrl || img?.url;
+      let path = '';
 
-        if (!path) return null;
+      if (typeof img === 'string') {
+        path = img;
+      } else if (img?.imageUrl) {
+        path = img.imageUrl;
+      } else if (img?.url) {
+        path = img.url;
+      }
 
-if (path.startsWith('http')) {
-  return path;
-}
+      if (!path) return null;
 
-if (path.startsWith('/uploads')) {
-  return `${apiBase}${path}`;
-}
+      // Full URL already
+      if (path.startsWith('http')) {
+        return path;
+      }
 
-const cleanPath = path.replace(/^\//, '');
+      // Already contains uploads
+      if (path.startsWith('/uploads')) {
+        return `${apiBase}${path}`;
+      }
 
-return `${apiBase}/uploads/${cleanPath}`;
-      })
-      .filter(Boolean);
-  }, [images, apiBase]);
+      // Plain filename
+      return `${apiBase}/uploads/${path.replace(/^\//, '')}`;
+    })
+    .filter((img): img is string => Boolean(img));
+
+  // remove duplicates
+  return [...new Set(normalized)];
+}, [images, apiBase]);
 
   useEffect(() => {
     if (
