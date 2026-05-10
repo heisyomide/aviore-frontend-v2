@@ -150,22 +150,43 @@ export default function EditProductModal({
     setLoading(true);
 
     try {
-      const payload = {
-        ...formData,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-        deliveryMin: formData.deliveryMin ? Number(formData.deliveryMin) : undefined,
-        deliveryMax: formData.deliveryMax ? Number(formData.deliveryMax) : undefined,
-        images: generalImages,   // General images
-        variants: variants.map(v => ({
-          id: v.id,
-          color: v.color,
-          size: v.size,
-          price: v.price ? Number(v.price) : undefined,
-          stock: v.stock ? Number(v.stock) : undefined,
-          images: v.images,
-        })),
-      };
+const payload = {
+  ...formData,
+
+  price: formData.price
+    ? Number(formData.price)
+    : undefined,
+
+  stock: formData.stock
+    ? Number(formData.stock)
+    : undefined,
+
+  deliveryMin: formData.deliveryMin
+    ? Number(formData.deliveryMin)
+    : undefined,
+
+  deliveryMax: formData.deliveryMax
+    ? Number(formData.deliveryMax)
+    : undefined,
+
+  generalImages,
+
+  variants: variants.map(v => ({
+    id: v.id,
+    color: v.color,
+    size: v.size,
+
+    price: v.price
+      ? Number(v.price)
+      : undefined,
+
+    stock: v.stock
+      ? Number(v.stock)
+      : undefined,
+
+    images: v.images,
+  })),
+};
 
       await api.patch(`/products/${product.id}`, payload);
 
