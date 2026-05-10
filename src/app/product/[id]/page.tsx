@@ -1,7 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import {
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+
+import {
+  useParams,
+  useRouter,
+} from 'next/navigation';
+
 import { useProductData } from '@/src/hooks/useProductData';
 import { useCartStore } from '@/src/store/useCartStore';
 
@@ -18,8 +27,9 @@ import { VendorCard } from '@/src/components/product/VendorCard';
 import { DeliveryInfo } from '@/src/components/product/DeliveryInfo';
 import { ProductDescription } from '@/src/components/product/ProductDescription';
 import { RecommendedProducts } from '@/src/components/product/RecommendedProducts';
-import { api } from '@/src/lib/axios';
 import { ProductReviews } from '@/src/components/product/ProductReviews';
+
+import { api } from '@/src/lib/axios';
 
 type VendorType = {
   id: string;
@@ -34,307 +44,546 @@ type VendorType = {
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
+
   const router = useRouter();
-  const addItem = useCartStore((state) => state.addItem);
 
+  const addItem = useCartStore(
+    (state) => state.addItem
+  );
 
+  const {
+    product,
+    vendor,
+    recommended,
+    loading,
 
+    selectedVariant,
+    setSelectedVariant,
 
-  const { 
-    product, vendor, recommended, loading, 
-    selectedVariant, setSelectedVariant,
-    selectedSize, setSelectedSize,
-    qty, setQty 
+    selectedSize,
+    setSelectedSize,
+
+    qty,
+    setQty,
   } = useProductData(id as string);
 
+  const [mounted, setMounted] =
+    useState(false);
 
-const [isFollowing, setIsFollowing] = useState<boolean>(false);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [vendorState, setVendorState] = useState<VendorType | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [isFollowing, setIsFollowing] =
+    useState(false);
 
-  // Dynamic values
-const currentPrice = selectedVariant?.price ?? product?.displayPrice ?? 0;
-  const currentStock = selectedVariant?.stock ?? product?.totalStock ?? 0;
-  const galleryImages = selectedVariant?.images?.length > 0 
-    ? selectedVariant.images 
-    : product?.images || [];
+  const [followLoading, setFollowLoading] =
+    useState(false);
 
-    
-useEffect(() => {
-  setVendorState(vendor);
-}, [vendor]);
+  const [vendorState, setVendorState] =
+    useState<VendorType | null>(null);
 
- 
-  useEffect(() => { setMounted(true); }, []);
-  
+  // =========================
+  // DYNAMIC VALUES
+  // =========================
+
+  const currentPrice =
+    selectedVariant?.price ??
+    product?.displayPrice ??
+    0;
+
+  const currentStock =
+    selectedVariant?.stock ??
+    product?.totalStock ??
+    0;
+
+  /**
+   * IMPORTANT:
+   * Show normal product images FIRST.
+   * Only switch to variant images after
+   * user selects a variant with images.
+   */
+
+  const galleryImages =
+    selectedVariant?.images?.length
+      ? selectedVariant.images
+      : product?.images || [];
+
+  // =========================
+  // EFFECTS
+  // =========================
 
   useEffect(() => {
-  if (!vendor?.id) return;
+    setMounted(true);
+  }, []);
 
-  const fetchFollowState = async () => {
-    try {
-      const res = await api.get(`/vendor/${vendor.id}`);
-      setIsFollowing(res.data.isFollowing);
-    } catch (err) {
-      console.error("Failed to fetch follow state");
-    }
-  };
+  useEffect(() => {
+    setVendorState(vendor);
+  }, [vendor]);
 
-  fetchFollowState();
-}, [vendor?.id]);
+  // =========================
+  // FOLLOW STATE
+  // =========================
 
-useEffect(() => {
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('token')
-      : null;
+  useEffect(() => {
+    if (!vendor?.id) return;
 
-  // only logged in users
-  if (!token) return;
+    const fetchFollowState =
+      async () => {
+        try {
+          const res = await api.get(
+            `/vendor/${vendor.id}`
+          );
 
-  // must have product id
-  if (!product?.id) return;
+          setIsFollowing(
+            res.data.isFollowing
+          );
+        } catch (err) {
+          console.error(
+            'Failed to fetch follow state'
+          );
+        }
+      };
 
-  const recordHistory = async () => {
-    try {
-      await api.post(
-        `/user/history/${product.id}`
-      );
-    } catch (error) {
-      console.error(
-        'History record failed:',
-        error
-      );
-    }
-  };
+    fetchFollowState();
+  }, [vendor?.id]);
 
-  recordHistory();
-}, [product?.id]);
+  // =========================
+  // RECENTLY VIEWED
+  // =========================
 
+  useEffect(() => {
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('token')
+        : null;
 
-  // 🛒 HANDLERS
-  const handleAddToCart = useCallback(async () => {
-    if (!product || !selectedVariant){alert("Please select a color and size");
-     return;
-    }
-    
-    // ✅ FIXED TS7006: Added types (v: any, s: any) to the parameters
-    const hasValidSizes = product.variants?.some((v: any) => 
-      v.sizes?.some((s: any) => s && s.trim() !== "")
-    );
-    
-    if (hasValidSizes && !selectedSize) {
-      alert("Please select a size to continue.");
+    if (!token) return;
+
+    if (!product?.id) return;
+
+    const recordHistory =
+      async () => {
+        try {
+          await api.post(
+            `/user/history/${product.id}`
+          );
+        } catch (error) {
+          console.error(
+            'History record failed:',
+            error
+          );
+        }
+      };
+
+    recordHistory();
+  }, [product?.id]);
+
+  // =========================
+  // ADD TO CART
+  // =========================
+
+  const handleAddToCart =
+    useCallback(async () => {
+      if (!product || !selectedVariant) {
+        alert(
+          'Please select a color and size'
+        );
+
+        return;
+      }
+
+      addItem({
+        id: product.id,
+
+        productId: product.id,
+
+        name: product.title,
+
+        price: currentPrice,
+
+        image:
+          selectedVariant.images?.[0]
+            ?.imageUrl ||
+          product.images?.[0]?.imageUrl ||
+          '/placeholder.jpg',
+
+        vendorId: product.vendorId,
+
+        stock: selectedVariant.stock,
+
+        quantity: qty,
+
+        color: selectedVariant.color,
+
+        size: selectedVariant.size,
+
+        variantId: selectedVariant.id,
+
+        variant: selectedVariant,
+      });
+    }, [
+      product,
+      selectedVariant,
+      qty,
+      currentPrice,
+      addItem,
+    ]);
+
+  // =========================
+  // FOLLOW VENDOR
+  // =========================
+
+  const handleFollow = async () => {
+    if (!vendor?.id || followLoading)
       return;
-    }
 
-    const cartImg = selectedVariant?.images?.[0]?.imageUrl || 
-                    product.variants?.[0]?.images?.[0]?.imageUrl || 
-                    '/placeholder.jpg';
+    setFollowLoading(true);
 
-addItem({
-  id: product.id,
+    const prev = isFollowing;
 
-  // ✅ REQUIRED
-  productId: product.id,
-
-  name: product.title,
-  price: currentPrice,
-
-  image:
-    selectedVariant.images?.[0]?.imageUrl ||
-    product.images?.[0]?.imageUrl ||
-    '/placeholder.jpg',
-
-  vendorId: product.vendorId,
-  stock: selectedVariant.stock,
-  quantity: qty,
-
-  color: selectedVariant.color,
-  size: selectedVariant.size,
-
-  // ✅ Variant uniqueness
-  variantId: selectedVariant.id,
-
-  variant: selectedVariant,
-});
-  }, [product, selectedVariant, qty, currentPrice, addItem]);
-
- const handleFollow = async () => {
-  if (!vendor?.id || followLoading) return;
-
-  setFollowLoading(true);
-
-  const prev = isFollowing;
-
-  // optimistic
-  setIsFollowing(!prev);
-
-  setVendorState((v) => {
-    if (!v) return v;
-
-    return {
-      ...v,
-      followers: !prev
-        ? (v.followers || 0) + 1
-        : (v.followers || 1) - 1,
-    };
-  });
-
-  try {
-    await api.post(`/vendor/${vendor.id}/follow`);
-  } catch (err) {
-    // rollback
-    setIsFollowing(prev);
+    setIsFollowing(!prev);
 
     setVendorState((v) => {
       if (!v) return v;
 
       return {
         ...v,
-        followers: prev
+
+        followers: !prev
           ? (v.followers || 0) + 1
           : (v.followers || 1) - 1,
       };
     });
-  } finally {
-    setFollowLoading(false);
-  }
-};
+
+    try {
+      await api.post(
+        `/vendor/${vendor.id}/follow`
+      );
+    } catch {
+      setIsFollowing(prev);
+
+      setVendorState((v) => {
+        if (!v) return v;
+
+        return {
+          ...v,
+
+          followers: prev
+            ? (v.followers || 0) + 1
+            : (v.followers || 1) - 1,
+        };
+      });
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // =========================
+  // BUY NOW
+  // =========================
 
   const handleBuyNow = async () => {
     await handleAddToCart();
+
     router.push('/cart');
   };
 
-  if (!mounted || loading || !product?.id) {
+  // =========================
+  // LOADING
+  // =========================
+
+  if (
+    !mounted ||
+    loading ||
+    !product?.id
+  ) {
     return <ProductSkeleton />;
   }
 
-
+  // =========================
+  // UI
+  // =========================
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <Container className="py-6 lg:py-10">
-        {/* Breadcrumbs */}
-        <nav className="flex gap-2 text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-8">
-          <span>Home</span> <span className="text-zinc-200">/</span> 
-          <span>{product.category?.name}</span> <span className="text-zinc-200">/</span> 
-          <span className="text-zinc-900">{product.title}</span>
+      <Container className="py-4 lg:py-10">
+        {/* ========================= */}
+        {/* BREADCRUMB */}
+        {/* ========================= */}
+
+        <nav className="hidden lg:flex gap-2 text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-8">
+          <span>Home</span>
+
+          <span>/</span>
+
+          <span>
+            {product.category?.name}
+          </span>
+
+          <span>/</span>
+
+          <span className="text-zinc-900">
+            {product.title}
+          </span>
         </nav>
 
-        <div className="flex flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-0 lg:h-[calc(100vh-80px)] lg:overflow-hidden">
-          
-          {/* LEFT: GALLERY SECTION */}
-          <div className="h-full overflow-y-auto pr-8 scrollbar-hide">
-             <ProductGallery images={galleryImages} title={product.title} productId={product.id} price={currentPrice} />
-             
-             <ProductReviews
+        {/* ================================================= */}
+        {/* MOBILE LAYOUT */}
+        {/* ================================================= */}
 
-  reviews={product.reviews}
+        <div className="lg:hidden">
+          {/* GALLERY */}
+          <ProductGallery
+            images={galleryImages}
+            title={product.title}
+            productId={product.id}
+            price={currentPrice}
+          />
 
-  averageRating={product.rating}
-
-  totalReviews={product.reviewCount}
-
-/>
-
-               <ProductDescription description={product.description} />
+          {/* PRODUCT INFO */}
+          <div className="mt-6">
+            <ProductInfo
+              title={product.title}
+              basePrice={product.basePrice}
+              displayPrice={
+                product.displayPrice
+              }
+              totalStock={
+                product.totalStock
+              }
+              selectedVariant={
+                selectedVariant
+              }
+              rating={product.rating}
+              reviewCount={
+                product.reviewCount
+              }
+            />
           </div>
 
+          {/* VARIANTS */}
+          <div className="mt-8">
+            <VariantSelector
+              variants={product.variants}
+              selectedVariant={
+                selectedVariant
+              }
+              onSelectVariant={(v) => {
+                setSelectedVariant(v);
 
+                setSelectedSize(v.size);
+              }}
+            />
+          </div>
 
-
-          {/* RIGHT: SIDEBAR (Sticky Layout) */}
-         <aside className="h-full overflow-y-auto pl-8 pr-2 scrollbar-hide">
-            
-            {/* 1. Header Info (Price/Title/Rating) */}
-<ProductInfo 
-  title={product.title}
-  basePrice={product.basePrice}
-  displayPrice={product.displayPrice}
-  totalStock={product.totalStock}
-  selectedVariant={selectedVariant}
-  rating={product.rating}
-  reviewCount={product.reviewCount}
-/>
-
-            {/* 2. Variant & Size Selection */}
-{/* 2. Variant & Size Selection */}
-<VariantSelector 
-  variants={product.variants}     // The flat array of Matrix rows from backend
-  selectedVariant={selectedVariant}
-  onSelectVariant={(v) => {
-    setSelectedVariant(v);
-    // Optional: if you still need the string 'S', 'M' for other logic
-    setSelectedSize(v.size); 
-  }}
-/>
-
-
-            {/* 3. Action Box (Grey background match) */}
-            <div className="p-8 rounded-[3rem] border border-zinc-100 bg-zinc-50/50 space-y-8">
-              <QuantitySelector
-               qty={qty} 
-               setQty={setQty} 
-                maxStock={currentStock} />
-              
-              <div className="space-y-4">
-                <ProductActions 
-                   stockCount={currentStock}  
-                  onAddToCart={handleAddToCart}
-                  onBuyNow={handleBuyNow}
-                />
-                
-                {/* Low Stock Indicator */}
-                {currentStock > 0 && currentStock <= 10 && (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-orange-600">Only {selectedVariant?.stock ?? product.totalStock} Left!</p>
-                    <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-orange-500" 
-                        style={{ width: `${(currentStock / 10) * 100}%` }} 
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 4. Vendor Section */}
-            {vendor && (
-              <div className="pt-4 border-t border-zinc-100">
-<VendorCard 
-  vendor={vendorState || vendor} 
-  isFollowing={isFollowing} 
-  onFollow={handleFollow} 
-/>
-              </div>
-            )}
-
-            {/* 5. Trust Badges */}
-            <DeliveryInfo 
-              origin={product.origin} 
-              min={product.deliveryMin} 
-              max={product.deliveryMax} 
+          {/* ACTION BOX */}
+          <div className="mt-8 rounded-[2rem] border border-zinc-100 bg-zinc-50 p-5 space-y-6">
+            <QuantitySelector
+              qty={qty}
+              setQty={setQty}
+              maxStock={currentStock}
             />
 
-            {/* Mobile Tabs */}
-            <div className="lg:hidden">
-              <ProductDescription description={product.description} />
+            <ProductActions
+              stockCount={currentStock}
+              onAddToCart={
+                handleAddToCart
+              }
+              onBuyNow={handleBuyNow}
+            />
+          </div>
+
+          {/* DESCRIPTION */}
+          <div className="mt-12">
+            <ProductDescription
+              description={
+                product.description
+              }
+            />
+          </div>
+
+          {/* REVIEWS */}
+          <div className="mt-14">
+            <ProductReviews
+              reviews={
+                product.reviews || []
+              }
+              averageRating={
+                product.rating || 0
+              }
+              totalReviews={
+                product.reviewCount || 0
+              }
+            />
+          </div>
+
+          {/* VENDOR */}
+          {vendor && (
+            <div className="mt-14">
+              <VendorCard
+                vendor={
+                  vendorState || vendor
+                }
+                isFollowing={
+                  isFollowing
+                }
+                onFollow={
+                  handleFollow
+                }
+              />
+            </div>
+          )}
+
+          {/* DELIVERY */}
+          <div className="mt-10">
+            <DeliveryInfo
+              origin={product.origin}
+              min={product.deliveryMin}
+              max={product.deliveryMax}
+            />
+          </div>
+        </div>
+
+        {/* ================================================= */}
+        {/* DESKTOP LAYOUT */}
+        {/* ================================================= */}
+
+        <div className="hidden lg:grid lg:grid-cols-[1.1fr_0.9fr] gap-14 h-[calc(100vh-90px)] overflow-hidden">
+          {/* LEFT SCROLL */}
+          <div className="h-full overflow-y-auto pr-6 scrollbar-hide">
+            <ProductGallery
+              images={galleryImages}
+              title={product.title}
+              productId={product.id}
+              price={currentPrice}
+            />
+
+            {/* REVIEWS */}
+            <div className="mt-20">
+              <ProductReviews
+                reviews={
+                  product.reviews || []
+                }
+                averageRating={
+                  product.rating || 0
+                }
+                totalReviews={
+                  product.reviewCount || 0
+                }
+              />
+            </div>
+
+            {/* DESCRIPTION */}
+            <div className="mt-20">
+              <ProductDescription
+                description={
+                  product.description
+                }
+              />
+            </div>
+          </div>
+
+          {/* RIGHT SCROLL */}
+          <aside className="h-full overflow-y-auto pl-2 pr-2 scrollbar-hide">
+            <div className="space-y-10 pb-20">
+              {/* PRODUCT INFO */}
+              <ProductInfo
+                title={product.title}
+                basePrice={
+                  product.basePrice
+                }
+                displayPrice={
+                  product.displayPrice
+                }
+                totalStock={
+                  product.totalStock
+                }
+                selectedVariant={
+                  selectedVariant
+                }
+                rating={product.rating}
+                reviewCount={
+                  product.reviewCount
+                }
+              />
+
+              {/* VARIANTS */}
+              <VariantSelector
+                variants={product.variants}
+                selectedVariant={
+                  selectedVariant
+                }
+                onSelectVariant={(v) => {
+                  setSelectedVariant(v);
+
+                  setSelectedSize(
+                    v.size
+                  );
+                }}
+              />
+
+              {/* ACTIONS */}
+              <div className="rounded-[2.5rem] border border-zinc-100 bg-zinc-50 p-7 space-y-7">
+                <QuantitySelector
+                  qty={qty}
+                  setQty={setQty}
+                  maxStock={
+                    currentStock
+                  }
+                />
+
+                <ProductActions
+                  stockCount={
+                    currentStock
+                  }
+                  onAddToCart={
+                    handleAddToCart
+                  }
+                  onBuyNow={
+                    handleBuyNow
+                  }
+                />
+              </div>
+
+              {/* VENDOR */}
+              {vendor && (
+                <div className="pt-8 border-t border-zinc-100">
+                  <VendorCard
+                    vendor={
+                      vendorState ||
+                      vendor
+                    }
+                    isFollowing={
+                      isFollowing
+                    }
+                    onFollow={
+                      handleFollow
+                    }
+                  />
+                </div>
+              )}
+
+              {/* DELIVERY */}
+              <DeliveryInfo
+                origin={product.origin}
+                min={product.deliveryMin}
+                max={product.deliveryMax}
+              />
             </div>
           </aside>
         </div>
 
-        {/* Recommended Products */}
-        {recommended && recommended.length > 0 && (
-          <div className="mt-24 border-t border-zinc-100 pt-20">
-            <RecommendedProducts products={recommended} />
-          </div>
-        )}
+        {/* ================================================= */}
+        {/* RECOMMENDED */}
+        {/* ================================================= */}
+
+        {recommended &&
+          recommended.length > 0 && (
+            <div className="mt-20 lg:mt-28 border-t border-zinc-100 pt-16">
+              <RecommendedProducts
+                products={recommended}
+              />
+            </div>
+          )}
       </Container>
     </div>
   );
