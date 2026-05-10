@@ -171,21 +171,23 @@ const payload = {
 
   generalImages,
 
-  variants: variants.map(v => ({
-    id: v.id,
-    color: v.color,
-    size: v.size,
+variants: variants.map(v => ({
+  id: v.id,
+  color: v.color,
+  size: v.size,
 
-    price: v.price
+  price:
+    v.price !== '' && v.price !== undefined
       ? Number(v.price)
       : undefined,
 
-    stock: v.stock
+  stock:
+    v.stock !== '' && v.stock !== undefined
       ? Number(v.stock)
       : undefined,
 
-    images: v.images,
-  })),
+  images: v.images,
+})),
 };
 
       await api.patch(`/products/${product.id}`, payload);
