@@ -79,6 +79,8 @@ export default function ProductDetailsPage() {
   const [vendorState, setVendorState] =
     useState<VendorType | null>(null);
 
+    const [hasSelectedVariant, setHasSelectedVariant] = useState(false);
+
   // =========================
   // DYNAMIC VALUES
   // =========================
@@ -100,10 +102,11 @@ export default function ProductDetailsPage() {
    * user selects a variant with images.
    */
 
-  const galleryImages =
-    selectedVariant?.images?.length
-      ? selectedVariant.images
-      : product?.images || [];
+const galleryImages =
+  hasSelectedVariant &&
+  selectedVariant?.images?.length > 0
+    ? selectedVariant.images
+    : product?.images || [];
 
   // =========================
   // EFFECTS
@@ -367,11 +370,12 @@ export default function ProductDetailsPage() {
               selectedVariant={
                 selectedVariant
               }
-              onSelectVariant={(v) => {
-                setSelectedVariant(v);
+onSelectVariant={(v) => {
+  setHasSelectedVariant(true);
 
-                setSelectedSize(v.size);
-              }}
+  setSelectedVariant(v);
+  setSelectedSize(v.size);
+}}
             />
           </div>
 
