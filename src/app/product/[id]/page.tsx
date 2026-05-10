@@ -19,6 +19,7 @@ import { DeliveryInfo } from '@/src/components/product/DeliveryInfo';
 import { ProductDescription } from '@/src/components/product/ProductDescription';
 import { RecommendedProducts } from '@/src/components/product/RecommendedProducts';
 import { api } from '@/src/lib/axios';
+import { ProductReviews } from '@/src/components/product/ProductReviews';
 
 type VendorType = {
   id: string;
@@ -225,20 +226,30 @@ addItem({
           <span className="text-zinc-900">{product.title}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-12 gap-12 xl:gap-24 items-start">
+        <div className="hidden lg:grid lg:grid-cols-[1.1fr_0.9fr] gap-0 h-[calc(100vh-80px)] overflow-hidden">
           
           {/* LEFT: GALLERY SECTION */}
-          <div className="lg:col-span-7">
+          <div className="h-full overflow-y-auto pr-8 scrollbar-hide">
              <ProductGallery images={galleryImages} title={product.title} productId={product.id} price={currentPrice} />
              
-             {/* Desktop Tabs at Bottom */}
-             <div className="hidden lg:block mt-24">
+             <ProductReviews
+
+  reviews={product.reviews}
+
+  averageRating={product.rating}
+
+  totalReviews={product.reviewCount}
+
+/>
+
                <ProductDescription description={product.description} />
-             </div>
           </div>
 
+
+
+
           {/* RIGHT: SIDEBAR (Sticky Layout) */}
-          <aside className="lg:col-span-5 lg:sticky lg:top-24 space-y-10">
+         <aside className="h-full overflow-y-auto pl-8 pr-2 scrollbar-hide">
             
             {/* 1. Header Info (Price/Title/Rating) */}
 <ProductInfo 
@@ -320,7 +331,7 @@ addItem({
 
         {/* Recommended Products */}
         {recommended && recommended.length > 0 && (
-          <div className="mt-24">
+          <div className="mt-24 border-t border-zinc-100 pt-20">
             <RecommendedProducts products={recommended} />
           </div>
         )}
