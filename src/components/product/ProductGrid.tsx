@@ -5,7 +5,6 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products }: ProductGridProps) {
-  // 1. Guard against non-array or empty data
   const safeProducts = Array.isArray(products) 
     ? products.filter(p => p && typeof p === 'object') 
     : [];
@@ -19,7 +18,24 @@ export function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
+    /**
+     * 🔥 THE TEMU FIX: 
+     * 1. gap-2 on mobile (approx 8px) vs gap-3+ on desktop.
+     * 2. Removed heavy side padding to utilize screen width.
+     */
+    <div className="
+      grid 
+      grid-cols-2 
+      sm:grid-cols-3 
+      md:grid-cols-4 
+      lg:grid-cols-5 
+      xl:grid-cols-6 
+      2xl:grid-cols-7 
+      gap-x-2 gap-y-4 
+      md:gap-4 
+      lg:gap-6 
+      px-2 md:px-0
+    ">
       {safeProducts.map((p, idx) => (
         <ProductCard 
           key={p.id || `grid-item-${idx}`} 
