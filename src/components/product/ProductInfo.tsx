@@ -67,8 +67,8 @@ export function ProductInfo({
           <h1
             onClick={() => setIsExpanded(!isExpanded)}
             className={`
-              text-[16px] lg:text-[18px] 
-              font-medium leading-snug text-zinc-900 
+              text-[16px] lg:text-[20px] 
+              font-semibold leading-snug text-zinc-900 
               cursor-pointer transition-all duration-300
               ${isExpanded ? 'block' : 'line-clamp-2'}
             `}

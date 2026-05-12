@@ -325,7 +325,7 @@ const galleryImages = useMemo(() => {
   // =========================
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="hidden lg:block min-h-screen bg-white">
       <Navbar />
 
       <Container className="py-4 lg:py-10">
@@ -352,6 +352,28 @@ const galleryImages = useMemo(() => {
         {/* ================================================= */}
         {/* MOBILE LAYOUT */}
         {/* ================================================= */}
+        <div className="sticky top-0 z-40 bg-white border-b border-zinc-100">
+  <div className="flex items-center justify-between px-4 h-14">
+
+    {/* BACK */}
+    <button
+      onClick={() => router.back()}
+      className="text-sm font-semibold text-zinc-900"
+    >
+      ← Back
+    </button>
+
+    {/* CATEGORY */}
+    <span className="text-[11px] uppercase tracking-wider text-zinc-400">
+      {product.category?.name}
+    </span>
+
+    {/* SHARE */}
+    <button className="text-sm text-zinc-900">
+      Share
+    </button>
+  </div>
+</div>
 
         <div className="lg:hidden">
           {/* GALLERY */}
