@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Share2 } from 'lucide-react';
 
+
 interface GalleryProps {
   images?: any[];
   title?: string;
@@ -20,6 +21,7 @@ export function ProductGallery({
   const [activeImg, setActiveImg] = useState(0);
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
+
 
 // src/components/product/ProductGallery.tsx
 
@@ -61,6 +63,7 @@ useEffect(() => {
   const currentImage =
     resolvedImages[activeImg] ||
     '/placeholder.jpg';
+
 
 
   const handleShare = async () => {
@@ -112,7 +115,7 @@ useEffect(() => {
       </div>
 
       {/* MAIN IMAGE */}
-      <div className="relative flex-1 bg-white lg:bg-[#f5f5f5] overflow-hidden rounded-none lg:rounded-[2rem] aspect-sqaure sm:aspect-[4/5]">
+      <div className="relative flex-1 bg-[#f5f5f5] overflow-hidden rounded-none lg:rounded-[2rem] aspect-[4/5]">
         <Image
           src={currentImage}
           alt={title}
@@ -121,6 +124,9 @@ useEffect(() => {
           className="object-cover"
           sizes="(max-width:768px) 100vw, 60vw"
         />
+
+        {/* FLOATING ACTIONS */}
+        <div className="absolute top-4 right-4 flex flex-col gap-3">
 
 
 <button
@@ -139,6 +145,7 @@ useEffect(() => {
 >
   <Share2 size={20} />
 </button>
+        </div>
 
         {/* IMAGE COUNT */}
         <div className="absolute bottom-4 right-4 px-3 py-1 rounded-full bg-black/70 text-white text-xs font-bold">
