@@ -128,33 +128,48 @@ return (
       </button>
     </div>
 
-    {/* TITLE */}
-    <div className="space-y-3">
+/* TITLE */
+<div className="space-y-2">
 
-      <h1
-        className="
-          text-[28px]
-          lg:text-[34px]
-          font-extrabold
-          leading-[1.05]
-          tracking-[-0.03em]
-          text-zinc-900
-          break-words
-        "
-      >
-        {title}
-      </h1>
+  <div className="flex items-start gap-2">
 
-      {selectedVariant && (
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full">
-          <span className="text-xs font-semibold text-blue-700">
-            {[selectedVariant.color, selectedVariant.size]
-              .filter(Boolean)
-              .join(' • ')}
-          </span>
-        </div>
-      )}
+    <h1
+      className="
+        flex-1
+        text-[15px]
+        lg:text-[17px]
+        font-medium
+        leading-[1.45]
+        text-zinc-900
+        line-clamp-2
+      "
+    >
+      {title}
+    </h1>
+
+    <button
+      className="
+        shrink-0
+        text-zinc-400
+        text-lg
+        leading-none
+        pt-[1px]
+      "
+    >
+      ˅
+    </button>
+  </div>
+
+  {selectedVariant && (
+    <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full">
+      <span className="text-[11px] font-medium text-blue-700">
+        {[selectedVariant.color, selectedVariant.size]
+          .filter(Boolean)
+          .join(' • ')}
+      </span>
     </div>
+  )}
+</div>
 
     {/* PRICE */}
     <div className="flex items-end gap-3 pt-1 flex-wrap">

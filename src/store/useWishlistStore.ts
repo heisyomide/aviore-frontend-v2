@@ -67,7 +67,7 @@ const safeItems: WishlistItem[] = data.map((item: any) => ({
           set({ items: safeItems });
         } catch (error) {
           console.error('Failed to fetch wishlist:', error);
-          toast.error('Could not load wishlist');
+          
         } finally {
           set({ loading: false });
         }

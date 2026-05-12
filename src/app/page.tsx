@@ -102,12 +102,12 @@ export default function HomePage() {
         <Hero />
 
         {/* 3. URGENCY ZONE */}
-        <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-16">
+        <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-7">
           {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
         </div>
 
         {/* 1. QUICK-ACCESS REGISTRY NAV */}
-        <Section className="bg-white border-b border-gray-50 py-8">
+        <Section className="bg-white border-b border-gray-50 py-1">
           <Container>
             <div className="flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2 no-scrollbar">
               {HOME_CATEGORIES.map((cat) => (
