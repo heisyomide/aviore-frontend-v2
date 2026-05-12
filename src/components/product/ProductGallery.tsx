@@ -77,6 +77,30 @@ useEffect(() => {
     });
   };
 
+  const handleShare = async () => {
+  const shareUrl = `${window.location.origin}/products/${productId}`;
+
+  try {
+    // Mobile Native Share
+    if (navigator.share) {
+      await navigator.share({
+        title,
+        text: `Check out this product on Aviorè`,
+        url: shareUrl,
+      });
+
+      return;
+    }
+
+    // Desktop Fallback
+    await navigator.clipboard.writeText(shareUrl);
+
+    alert('Product link copied!');
+  } catch (error) {
+    console.error('Share failed', error);
+  }
+};
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
       {/* THUMBNAILS */}
@@ -128,11 +152,12 @@ useEffect(() => {
             />
           </button>
 
-          <button
-            className="h-11 w-11 rounded-full text-zinc-900 bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
-          >
-            <Share2 size={18} />
-          </button>
+  <button
+  onClick={handleShare}
+  className="h-11 w-11 rounded-full text-zinc-900 bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md"
+>
+  <Share2 size={18} />
+</button>
         </div>
 
         {/* IMAGE COUNT */}

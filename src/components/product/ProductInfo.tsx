@@ -68,7 +68,7 @@ export function ProductInfo({
             onClick={() => setIsExpanded(!isExpanded)}
             className={`
               text-[16px] lg:text-[18px] 
-              font-medium leading-snug text-zinc-800 
+              font-medium leading-snug text-zinc-900 
               cursor-pointer transition-all duration-300
               ${isExpanded ? 'block' : 'line-clamp-2'}
             `}
@@ -86,11 +86,13 @@ export function ProductInfo({
         </div>
 
         {selectedVariant && (
-          <div className="mt-2 inline-flex items-center gap-2 px-2.5 py-1 bg-zinc-100 rounded-md">
-            <span className="text-[11px] font-medium text-zinc-600 uppercase tracking-tight">
-              Selected: {[selectedVariant.color, selectedVariant.size].filter(Boolean).join(' / ')}
-            </span>
-          </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full">
+          <span className="text-xs font-semibold text-blue-700">
+            {[selectedVariant.color, selectedVariant.size]
+              .filter(Boolean)
+              .join(' • ')}
+          </span>
+        </div>
         )}
       </div>
 
