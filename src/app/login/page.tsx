@@ -29,6 +29,9 @@ function LoginFormContent() {
   const registered = searchParams.get('registered');
   const initialEmail = searchParams.get('email') || '';
 
+  // ✅ THIS WAS MISSING
+  const from = searchParams.get('from');
+
   const { register, handleSubmit, setValue } = useForm<LoginInput>({
     defaultValues: { email: initialEmail }
   });
@@ -49,42 +52,58 @@ function LoginFormContent() {
       setError(null);
 
       const response = await api.post('/auth/login', data);
+
       const { access_token, user } = response.data;
-      const role = String(user?.role || '').toLowerCase().trim();
 
-      // 1. 🍪 SET THE COOKIE (For the Middleware "Bouncer")
-      // We set 'path=/' so the cookie is visible to all pages
-      // We set 'max-age' so it lasts (e.g., 7 days = 604800 seconds)
+      const role = String(user?.role || '')
+        .toLowerCase()
+        .trim();
 
-
-      // 2. 💾 SET LOCALSTORAGE (For your internal app state/Zustand)
+      // ✅ STORAGE
       localStorage.setItem('token', access_token);
       localStorage.setItem('role', role);
       localStorage.setItem('firstName', user?.firstName || '');
       localStorage.setItem('lastName', user?.lastName || '');
 
-      // 3. 🚀 REDIRECT LOGIC (Keep your existing role-based routing)
+      // ✅ RETURN USER TO ORIGINAL PAGE
+      if (from) {
+        router.replace(from);
+        return;
+      }
+
+      // ✅ ADMIN
       if (role === 'admin') {
-        router.push('/admin/products');
+        router.replace('/admin/products');
         return;
       }
 
+      // ✅ VENDOR
       if (role === 'vendor') {
+
         if (user.isVerified) {
-          router.push('/vendor');
+          router.replace('/vendor');
           return;
         }
+
         if (user.kycStatus === 'PENDING') {
-          router.push('/dashboard/waiting-room');
+          router.replace('/dashboard/waiting-room');
           return;
         }
-        router.push('/kyc-verification');
+
+        router.replace('/kyc-verification');
         return;
       }
 
-      router.push('/dashboard');
+      // ✅ DEFAULT USER
+      router.replace('/dashboard');
+
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Invalid email or password');
+
+      setError(
+        err?.response?.data?.message ||
+        'Invalid email or password'
+      );
+
     } finally {
       setLoading(false);
     }
