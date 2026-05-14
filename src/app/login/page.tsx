@@ -61,7 +61,8 @@ function LoginFormContent() {
 
   const [loading, setLoading] = useState(false);
 
-  const [error, setError] = useState('');
+const [error, setError] = useState<string | null>(null);
+  
 
   // ======================================================
   // PREFILL EMAIL
@@ -75,89 +76,54 @@ function LoginFormContent() {
   // ======================================================
   // LOGIN HANDLER
   // ======================================================
-  const onSubmit = async (data: LoginInput) => {
-    try {
-      setLoading(true);
-      setError('');
+const onSubmit = async (data: LoginInput) => {
+  try {
+    setLoading(true);
+    setError(null);
 
-      const response = await api.post(
-        '/auth/login',
-        data
-      );
+    const response = await api.post('/auth/login', data);
+    
+    // Extract data from your specific JSON structure
+    const { access_token, user } = response.data;
+    
+    // Convert to lowercase to be safe: "VENDOR" becomes "vendor"
+    const role = String(user?.role || '').toLowerCase().trim();
 
-      console.log('LOGIN_RESPONSE:', response.data);
+    // Save to localStorage
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('firstName', user?.firstName || '');
+    localStorage.setItem('lastName', user?.lastName || '');
 
-      const { access_token, user } = response.data;
+    console.log("Authenticated as:", role); // Debugging line
 
-      // ======================================================
-      // STORE AUTH DATA
-      // ======================================================
-      localStorage.setItem(
-        'access_token',
-        access_token
-      );
-
-      localStorage.setItem(
-        'role',
-        user?.role || ''
-      );
-
-      localStorage.setItem(
-        'firstName',
-        user?.firstName || ''
-      );
-
-      localStorage.setItem(
-        'lastName',
-        user?.lastName || ''
-      );
-
-      // ======================================================
-      // ROLE NORMALIZATION
-      // ======================================================
-      const role = String(
-        user?.role || ''
-      ).toUpperCase();
-
-      // ======================================================
-      // REDIRECTS
-      // ======================================================
-      if (role === 'ADMIN') {
-        router.replace('/admin/products');
-        return;
-      }
-
-      if (role === 'VENDOR') {
-        if (user?.isVerified) {
-          router.replace('/vendor');
-          return;
-        }
-
-        if (user?.kycStatus === 'PENDING') {
-          router.replace(
-            '/dashboard/waiting-room'
-          );
-          return;
-        }
-
-        router.replace('/kyc-verification');
-        return;
-      }
-
-      router.replace('/dashboard');
-
-    } catch (err: any) {
-      console.error('LOGIN_ERROR:', err);
-
-      setError(
-        err?.response?.data?.message ||
-          'Invalid email or password'
-      );
-    } finally {
-      setLoading(false);
+    // 🚀 THE REDIRECT LOGIC
+    if (role === 'admin') {
+      router.push('/admin/products');
+      return;
     }
-  };
 
+    if (role === 'vendor') {
+      // Use the exact values from your JSON: "APPROVED" and true
+      if (user.isVerified || user.kycStatus === 'APPROVED') {
+        router.push('/vendor');
+      } else if (user.kycStatus === 'PENDING') {
+        router.push('/dashboard/waiting-room');
+      } else {
+        router.push('/kyc-verification');
+      }
+      return;
+    }
+
+    // Default for CUSTOMER
+    router.push('/dashboard');
+    
+  } catch (err: any) {
+    setError(err?.response?.data?.message || 'Invalid email or password');
+  } finally {
+    setLoading(false);
+  }
+};
   // ======================================================
   // UI
   // ======================================================
