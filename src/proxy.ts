@@ -7,14 +7,14 @@ import type { NextRequest } from 'next/server';
  * Using 'export function middleware' is the standard convention.
  */
 export function proxy(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
+  const session = request.cookies.get('session_id')?.value;
   const { pathname } = request.nextUrl;
 
   // Define your protected registry zones
   const protectedRoutes = ['/checkout', '/dashboard', '/orders'];
 
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-    if (!token) {
+    if (!session) {
       const url = new URL('/login', request.url);
       url.searchParams.set('from', pathname);
       return NextResponse.redirect(url);

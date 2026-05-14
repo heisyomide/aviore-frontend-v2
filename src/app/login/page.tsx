@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/axios';
 import { LoginInput } from '../../types/auth';
 import { Eye, EyeOff, Loader2, User, CheckCircle2 } from 'lucide-react';
-import { Navbar } from '@/src/components/navbar/Navbar';
 
 // 🚀 1. This wrapper is the only structural change needed to fix the error
 export default function LoginPage() {
@@ -55,12 +54,10 @@ function LoginFormContent() {
       // 1. 🍪 SET THE COOKIE (For the Middleware "Bouncer")
       // We set 'path=/' so the cookie is visible to all pages
       // We set 'max-age' so it lasts (e.g., 7 days = 604800 seconds)
-      document.cookie = `token=${access_token}; path=/; max-age=604800; SameSite=Lax; ${
-        window.location.protocol === 'https:' ? 'Secure' : ''
-      }`;
+      
 
       // 2. 💾 SET LOCALSTORAGE (For your internal app state/Zustand)
-      localStorage.setItem('token', access_token);
+      localStorage.setItem('access_token', access_token);
       localStorage.setItem('role', role);
       localStorage.setItem('firstName', user?.firstName || '');
       localStorage.setItem('lastName', user?.lastName || '');
