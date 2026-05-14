@@ -55,9 +55,7 @@ function LoginFormContent() {
       // 1. 🍪 SET THE COOKIE (For the Middleware "Bouncer")
       // We set 'path=/' so the cookie is visible to all pages
       // We set 'max-age' so it lasts (e.g., 7 days = 604800 seconds)
-      document.cookie = `token=${access_token}; path=/; max-age=604800; SameSite=Lax; ${
-        window.location.protocol === 'https:' ? 'Secure' : ''
-      }`;
+
 
       // 2. 💾 SET LOCALSTORAGE (For your internal app state/Zustand)
       localStorage.setItem('token', access_token);
