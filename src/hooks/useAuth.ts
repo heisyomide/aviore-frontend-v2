@@ -19,7 +19,7 @@ export function useAuth() {
   }, [])
 
   const syncUser = () => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("access_token")
 
     if (!token) {
       setUser(null)
