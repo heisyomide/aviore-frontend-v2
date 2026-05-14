@@ -1,37 +1,40 @@
-// src/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-/**
- * 🛡️ THE GATEKEEPER
- * Using 'export function middleware' is the standard convention.
- */
 export function proxy(request: NextRequest) {
-  const session = request.cookies.get('session_id')?.value;
+  const session =
+    request.cookies.get('session_id')?.value;
+
   const { pathname } = request.nextUrl;
 
-  // Define your protected registry zones
-  const protectedRoutes = ['/checkout', '/dashboard', '/orders'];
+  const protectedRoutes = [
+    '/checkout',
+    '/dashboard',
+    '/vendor',
+    '/admin',
+    '/orders',
+  ];
 
-  if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-    if (!session) {
-      const url = new URL('/login', request.url);
-      url.searchParams.set('from', pathname);
-      return NextResponse.redirect(url);
-    }
+  const isProtected = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  // NOT LOGGED IN
+  if (isProtected && !session) {
+    return NextResponse.redirect(
+      new URL('/login', request.url)
+    );
   }
 
   return NextResponse.next();
 }
 
-/**
- * 🏛️ MATCHER CONFIG
- * This tells Next.js exactly which paths to trigger the function for.
- */
 export const config = {
   matcher: [
     '/checkout/:path*',
     '/dashboard/:path*',
+    '/vendor/:path*',
+    '/admin/:path*',
     '/orders/:path*',
   ],
 };

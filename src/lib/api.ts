@@ -113,7 +113,9 @@ api.interceptors.response.use(
         localStorage.removeItem('firstName');
         localStorage.removeItem('lastName');
 
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+  window.location.href = '/login';
+}
 
         return Promise.reject(refreshError);
 
