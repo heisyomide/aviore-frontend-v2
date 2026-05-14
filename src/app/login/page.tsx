@@ -62,28 +62,41 @@ const onSubmit = async (data: LoginInput) => {
     const response = await api.post('/auth/login', data);
     const { access_token, user } = response.data;
     
-    // Normalize role for AVIORÈ logic
+    // Normalize Role to match your JSON: "VENDOR"
     const role = String(user?.role || '').toUpperCase().trim();
 
-    // Sync LocalStorage
+    // Persist to storage
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('role', role);
     localStorage.setItem('firstName', user?.firstName || '');
     localStorage.setItem('lastName', user?.lastName || '');
 
-    // Target mapping
+    // Precise AVIORÈ Redirect Logic
     let destination = '/dashboard';
-    if (role === 'ADMIN') destination = '/admin/products';
-    else if (role === 'VENDOR') {
-      const isApproved = user.isVerified || user.kycStatus === 'APPROVED';
-      destination = isApproved ? '/vendor' : user.kycStatus === 'PENDING' ? '/dashboard/waiting-room' : '/kyc-verification';
+    
+    if (role === 'ADMIN') {
+      destination = '/admin/products';
+    } else if (role === 'VENDOR') {
+      // Use the exact flags from your JSON
+      const isApproved = user.isVerified === true || user.kycStatus === 'APPROVED';
+      
+      if (isApproved) {
+        destination = '/vendor';
+      } else if (user.kycStatus === 'PENDING') {
+        destination = '/dashboard/waiting-room';
+      } else {
+        destination = '/kyc-verification';
+      }
     }
 
-    // Force a Hard Redirect to break the Middleware race condition
+    // Trigger local state sync
+    window.dispatchEvent(new Event("aviore_auth_sync"));
+
+    // THE FIX: Hard reload to flush cookies to the Middleware
     window.location.href = destination;
 
   } catch (err: any) {
-    setApiError(err?.response?.data?.message || 'Login failed. Please try again.');
+    setApiError(err?.response?.data?.message || 'Login failed');
     setIsLoading(false);
   }
 };
