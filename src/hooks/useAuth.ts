@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 
-export type Role = "ADMIN" | "VENDOR" | "USER" | "CUSTOMER"
+export type Role = "ADMIN" | "VENDOR" | "CUSTOMER"
 
 interface AuthUser {
   id: string

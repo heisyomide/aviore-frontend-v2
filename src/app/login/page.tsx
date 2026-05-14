@@ -90,7 +90,7 @@ const onSubmit = async (data: LoginInput) => {
     }
 
     // Trigger local state sync
-    window.dispatchEvent(new Event("aviore_auth_sync"));
+   
 
     // THE FIX: Hard reload to flush cookies to the Middleware
     window.location.href = destination;
