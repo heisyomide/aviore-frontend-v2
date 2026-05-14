@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -60,10 +60,13 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // ACCESS TOKEN EXPIRED
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry
-    ) {
+if (
+  error.response?.status === 401 &&
+  !originalRequest._retry &&
+  !originalRequest.url?.includes('/auth/refresh')
+)
+    
+    {
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
@@ -113,7 +116,9 @@ api.interceptors.response.use(
         localStorage.removeItem('firstName');
         localStorage.removeItem('lastName');
 
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+  window.location.href = '/login';
+}
 
         return Promise.reject(refreshError);
 
