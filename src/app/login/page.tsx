@@ -62,41 +62,28 @@ const onSubmit = async (data: LoginInput) => {
     const response = await api.post('/auth/login', data);
     const { access_token, user } = response.data;
     
-    // Normalize Role to Uppercase for consistent logic
+    // Normalize role for AVIORÈ logic
     const role = String(user?.role || '').toUpperCase().trim();
 
+    // Sync LocalStorage
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('role', role);
     localStorage.setItem('firstName', user?.firstName || '');
     localStorage.setItem('lastName', user?.lastName || '');
 
+    // Target mapping
     let destination = '/dashboard';
-    
-    if (role === 'ADMIN') {
-      destination = '/admin/products';
-    } else if (role === 'VENDOR') {
-      // Direct comparison with specific backend strings
-      const isApproved = user.isVerified === true || user.kycStatus === 'APPROVED';
-      const isPending = user.kycStatus === 'PENDING';
-      
-      if (isApproved) {
-        destination = '/vendor';
-      } else if (isPending) {
-        destination = '/dashboard/waiting-room';
-      } else {
-        destination = '/kyc-verification';
-      }
+    if (role === 'ADMIN') destination = '/admin/products';
+    else if (role === 'VENDOR') {
+      const isApproved = user.isVerified || user.kycStatus === 'APPROVED';
+      destination = isApproved ? '/vendor' : user.kycStatus === 'PENDING' ? '/dashboard/waiting-room' : '/kyc-verification';
     }
 
-    // Trigger the auth sync event for useAuth hook
-    window.dispatchEvent(new Event("aviore_auth_sync"));
-
-    // Final push - window.location is safer for the Middleware session check
+    // Force a Hard Redirect to break the Middleware race condition
     window.location.href = destination;
 
   } catch (err: any) {
-    const message = err?.response?.data?.message || 'Invalid email or password.';
-    setApiError(message);
+    setApiError(err?.response?.data?.message || 'Login failed. Please try again.');
     setIsLoading(false);
   }
 };
