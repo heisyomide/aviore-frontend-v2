@@ -54,45 +54,52 @@ function LoginFormContent() {
     if (initialEmail) setValue('email', initialEmail);
   }, [initialEmail, setValue]);
 
-  const onSubmit = async (data: LoginInput) => {
-    try {
-      setIsLoading(true);
-      setApiError(null);
+const onSubmit = async (data: LoginInput) => {
+  try {
+    setIsLoading(true);
+    setApiError(null);
 
-      const response = await api.post('/auth/login', data);
-      const { access_token, user } = response.data;
+    const response = await api.post('/auth/login', data);
+    const { access_token, user } = response.data;
+    
+    // Normalize Role to Uppercase for consistent logic
+    const role = String(user?.role || '').toUpperCase().trim();
+
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('firstName', user?.firstName || '');
+    localStorage.setItem('lastName', user?.lastName || '');
+
+    let destination = '/dashboard';
+    
+    if (role === 'ADMIN') {
+      destination = '/admin/products';
+    } else if (role === 'VENDOR') {
+      // Direct comparison with specific backend strings
+      const isApproved = user.isVerified === true || user.kycStatus === 'APPROVED';
+      const isPending = user.kycStatus === 'PENDING';
       
-      // 1. Normalize Role
-      const role = String(user?.role || '').toLowerCase().trim();
-
-      // 2. Persist Auth Data
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('role', role);
-      localStorage.setItem('firstName', user?.firstName || '');
-      localStorage.setItem('lastName', user?.lastName || '');
-
-      // 3. Determine Destination
-      let destination = '/dashboard';
-      
-      if (role === 'admin') {
-        destination = '/admin/products';
-      } else if (role === 'vendor') {
-        const isApproved = user.isVerified || user.kycStatus === 'APPROVED';
-        const isPending = user.kycStatus === 'PENDING';
-        
-        destination = isApproved ? '/vendor' : isPending ? '/dashboard/waiting-room' : '/kyc-verification';
+      if (isApproved) {
+        destination = '/vendor';
+      } else if (isPending) {
+        destination = '/dashboard/waiting-room';
+      } else {
+        destination = '/kyc-verification';
       }
-
-      // 4. Force Hard Redirect 
-      // This ensures cookies are flushed and Middleware picks up the new session_id
-      window.location.href = destination;
-
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Invalid email or password. Please try again.';
-      setApiError(message);
-      setIsLoading(false);
     }
-  };
+
+    // Trigger the auth sync event for useAuth hook
+    window.dispatchEvent(new Event("aviore_auth_sync"));
+
+    // Final push - window.location is safer for the Middleware session check
+    window.location.href = destination;
+
+  } catch (err: any) {
+    const message = err?.response?.data?.message || 'Invalid email or password.';
+    setApiError(message);
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4">
