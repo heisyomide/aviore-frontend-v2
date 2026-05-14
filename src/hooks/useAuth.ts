@@ -1,82 +1,50 @@
 'use client'
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 
-export type Role = "ADMIN" | "VENDOR" | "USER" | "CUSTOMER"
+export type Role = "ADMIN" | "VENDOR" | "USER"
 
-interface AuthUser {
+type AuthUser = {
   id: string
   role: Role
   firstName?: string
   lastName?: string
 }
-
-// Custom event name for cross-tab or cross-component syncing
-const AUTH_EVENT = "aviore_auth_sync"
-
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
 
-  const syncUser = useCallback(() => {
-    if (typeof window === 'undefined') return
+  useEffect(() => {
+    syncUser()
+  }, [])
 
-    const token = localStorage.getItem("access_token")
-    const role = localStorage.getItem("role")?.toUpperCase() as Role
+  const syncUser = () => {
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
+    const role = localStorage.getItem("role") as Role
     const firstName = localStorage.getItem("firstName") || ""
     const lastName = localStorage.getItem("lastName") || ""
 
-    if (!token || !role) {
-      setUser(null)
-    } else {
-      setUser({
-        id: "user-session", // In a real app, extract ID from JWT if possible
-        role,
-        firstName,
-        lastName
-      })
-    }
-    setIsLoading(false)
-  }, [])
+    setUser({
+      id: "temp-id",
+      role,
+      firstName,
+      lastName
+    })
 
-  useEffect(() => {
-    // 1. Initial sync
-    syncUser()
-
-    // 2. Listen for internal app changes (login/logout)
-    const handleCustomSync = () => syncUser()
-    window.addEventListener(AUTH_EVENT, handleCustomSync)
-
-    // 3. Listen for changes from other tabs (StorageEvent)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (['access_token', 'role'].includes(e.key || '')) {
-        syncUser()
-      }
-    }
-    window.addEventListener("storage", handleStorageChange)
-
-    return () => {
-      window.removeEventListener(AUTH_EVENT, handleCustomSync)
-      window.removeEventListener("storage", handleStorageChange)
-    }
-  }, [syncUser])
+    setLoading(false)
+  }
 
   const logout = () => {
     localStorage.clear()
-    
-    // Dispatch event so all useAuth instances update immediately
-    window.dispatchEvent(new Event(AUTH_EVENT))
-    
-    // Force redirect to login
-    window.location.href = "/login"
+    setUser(null) // 🔥 THIS IS THE FIX
   }
 
-  return { 
-    user, 
-    isLoading, 
-    logout, 
-    isAuthenticated: !!user,
-    isVendor: user?.role === 'VENDOR',
-    isAdmin: user?.role === 'ADMIN'
-  }
+  return { user, loading, logout }
 }
