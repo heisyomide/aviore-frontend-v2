@@ -29,8 +29,7 @@ function LoginFormContent() {
   const registered = searchParams.get('registered');
   const initialEmail = searchParams.get('email') || '';
 
-  // ✅ THIS WAS MISSING
-  const from = searchParams.get('from');
+  const from = searchParams.get('from')
 
   const { register, handleSubmit, setValue } = useForm<LoginInput>({
     defaultValues: { email: initialEmail }
@@ -47,67 +46,75 @@ function LoginFormContent() {
   }, [initialEmail, setValue]);
 
   const onSubmit = async (data: LoginInput) => {
-    try {
-      setLoading(true);
-      setError(null);
+  try {
+    setLoading(true);
+    setError(null);
 
-      const response = await api.post('/auth/login', data);
+    const response = await api.post('/auth/login', data);
 
-      const { access_token, user } = response.data;
+    const { access_token, user } = response.data;
 
-      const role = String(user?.role || '')
-        .toLowerCase()
-        .trim();
+    const role = String(user?.role || '')
+      .toLowerCase()
+      .trim();
 
-      // ✅ STORAGE
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('role', role);
-      localStorage.setItem('firstName', user?.firstName || '');
-      localStorage.setItem('lastName', user?.lastName || '');
+    // ✅ VERY IMPORTANT
+    // THIS IS WHAT MIDDLEWARE READS
+      document.cookie = `token=${access_token}; path=/; max-age=604800; SameSite=Lax; ${
+        window.location.protocol === 'https:' ? 'Secure' : ''
+      }`;
+    // ✅ LOCAL STORAGE
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('firstName', user?.firstName || '');
+    localStorage.setItem('lastName', user?.lastName || '');
 
-      // ✅ RETURN USER TO ORIGINAL PAGE
-      if (from) {
-        router.replace(from);
-        return;
-      }
+    // ✅ FORCE COOKIE SAVE BEFORE REDIRECT
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // ✅ ADMIN
-      if (role === 'admin') {
-        router.replace('/admin/products');
-        return;
-      }
-
-      // ✅ VENDOR
-      if (role === 'vendor') {
-
-        if (user.isVerified) {
-          router.replace('/vendor');
-          return;
-        }
-
-        if (user.kycStatus === 'PENDING') {
-          router.replace('/dashboard/waiting-room');
-          return;
-        }
-
-        router.replace('/kyc-verification');
-        return;
-      }
-
-      // ✅ DEFAULT USER
-      router.replace('/dashboard');
-
-    } catch (err: any) {
-
-      setError(
-        err?.response?.data?.message ||
-        'Invalid email or password'
-      );
-
-    } finally {
-      setLoading(false);
+    // ✅ RETURN USER TO ORIGINAL PAGE
+    if (from) {
+      router.replace(from);
+      return;
     }
-  };
+
+    // ✅ ADMIN
+    if (role === 'admin') {
+      router.replace('/admin/products');
+      return;
+    }
+
+    // ✅ VENDOR
+    if (role === 'vendor') {
+
+      if (user.isVerified) {
+        router.replace('/vendor');
+        return;
+      }
+
+      if (user.kycStatus === 'PENDING') {
+        router.replace('/dashboard/waiting-room');
+        return;
+      }
+
+      router.replace('/kyc-verification');
+      return;
+    }
+
+    // ✅ DEFAULT USER
+    router.replace('/dashboard');
+
+  } catch (err: any) {
+
+    setError(
+      err?.response?.data?.message ||
+      'Invalid email or password'
+    );
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
      
