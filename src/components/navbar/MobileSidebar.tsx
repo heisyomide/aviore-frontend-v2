@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 import {
+  Dispatch,
+  SetStateAction,
   useState
 } from 'react';
 
@@ -15,15 +17,19 @@ import {
   CategoryItem
 } from '@/src/data/category.data';
 
+interface MobileSidebarProps {
+  open: boolean;
+  onClose: () => void;
+  activeCategory: MarketplaceCategory;
+  setActiveCategory: Dispatch<SetStateAction<MarketplaceCategory>>;
+}
+
 export function MobileSidebar({
   open,
   onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const [activeCategory, setActiveCategory] =
-    useState<MarketplaceCategory>(MARKETPLACE_CATEGORIES[0]);
+  activeCategory, // Destructured from props
+  setActiveCategory, // Destructured from props
+}: MobileSidebarProps) {
 
   if (!open) return null;
 
