@@ -6,7 +6,7 @@ import { DesktopHeader } from './DesktopHeader';
 import { MobileHeader } from './MobileHeader';
 import { MobileSidebar } from './MobileSidebar';
 import { TrendingTags } from '../home/TrendingTags'; 
-import { MEGA_MENU_DATA } from '../../data/categories';
+import { MARKETPLACE_CATEGORIES } from '../../data/category.data';
 
 /**
  * 🚀 NAVBAR ORGANISM
@@ -17,7 +17,7 @@ export function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Keep this only for the MobileSidebar if it still needs it
-  const [activeCategory, setActiveCategory] = useState(MEGA_MENU_DATA[0]);
+  const [activeCategory, setActiveCategory] = useState(MARKETPLACE_CATEGORIES[0]);
 
   return (
     <>

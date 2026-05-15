@@ -9,7 +9,7 @@ import { Section } from '../components/layout/Section';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { SkeletonGrid } from '../components/product/SkeletonGrid';
 import { TrustBar } from '../components/home/TrustBar';
-import { HOME_CATEGORIES } from '../data/categories';
+import { HomeCategories } from '@/src/components/home/HomeCategories';
 import { TopDealsSection } from '../components/home/TopSaverDeals';
 import {  PromoBanner } from '../components/home/MultiBannerGrid';
 import { PopularVendorsSection } from '../components/home/PopularVendors';
@@ -101,31 +101,12 @@ export default function HomePage() {
       <div className="grow">
         <Hero />
 
+        <HomeCategories />
+
         {/* 3. URGENCY ZONE */}
         <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-7">
           {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
         </div>
-
-        {/* 1. QUICK-ACCESS REGISTRY NAV */}
-        <Section className="bg-white border-b border-gray-50 py-1">
-          <Container>
-            <div className="flex items-start gap-6 overflow-x-auto pb-4 md:gap-10 md:pb-2 no-scrollbar">
-              {HOME_CATEGORIES.map((cat) => (
-                <CategoryCircle 
-                  key={cat.id}
-                  name={cat.name}
-                  image={cat.image || '/placeholder.png'}
-                  slug={cat.id.toLowerCase()} 
-                />
-              ))}
-              <div className="flex gap-6 border-l border-gray-100 pl-6 md:gap-10 md:pl-10">
-                <CategoryCircle name="Best Sellers" image="/registry/categories/bestsellers.jpg" slug="best-sellers" />
-                <CategoryCircle name="Flash Deals" image="/registry/categories/flash.jpg" slug="flash-deals" />
-                <CategoryCircle name="New Arrivals" image="/registry/categories/newarrival.jpg" slug="new-arrivals" />
-              </div>
-            </div>
-          </Container>
-        </Section>
 
         <div className="py-12">
           <PopularVendorsSection initialVendors={registry.vendors} />

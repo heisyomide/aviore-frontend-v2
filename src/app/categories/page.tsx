@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, X, Zap, ListFilter, Star, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MEGA_MENU_DATA, MegaMainCategory, MegaSubCategory, MegaMenuItem } from '../../data/categories';
+import { MEGA_MENU_DATA, MegaMainCategory, MegaSubCategory, MegaMenuItem } from '../../data/category.data';
 import { Navbar } from '@/src/components/navbar/Navbar';
 
 export default function MobileCategoriesPage() {
