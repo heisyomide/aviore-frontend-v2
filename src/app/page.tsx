@@ -20,6 +20,8 @@ import { Navbar } from '../components/navbar/Navbar';
 import { Footer } from '../components/Footer';
 import { BreakoutBannerGrid } from '../components/home/BreakBannerGrid';
 import { VendorCTA } from '../components/home/VendorCTA';
+import { CategoryWorldSection } from '../components/home/CategoryWorldSection';
+import { HomeRailSection } from '../components/home/HomeRailSection';
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
@@ -101,7 +103,7 @@ export default function HomePage() {
       <div className="grow">
         <Hero />
 
-        <HomeCategories />
+        <HomeRailSection title={''} href={''} products={[]} />
 
         {/* 3. URGENCY ZONE */}
         <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-7">
@@ -140,18 +142,24 @@ export default function HomePage() {
 />
 
         {/* 2. DYNAMIC DEPARTMENTS */}
-        <div className="flex flex-col">
-          {registry.departments.map((section: any) => (
-            section.data?.length > 0 && (
-              <CategoryExplorer 
-                key={section.id}
-                categoryName={section.title} 
-                categorySlug={section.slug}
-                products={section.data}
-              />
-            )
-          ))}
-        </div>
+<div className="px-4 md:px-8">
+
+  {registry.departments.map((section: any) => (
+
+    section.data?.length > 0 && (
+
+      <CategoryWorldSection
+        key={section.slug}
+        title={section.title}
+        slug={section.slug}
+        products={section.data}
+      />
+
+    )
+
+  ))}
+
+</div>
 
 <BreakoutBannerGrid 
   items={[

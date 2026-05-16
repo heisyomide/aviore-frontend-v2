@@ -22,7 +22,7 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
   {
     name: 'Fashion',
     slug: 'fashion',
-    banner: '/banners/fashion.jpg',
+    banner: '/banners/fash.jpg',
 
     children: [
       {
