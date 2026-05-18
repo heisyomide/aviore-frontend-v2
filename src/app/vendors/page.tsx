@@ -59,7 +59,7 @@ function VendorsContent() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#A4143D]/20 border border-[#A4143D]/30">
               <span className="w-1.5 h-1.5 rounded-full bg-[#A4143D] animate-pulse" />
               <span className="text-[#A4143D] text-[9px] font-black uppercase tracking-[0.3em]">
-                Verified_Partner_Registry
+                AVIORÈ Verified Vendors
               </span>
             </div>
             <h1 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white leading-[0.85]">

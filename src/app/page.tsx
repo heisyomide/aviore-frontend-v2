@@ -103,8 +103,6 @@ export default function HomePage() {
       <div className="grow">
         <Hero />
 
-        <HomeRailSection title={''} href={''} products={[]} />
-
         {/* 3. URGENCY ZONE */}
         <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-7">
           {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
