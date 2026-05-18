@@ -435,7 +435,7 @@ variants: variants.map(v => ({
 >
 
   {/* ================= LEFT COLUMN ================= */}
-  <div className="space-y-8">
+  <div className="space-y-8 min-w-0">
 
     {/* CATEGORY ENGINE */}
     <div className="bg-[#1E293B] p-6 rounded-[2rem] border border-slate-800">
@@ -817,7 +817,7 @@ variants: variants.map(v => ({
   </div>
 
   {/* ================= RIGHT COLUMN ================= */}
-  <div className="space-y-8">
+  <div className="space-y-8 min-w-0">
 
     {/* GENERAL IMAGES */}
     <div className="bg-white p-6 rounded-3xl border border-slate-200 sticky top-0">
