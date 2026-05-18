@@ -32,7 +32,11 @@ const data = useMemo(() => {
   const displayPrice =
     variantPrices.length > 0
       ? Math.min(...variantPrices)
-      : Number(product?.price || 0);
+      : Number(
+    product?.price ||
+    product?.basePrice ||
+    0
+  );
 
   // STOCK
   const totalStock =
@@ -42,7 +46,11 @@ const data = useMemo(() => {
             sum + (Number(v?.stock) || 0),
           0
         )
-      : Number(product?.stock || 0);
+      : Number(
+    product?.stock ??
+    product?.totalStock ??
+    0
+  );
 
   // IMAGE
   const firstVariantImage =
