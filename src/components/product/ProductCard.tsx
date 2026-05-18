@@ -1,269 +1,387 @@
 'use client';
 
-import React, { useState, useMemo, memo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Heart, Truck, ImageOff, Star } from 'lucide-react';
+import {
+  ShoppingCart,
+  Heart,
+  Truck,
+  ImageOff,
+  Star,
+} from 'lucide-react';
 
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { safeNumber, safeString, formatMoney } from '@/src/utils/safe';
+import { safeNumber, safeString } from '@/src/utils/safe';
 import toast from 'react-hot-toast';
 
-/* ====================== EXACT MATCH PRODUCT CARD ====================== */
+/* ====================== TEMU-STYLE PRODUCT CARD ====================== */
+
 export function ProductCard({ product }: { product: any }) {
   const router = useRouter();
+
   const [mounted, setMounted] = useState(false);
+
   const addItem = useCartStore((s) => s.addItem);
   const { toggleWishlist, isWishlisted } = useWishlistStore();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
-const data = useMemo(() => {
-  const variants = product?.variants || [];
+  const data = useMemo(() => {
+    const variants = Array.isArray(product?.variants)
+      ? product.variants
+      : [];
 
-  // PRICE
-  const variantPrices = variants
-    .map((v: any) => Number(v?.price) || 0)
-    .filter((p: number) => p > 0);
+    /* ================= PRICE ================= */
 
-  const displayPrice =
-    variantPrices.length > 0
-      ? Math.min(...variantPrices)
-      : Number(
-    product?.price ||
-    product?.basePrice ||
-    0
-  );
+    const variantPrices = variants
+      .map((v: any) => Number(v?.price) || 0)
+      .filter((p: number) => p > 0);
 
-  // STOCK
-  const totalStock =
-    variants.length > 0
-      ? variants.reduce(
-          (sum: number, v: any) =>
-            sum + (Number(v?.stock) || 0),
-          0
-        )
-      : Number(
-    product?.stock ??
-    product?.totalStock ??
-    0
-  );
+    const displayPrice =
+      Number(product?.displayPrice) > 0
+        ? Number(product?.displayPrice)
+        : variantPrices.length > 0
+        ? Math.min(...variantPrices)
+        : Number(product?.price || 0);
 
-  // IMAGE
-  const firstVariantImage =
-    variants?.[0]?.images?.[0]?.imageUrl;
+    /* ================= STOCK ================= */
 
-  const generalImage =
-    product?.images?.[0]?.imageUrl ||
-    product?.image;
+    const totalStock =
+      Number(product?.totalStock) > 0
+        ? Number(product?.totalStock)
+        : variants.length > 0
+        ? variants.reduce(
+            (sum: number, v: any) =>
+              sum + (Number(v?.stock) || 0),
+            0
+          )
+        : Number(product?.stock || 0);
 
-  const imageUrl =
-    firstVariantImage || generalImage;
+    /* ================= IMAGE ================= */
 
-  const finalImage = imageUrl
-    ? imageUrl.startsWith('http')
-      ? imageUrl
-      : `${apiBase}/uploads/${imageUrl.replace(/^\//, '')}`
-    : '/placeholder.png';
+    const variantImage =
+      variants?.[0]?.images?.[0]?.imageUrl;
 
-  return {
-    id: safeString(product?.id),
-    name: safeString(
-      product?.title || product?.name,
-      'Product Name'
-    ),
-    subTitle: safeString(
-      product?.subTitle || 'Premium Quality'
-    ),
-    origin: safeString(
-      product?.origin || 'LOCAL'
-    ),
+    const productImage =
+      product?.images?.[0]?.imageUrl ||
+      product?.image ||
+      product?.img;
 
-    // ✅ FIXED
-    price: displayPrice,
-    stock: totalStock,
+    const imageUrl = variantImage || productImage;
 
-    oldPrice: safeNumber(
-      product?.oldPrice || displayPrice * 1.2
-    ),
+    const finalImage = imageUrl
+      ? imageUrl.startsWith('http')
+        ? imageUrl
+        : `${apiBase}/uploads/${imageUrl.replace(/^\//, '')}`
+      : '/placeholder.png';
 
-    rating: safeNumber(
-      product?.averageRating ||
-      product?.rating,
-      0
-    ),
+    /* ================= RANDOM SOLD COUNT ================= */
 
-    reviewCount: safeNumber(
-      product?.reviewCount,
-      0
-    ),
+    const soldSeed =
+      Number(product?.reviewCount || 0) > 0
+        ? `${Math.floor(
+            Math.random() * 90 + 10
+          )}K+ sold`
+        : `${Math.floor(
+            Math.random() * 900 + 100
+          )}+ sold`;
 
-    discount: safeNumber(
-      product?.discount,
-      15
-    ),
+    /* ================= DISCOUNT ================= */
 
-    image: finalImage,
-    vendorId: safeString(product?.vendorId),
+    const oldPrice =
+      Number(product?.oldPrice) > 0
+        ? Number(product?.oldPrice)
+        : Math.floor(displayPrice * 1.35);
+
+    const discount =
+      Math.round(
+        ((oldPrice - displayPrice) / oldPrice) * 100
+      ) || 15;
+
+    return {
+      id: safeString(product?.id),
+
+      name: safeString(
+        product?.title || product?.name,
+        'Product'
+      ),
+
+      image: finalImage,
+
+      price: displayPrice,
+
+      oldPrice,
+
+      stock: totalStock,
+
+      rating:
+        safeNumber(product?.averageRating) || 4.8,
+
+      reviewCount:
+        safeNumber(product?.reviewCount) || 0,
+
+      soldSeed,
+
+      discount,
+
+      vendorId: safeString(product?.vendorId),
+
+      origin: safeString(product?.origin || 'LOCAL'),
+    };
+  }, [product, apiBase]);
+
+  const isHearted =
+    mounted && data.id
+      ? isWishlisted?.(data.id)
+      : false;
+
+  const handleNavigate = () => {
+    if (!data.id) return;
+    router.push(`/product/${data.id}`);
   };
-}, [product, apiBase]);
 
-  const isHearted = mounted && data.id ? isWishlisted?.(data.id) : false;
-
-  const handleNavigate = () => data.id && router.push(`/product/${data.id}`);
-
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleWishlist = (
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
 
-    if (!data.id) return;
+    toggleWishlist({
+      id: data.id,
+      name: data.name,
+      image: data.image,
+      price: data.price,
+    });
 
-    const firstVariant = product?.variants?.[0];
+    toast.success(
+      isHearted
+        ? 'Removed from wishlist'
+        : 'Added to wishlist'
+    );
+  };
+
+  const handleAddToCart = (
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+
+    const firstVariant =
+      product?.variants?.[0];
 
     addItem({
       id: data.id,
-      name: data.name,
       productId: data.id,
-      price: data.price,
+      name: data.name,
       image: data.image,
-      vendorId: String(product?.vendorId || ''),
+      price: data.price,
       stock: data.stock,
       quantity: 1,
+      vendorId: data.vendorId,
+
+      variantId: firstVariant?.id,
       color: firstVariant?.color,
       size: firstVariant?.size,
-      variantId: firstVariant?.id,
     });
 
     toast.success('Added to cart');
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    toggleWishlist({
-      id: data.id,
-      
-      name: data.name,
-      price: data.price,
-      image: data.image,
-    });
-
-    toast.success(isHearted ? 'Removed from wishlist' : 'Added to wishlist');
-  };
-
   return (
-    <div 
+    <div
       onClick={handleNavigate}
-      className="group bg-white rounded-2xl border border-zinc-100 overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
+      className="
+        bg-white
+        rounded-xl
+        overflow-hidden
+        cursor-pointer
+        border border-zinc-100
+        active:scale-[0.99]
+        transition-all
+      "
     >
-      {/* 1. IMAGE CONTAINER (Exactly like sample) */}
-      <div className="relative aspect-square m-2 rounded-xl bg-zinc-50 overflow-hidden">
+      {/* ================= IMAGE ================= */}
+
+      <div className="relative aspect-[0.92] bg-[#F7F7F7] overflow-hidden">
         {data.image !== '/placeholder.png' ? (
           <Image
             src={data.image}
             alt={data.name}
             fill
             sizes="(max-width:768px) 50vw, 25vw"
-            className="object-contain"
+            className="object-cover"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-zinc-300"><ImageOff size={24} /></div>
+          <div className="h-full flex items-center justify-center text-zinc-300">
+            <ImageOff size={26} />
+          </div>
         )}
 
-        {/* Floating Badges */}
-        <div className="absolute top-2 left-2">
-          <span className="bg-[#A4143D] text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+        {/* Discount Badge */}
+
+        <div className="absolute top-2 left-2 z-10">
+          <div className="bg-[#A4143D] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
             -{data.discount}%
-          </span>
+          </div>
         </div>
 
-        <button
-          onClick= {handleWishlist}
-          className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-sm border border-zinc-50 transition-transform active:scale-90"
-        >
-          <Heart size={14} className={isHearted ? "fill-[#A4143D] text-[#A4143D]" : "text-zinc-400"} />
-        </button>
+        {/* Wishlist */}
 
         <button
-          onClick= {handleAddToCart}
-          className="absolute bottom-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-sm border border-zinc-50 transition-transform active:scale-90 hover:text-[#A4143D]"
+          onClick={handleWishlist}
+          className="
+            absolute
+            top-2
+            right-2
+            z-10
+            w-8
+            h-8
+            rounded-full
+            bg-white/95
+            flex
+            items-center
+            justify-center
+            shadow-md
+          "
         >
-          <ShoppingCart size={14} className="text-zinc-600" />
+          <Heart
+            size={14}
+            className={
+              isHearted
+                ? 'fill-[#A4143D] text-[#A4143D]'
+                : 'text-zinc-500'
+            }
+          />
+        </button>
+
+        {/* Cart */}
+
+        <button
+          onClick={handleAddToCart}
+          className="
+            absolute
+            bottom-2
+            right-2
+            z-10
+            w-9
+            h-9
+            rounded-full
+            bg-white
+            flex
+            items-center
+            justify-center
+            shadow-lg
+            border border-zinc-100
+          "
+        >
+          <ShoppingCart
+            size={16}
+            className="text-zinc-700"
+          />
         </button>
       </div>
 
-      {/* 2. CONTENT AREA */}
-      <div className="p-3 pt-1 space-y-2">
-        {/* Title & Subtitle */}
-        <div className="space-y-0.5">
-          <h3 className="text-[13px] font-bold text-zinc-900 truncate">{data.name}</h3>
-          <p className="text-[10px] text-zinc-400 font-medium">
-            {data.subTitle} • <span className="text-emerald-600">{data.origin}</span>
-          </p>
+      {/* ================= CONTENT ================= */}
+
+      <div className="px-2.5 py-2 space-y-1.5">
+        {/* Title */}
+
+        <h3
+          className="
+            text-[13px]
+            leading-[1.2]
+            font-semibold
+            text-zinc-900
+            line-clamp-2
+            min-h-[32px]
+          "
+        >
+          {data.name}
+        </h3>
+
+        {/* Rating + Sold */}
+
+        <div className="flex items-center gap-1 flex-wrap">
+          <div className="flex items-center gap-0.5">
+            <Star
+              size={11}
+              className="fill-black text-black"
+            />
+            <span className="text-[11px] font-bold text-black">
+              {data.rating.toFixed(1)}
+            </span>
+          </div>
+
+          <span className="text-[11px] text-zinc-500">
+            🔥 {data.soldSeed}
+          </span>
         </div>
 
-        {/* Price Row */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-bold text-[#A4143D]">
+        {/* Tiny Promo Strip */}
+
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className="bg-[#F97316] text-white text-[9px] font-bold px-1.5 py-[2px] rounded">
+            Saved ₦
+            {Math.floor(
+              data.oldPrice - data.price
+            ).toLocaleString()}
+          </span>
+
+          <span className="text-[9px] text-[#F97316] font-bold">
+            11:59:29
+          </span>
+        </div>
+
+        {/* Marketing Text */}
+
+        <p className="text-[11px] font-medium text-[#F97316] truncate">
+          BEST-SELLING ITEM | Limited deal
+        </p>
+
+        {/* PRICE */}
+
+        <div className="flex items-end gap-1 flex-wrap">
+          <span className="text-[22px] font-black text-[#F97316] tracking-tight leading-none">
             ₦{data.price.toLocaleString()}
           </span>
-          <span className="text-[10px] text-zinc-300 line-through">
+
+          <span className="text-[11px] text-zinc-400 line-through mb-[2px]">
             ₦{data.oldPrice.toLocaleString()}
           </span>
         </div>
 
-{/* Rating & Stock/Urgency Row */}
-<div className="flex items-center justify-between pt-1 min-h-[20px]">
-  
-  {/* 1. SEEDED RATING LOGIC */}
-  <div className="flex items-center gap-1">
-    {data.reviewCount > 0 ? (
-      <>
-        <Star size={10} className="fill-yellow-400 text-yellow-400" />
-        <span className="text-[11px] font-bold text-zinc-800">
-          {(data.rating || 4.5).toFixed(1)} 
-        </span>
-        <span className="text-[10px] text-zinc-400">
-          ({data.reviewCount})
-        </span>
-      </>
-    ) : (
-      // Badge for new items instead of 0.0
-      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter bg-zinc-50 px-2 py-0.5 rounded-md">
-        New Arrival
-      </span>
-    )}
-  </div>
+        {/* STOCK */}
 
-  {/* 2. DYNAMIC URGENCY LOGIC */}
-  <div className="flex flex-col items-end">
-    {data.stock > 0 && data.stock <= 5 ? (
-      // RED URGENCY: Only shown if stock is critical
-      <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter animate-pulse">
-        Only {data.stock} Left
-      </span>
-    ) : data.stock > 0 ? (
-      // SUBTLE STOCK: Standard in-stock signal
-      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">
-        In Stock
-      </span>
-    ) : (
-      // SOLD OUT: Greyed out
-      <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-tighter">
-        Out of Stock
-      </span>
-    )}
-  </div>
+        <div className="min-h-[18px]">
+          {data.stock > 0 &&
+          data.stock <= 5 ? (
+            <span className="text-[10px] font-bold text-red-500 uppercase">
+              Only {data.stock} left
+            </span>
+          ) : data.stock > 0 ? (
+            <span className="text-[10px] font-bold text-emerald-600 uppercase">
+              In stock
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold text-zinc-300 uppercase">
+              Out of stock
+            </span>
+          )}
+        </div>
 
-</div>
+        {/* SHIPPING */}
 
-        {/* Delivery Footer */}
-        <div className="pt-2 border-t border-zinc-50 flex items-center gap-2 text-zinc-500">
-          <Truck size={12} className="shrink-0" />
-          <span className="text-[10px] font-medium truncate">
-            {data.origin === 'LOCAL' ? 'Fast Local Delivery • 1-3 days' : 'Ships Worldwide • 5-10 days'}
+        <div className="flex items-center gap-1 pt-1 text-zinc-500">
+          <Truck size={11} />
+
+          <span className="text-[10px] truncate">
+            {data.origin === 'LOCAL'
+              ? 'Fast Local Delivery'
+              : 'Ships Worldwide'}
           </span>
         </div>
       </div>
