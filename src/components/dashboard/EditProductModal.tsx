@@ -2,22 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-  X, Loader2, Plus, Trash2, Box, Tag, Zap, Layers, Image as ImageIcon
+  X, Loader2, Plus, Trash2, Box, Tag, Zap, Palette, Layers, Image as ImageIcon
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { uploadToCloudinary } from '@/src/lib/cloudinary';
 import { toast } from 'sonner';
 
-type Category = { 
-  id: string; 
-  name: string; 
-  children?: Category[]; 
-};
-
 type Variant = {
   id?: string;
   color: string;
-  size: string;
+  size: string;           // Changed to singular 'size'
   price?: string;
   stock?: string;
   images: string[];
@@ -34,14 +28,22 @@ type FormData = {
   deliveryMax: string;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  children?: Category[];
+};
+
 export default function EditProductModal({
   isOpen,
   onClose,
   onRefresh,
   product,
 }: any) {
+
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -54,36 +56,74 @@ export default function EditProductModal({
     deliveryMax: '',
   });
 
-  const [generalImages, setGeneralImages] = useState<string[]>([]);
+  const [generalImages, setGeneralImages] = useState<string[]>([]);   // Main images
   const [variants, setVariants] = useState<Variant[]>([]);
 
-  // 🌍 CATEGORY ENGINE LAYER STACK
-  const [mainCategories, setMainCategories] = useState<Category[]>([]); 
-  const [secondaryCategories, setSecondaryCategories] = useState<Category[]>([]);
-  const [tertiaryCategories, setTertiaryCategories] = useState<Category[]>([]);
+  const [mainCategories, setMainCategories] = useState<Category[]>([]);
+const [secondaryCategories, setSecondaryCategories] = useState<Category[]>([]);
+const [tertiaryCategories, setTertiaryCategories] = useState<Category[]>([]);
 
-  const [mainCatId, setMainCatId] = useState('');
-  const [secondaryCatId, setSecondaryCatId] = useState('');
+const [mainCatId, setMainCatId] = useState('');
+const [secondaryCatId, setSecondaryCatId] = useState('');
 
-  // Fetch your structured categories from the DB on layout open
-  useEffect(() => { 
-    if (isOpen) {
-      fetchCategories();
-    }
-  }, [isOpen]);
+  const dragIndex = useRef<number | null>(null);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await api.get('/categories');
-      setMainCategories(res.data);
-    } catch (e) { 
-      console.error("Registry_Fetch_Failure", e); 
-    }
-  };
+  // ================= HYDRATION FROM PRODUCT =================
 
-  // ================= HYDRATION & RE-MAPPING ENGINE =================
+
   useEffect(() => {
-    if (!isOpen || !product || mainCategories.length === 0) return;
+  if (isOpen) {
+    fetchCategories();
+  }
+}, [isOpen]);
+
+const fetchCategories = async () => {
+  try {
+    const res = await api.get('/categories');
+
+    setMainCategories(res.data);
+
+    if (product?.categoryId) {
+      hydrateCategoryTree(res.data, product.categoryId);
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const hydrateCategoryTree = (
+  categories: Category[],
+  targetCategoryId: string
+) => {
+
+  for (const main of categories) {
+
+    if (!main.children) continue;
+
+    for (const secondary of main.children) {
+
+      if (!secondary.children) continue;
+
+      const tertiary = secondary.children.find(
+        (t) => t.id === targetCategoryId
+      );
+
+      if (tertiary) {
+
+        setMainCatId(main.id);
+        setSecondaryCategories(main.children);
+
+        setSecondaryCatId(secondary.id);
+        setTertiaryCategories(secondary.children);
+
+        return;
+      }
+    }
+  }
+};
+  useEffect(() => {
+    if (!isOpen || !product) return;
 
     setFormData({
       title: product.title || '',
@@ -96,10 +136,12 @@ export default function EditProductModal({
       deliveryMax: String(product.deliveryMax || ''),
     });
 
+    // General Images
     setGeneralImages(
       product.images?.map((img: any) => img.imageUrl) || []
     );
 
+    // Variants
     setVariants(
       product.variants?.map((v: any) => ({
         id: v.id,
@@ -110,67 +152,9 @@ export default function EditProductModal({
         images: v.images?.map((img: any) => img.imageUrl) || [],
       })) || []
     );
+  }, [isOpen, product]);
 
-    // 🎯 REVERSE CASCADE ALIGNMENT FOR PRE-SET SELECTIONS
-    if (product.categoryId) {
-      // Traverse down into your DB layers to re-select matching dropdown levels
-      let foundMainId = '';
-      let foundSecondaryId = '';
-      let targetTertiaryList: Category[] = [];
-      let targetSecondaryList: Category[] = [];
-
-      for (const main of mainCategories) {
-        if (main.children) {
-          for (const sub of main.children) {
-            // Check if product is set at level 3 (Leaf node)
-            const matchedLeaf = sub.children?.find(leaf => leaf.id === product.categoryId);
-            if (matchedLeaf) {
-              foundMainId = main.id;
-              foundSecondaryId = sub.id;
-              targetSecondaryList = main.children;
-              targetTertiaryList = sub.children || [];
-              break;
-            }
-            // Fallback match if it was stored directly at level 2
-            if (sub.id === product.categoryId) {
-              foundMainId = main.id;
-              foundSecondaryId = sub.id;
-              targetSecondaryList = main.children;
-              targetTertiaryList = sub.children || [];
-              break;
-            }
-          }
-        }
-      }
-
-      if (foundMainId) {
-        setMainCatId(foundMainId);
-        setSecondaryCategories(targetSecondaryList);
-        setSecondaryCatId(foundSecondaryId);
-        setTertiaryCategories(targetTertiaryList);
-      }
-    }
-  }, [isOpen, product, mainCategories]);
-
-  // ================= TIER CHANGING LOGIC PIPELINES =================
-  const handleMainChange = (id: string) => {
-    setMainCatId(id);
-    const selected = mainCategories.find(c => c.id === id);
-    setSecondaryCategories(selected?.children || []);
-    setSecondaryCatId('');
-    setTertiaryCategories([]);
-    setFormData(prev => ({ ...prev, categoryId: '' }));
-  };
-
-  const handleSecondaryChange = (id: string) => {
-    setSecondaryCatId(id);
-    const selected = secondaryCategories.find(c => c.id === id);
-    const children = selected?.children || [];
-    setTertiaryCategories(children);
-    setFormData(prev => ({ ...prev, categoryId: children.length === 0 ? id : '' }));
-  };
-
-  // ================= IMAGES UPLOAD MECHANICS =================
+  // ================= GENERAL IMAGE UPLOAD =================
   const handleGeneralImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -190,7 +174,7 @@ export default function EditProductModal({
     setGeneralImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // ================= VARIANT ROUTINE OPERATIONS =================
+  // ================= VARIANT HANDLERS =================
   const addVariant = () => {
     setVariants(prev => [...prev, { color: '', size: '', price: '', stock: '', images: [] }]);
   };
@@ -224,31 +208,86 @@ export default function EditProductModal({
     }
   };
 
-  // ================= FORM SUBMISSION PROTOCOL =================
+  const handleMainChange = (id: string) => {
+
+  setMainCatId(id);
+
+  const selected = mainCategories.find(c => c.id === id);
+
+  setSecondaryCategories(selected?.children || []);
+
+  setSecondaryCatId('');
+  setTertiaryCategories([]);
+
+  setFormData(prev => ({
+    ...prev,
+    categoryId: '',
+  }));
+};
+
+const handleSecondaryChange = (id: string) => {
+
+  setSecondaryCatId(id);
+
+  const selected = secondaryCategories.find(c => c.id === id);
+
+  const children = selected?.children || [];
+
+  setTertiaryCategories(children);
+
+  setFormData(prev => ({
+    ...prev,
+    categoryId: '',
+  }));
+};
+
+  // ================= SUBMIT =================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!product) return;
-    if (!formData.categoryId) return toast.error("Please select a valid sub-category path.");
 
     setLoading(true);
 
     try {
-      const payload = {
-        ...formData,
-        price: formData.price ? Number(formData.price) : undefined,
-        stock: formData.stock ? Number(formData.stock) : undefined,
-        deliveryMin: formData.deliveryMin ? Number(formData.deliveryMin) : undefined,
-        deliveryMax: formData.deliveryMax ? Number(formData.deliveryMax) : undefined,
-        generalImages,
-        variants: variants.map(v => ({
-          id: v.id,
-          color: v.color.trim(),
-          size: v.size.trim(),
-          price: v.price !== '' && v.price !== undefined ? Number(v.price) : undefined,
-          stock: v.stock !== '' && v.stock !== undefined ? Number(v.stock) : undefined,
-          images: v.images,
-        })),
-      };
+const payload = {
+  ...formData,
+
+  price: formData.price
+    ? Number(formData.price)
+    : undefined,
+
+  stock: formData.stock
+    ? Number(formData.stock)
+    : undefined,
+
+  deliveryMin: formData.deliveryMin
+    ? Number(formData.deliveryMin)
+    : undefined,
+
+  deliveryMax: formData.deliveryMax
+    ? Number(formData.deliveryMax)
+    : undefined,
+
+  generalImages,
+
+variants: variants.map(v => ({
+  id: v.id,
+  color: v.color,
+  size: v.size,
+
+  price:
+    v.price !== '' && v.price !== undefined
+      ? Number(v.price)
+      : undefined,
+
+  stock:
+    v.stock !== '' && v.stock !== undefined
+      ? Number(v.stock)
+      : undefined,
+
+  images: v.images,
+})),
+};
 
       await api.patch(`/products/${product.id}`, payload);
 
@@ -258,7 +297,7 @@ export default function EditProductModal({
       toast.success("Product updated successfully");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update product alignment");
+      toast.error("Failed to update product");
     } finally {
       setLoading(false);
     }
@@ -267,14 +306,13 @@ export default function EditProductModal({
   if (!isOpen || !product) return null;
 
   const inputClasses = "w-full p-4 lg:p-5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 outline-none focus:border-blue-600 transition-all placeholder:text-slate-400 shadow-sm";
-  const darkSelectClasses = "w-full p-4 lg:p-5 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white outline-none focus:border-blue-600 transition-all";
   const labelClasses = "text-[10px] font-black uppercase text-slate-500 mb-2 block ml-1 tracking-widest";
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end lg:items-center justify-center bg-[#0F172A]/80 backdrop-blur-md">
       <div className="bg-[#F4F7FE] w-full max-w-6xl lg:rounded-4xl rounded-t-[2.5rem] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
 
-        {/* HEADER BLOCK */}
+        {/* HEADER */}
         <div className="p-6 lg:p-8 border-b border-slate-200 flex justify-between items-center bg-white">
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">
@@ -289,68 +327,119 @@ export default function EditProductModal({
 
         <form onSubmit={handleSubmit} className="p-6 lg:p-10 grid lg:grid-cols-2 gap-8 overflow-y-auto">
           
-          {/* LEFT COLUMN - System Images & Categorization */}
+          {/* LEFT COLUMN - General Info & Images */}
           <div className="space-y-8">
-            
-            {/* 🌐 NEW CATEGORIZATION CONTROLS */}
-            <div className="bg-[#1E293B] p-6 lg:p-8 rounded-4xl shadow-xl border border-slate-800">
-              <h3 className="text-[10px] font-black uppercase text-orange-500 mb-6 tracking-widest flex items-center gap-2 italic">
-                <Tag size={12} /> SYSTEM RECLASSIFICATION
-              </h3>
-              <div className="space-y-5">
-                <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase mb-2 block ml-1">DEPARTMENT</label>
-                  <select required value={mainCatId} className={darkSelectClasses} onChange={e => handleMainChange(e.target.value)}>
-                    <option value="">Select Department</option>
-                    {mainCategories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase mb-2 block ml-1">GROUP SECTOR</label>
-                  <select required disabled={!secondaryCategories.length} value={secondaryCatId} className={`${darkSelectClasses} disabled:opacity-20`} onChange={e => handleSecondaryChange(e.target.value)}>
-                    <option value="">Select Group Sector</option>
-                    {secondaryCategories.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase mb-2 block ml-1">MICRO SUB-CATEGORY</label>
-                  <select required disabled={!tertiaryCategories.length} className={`${darkSelectClasses} border-orange-900/30 disabled:opacity-20`} onChange={e => setFormData({...formData, categoryId: e.target.value})} value={formData.categoryId}>
-                    <option value="">Select Sub-Category Target</option>
-                    {tertiaryCategories.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* General Product Images Preview Strip */}
+            {/* General Images */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-slate-900">General Product Images</h3>
-                <span className="text-xs font-mono text-slate-400">{generalImages.length}/8</span>
-              </div>
+              <h3 className="font-bold mb-4">General Product Images</h3>
               <div className="flex gap-3 overflow-x-auto pb-4">
-                <label className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 shrink-0">
-                  <ImageIcon size={24} className="text-slate-400" />
-                  <span className="text-[10px] font-black text-slate-400 mt-1">Add Image</span>
-                  <input type="file" multiple hidden accept="image/*" onChange={handleGeneralImageUpload} />
+                <label className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500">
+                  <Plus size={28} className="text-slate-400" />
+                  <input type="file" multiple hidden onChange={handleGeneralImageUpload} />
                 </label>
 
                 {generalImages.map((img, idx) => (
-                  <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 shrink-0 group">
+                  <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 shrink-0">
                     <img src={img} alt="" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => removeGeneralImage(idx)}
-                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                      className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Title & Specs */}
+
+            {/* CATEGORY ENGINE */}
+<div className="bg-[#1E293B] p-6 rounded-4xl border border-slate-800">
+
+  <h3 className="text-[10px] font-black uppercase text-orange-500 mb-6 tracking-widest">
+    Categorization
+  </h3>
+
+  <div className="space-y-5">
+
+    {/* MAIN */}
+    <div>
+      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
+        Department
+      </label>
+
+      <select
+        required
+        value={mainCatId}
+        onChange={(e) => handleMainChange(e.target.value)}
+        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
+      >
+        <option value="">Select Department</option>
+
+        {mainCategories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* SECONDARY */}
+    <div>
+      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
+        Category
+      </label>
+
+      <select
+        required
+        value={secondaryCatId}
+        disabled={!secondaryCategories.length}
+        onChange={(e) => handleSecondaryChange(e.target.value)}
+        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
+      >
+        <option value="">Select Category</option>
+
+        {secondaryCategories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* TERTIARY */}
+    <div>
+      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
+        Sub Category
+      </label>
+
+      <select
+        required
+        value={formData.categoryId}
+        disabled={!tertiaryCategories.length}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            categoryId: e.target.value,
+          })
+        }
+        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
+      >
+        <option value="">Select Sub Category</option>
+
+        {tertiaryCategories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+  </div>
+</div>
+
+            {/* Title & Description */}
             <div>
               <label className={labelClasses}>Product Title</label>
               <input
@@ -360,29 +449,8 @@ export default function EditProductModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClasses}>Base Price (₦)</label>
-                <input
-                  type="number"
-                  className={inputClasses}
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className={labelClasses}>Global Base Stock</label>
-                <input
-                  type="number"
-                  className={inputClasses}
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                />
-              </div>
-            </div>
-
             <div>
-              <label className={labelClasses}>Description Summary</label>
+              <label className={labelClasses}>Description</label>
               <textarea
                 className={`${inputClasses} h-40 resize-none`}
                 value={formData.description}
@@ -391,115 +459,185 @@ export default function EditProductModal({
             </div>
           </div>
 
-          {/* RIGHT COLUMN - Variants & Submission Engine */}
+          <div className="grid grid-cols-2 gap-4">
+
+  <div>
+    <label className={labelClasses}>Price</label>
+
+    <input
+      type="number"
+      className={inputClasses}
+      value={formData.price}
+      onChange={(e) =>
+        setFormData({
+          ...formData,
+          price: e.target.value,
+        })
+      }
+    />
+  </div>
+
+  <div>
+    <label className={labelClasses}>Stock</label>
+
+    <input
+      type="number"
+      className={inputClasses}
+      value={formData.stock}
+      onChange={(e) =>
+        setFormData({
+          ...formData,
+          stock: e.target.value,
+        })
+      }
+    />
+  </div>
+
+</div>
+
+          {/* RIGHT COLUMN - Variants */}
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="font-bold text-slate-900">Active Specification Matrix</h3>
+              <h3 className="font-bold">Variants</h3>
               <button
                 type="button"
                 onClick={addVariant}
-                className="flex items-center gap-2 text-blue-600 text-sm font-bold hover:text-blue-500"
+                className="flex items-center gap-2 text-blue-600 text-sm font-bold"
               >
-                <Plus size={18} /> Add New Matrix Node
+                <Plus size={18} /> Add Variant
               </button>
             </div>
 
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-              {variants.map((variant, i) => (
-                <div key={i} className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm relative group border-l-4 border-l-blue-600">
-                  <button
-                    type="button"
-                    onClick={() => removeVariant(i)}
-                    className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+            {variants.map((variant, i) => (
+              <div key={i} className="p-6 bg-white border border-slate-200 rounded-3xl">
+                <button
+                  type="button"
+                  onClick={() => removeVariant(i)}
+                  className="float-right text-red-500"
+                >
+                  <Trash2 size={18} />
+                </button>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Color Variant</label>
-                      <input
-                        value={variant.color}
-                        onChange={(e) => updateVariant(i, 'color', e.target.value)}
-                        className={inputClasses}
-                        placeholder="Red, Black..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Size Metric</label>
-                      <input
-                        value={variant.size}
-                        onChange={(e) => updateVariant(i, 'size', e.target.value)}
-                        className={inputClasses}
-                        placeholder="M, L, XL..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Overriding Price (₦)</label>
-                      <input
-                        type="number"
-                        value={variant.price || ''}
-                        onChange={(e) => updateVariant(i, 'price', e.target.value)}
-                        className={inputClasses}
-                        placeholder="Defaults to Base Price"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Allocation Stock</label>
-                      <input
-                        type="number"
-                        value={variant.stock || ''}
-                        onChange={(e) => updateVariant(i, 'stock', e.target.value)}
-                        className={inputClasses}
-                        placeholder="Allocated QTY"
-                      />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+  {/* COLOR */}
+  <div>
+    <label className="text-xs font-bold">
+      Color
+    </label>
 
-                  {/* Variant Media Strip */}
-                  <div className="mt-4">
-                    <label className="text-[10px] font-bold text-slate-400 mb-2 block">Variant-Specific Media</label>
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                      <label className="w-12 h-12 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 shrink-0">
-                        <Plus size={16} className="text-slate-400" />
-                        <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
-                      </label>
+    <input
+      value={variant.color}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'color',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="Red, Blue..."
+    />
+  </div>
 
-                      {variant.images.map((img, idx) => (
-                        <div key={idx} className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-100">
-                          <img src={img} className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newImages = variant.images.filter((_, j) => j !== idx);
-                              updateVariant(i, 'images', newImages as any);
-                            }}
-                            className="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center shadow-sm"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+  {/* SIZE */}
+  <div>
+    <label className="text-xs font-bold">
+      Size
+    </label>
+
+    <input
+      value={variant.size}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'size',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="S, M, L..."
+    />
+  </div>
+
+  {/* PRICE */}
+  <div>
+    <label className="text-xs font-bold">
+      Price
+    </label>
+
+    <input
+      type="number"
+      value={variant.price || ''}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'price',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="15000"
+    />
+  </div>
+
+  {/* STOCK */}
+  <div>
+    <label className="text-xs font-bold">
+      Stock
+    </label>
+
+    <input
+      type="number"
+      value={variant.stock || ''}
+      onChange={(e) =>
+        updateVariant(
+          i,
+          'stock',
+          e.target.value
+        )
+      }
+      className={inputClasses}
+      placeholder="10"
+    />
+  </div>
+</div>
+
+                {/* Variant Images */}
+                <div className="mt-6">
+                  <label className="text-xs font-bold mb-2 block">Variant Images</label>
+                  <div className="flex gap-2 overflow-x-auto">
+                    <label className="w-12 h-12 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer">
+                      <Plus size={16} />
+                      <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
+                    </label>
+
+                    {variant.images.map((img, idx) => (
+                      <div key={idx} className="relative w-12 h-12 rounded-xl overflow-hidden">
+                        <img src={img} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newImages = variant.images.filter((_, j) => j !== idx);
+                            updateVariant(i, 'images', newImages as any);
+                          }}
+                          className="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
 
-          {/* SYSTEM MASTER ACTION BUTTON */}
           <button
             type="submit"
             disabled={loading}
-            className="lg:col-span-2 w-full bg-slate-900 hover:bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-40 transition-all flex items-center justify-center gap-2 shadow-xl"
+            className="lg:col-span-2 w-full bg-black text-white py-6 rounded-2xl font-bold text-sm tracking-widest"
           >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin" size={16} /> Syncing Payload Changes...
-              </>
-            ) : (
-              'Commit Changes to Database'
-            )}
+            {loading ? 'Updating...' : 'Save Changes'}
           </button>
         </form>
       </div>
