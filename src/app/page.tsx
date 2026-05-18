@@ -21,10 +21,22 @@ import { Footer } from '../components/Footer';
 import { BreakoutBannerGrid } from '../components/home/BreakBannerGrid';
 import { VendorCTA } from '../components/home/VendorCTA';
 import { CategoryWorldSection } from '../components/home/CategoryWorldSection';
-import { HomeRailSection } from '../components/home/HomeRailSection';
+import  { HomepageRail } from '../components/home/HomeRailSection';
+import axios from 'axios';
 
 export default function HomePage() {
+  const [data, setData] = useState({
+    trending: [],
+    beauty: [],
+    under10k: [],
+    recent: [],
+    imported: [],
+    fastDelivery: [],
+    fashion: [],
+    accessories: [],
+  });
   const [loading, setLoading] = useState(true);
+
   const [visibleCount, setVisibleCount] = useState(12);
   const [isSyncing, setIsSyncing] = useState(false);
   
@@ -40,6 +52,54 @@ export default function HomePage() {
     topSaver: []
   });
 
+
+useEffect(() => {
+    const fetchHomepageDiscoveryData = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL;
+        
+        // Parallelized network operations for maximum response velocity
+        const [
+          trendingRes, 
+          beautyRes, 
+          under10kRes, 
+          recentRes, 
+          importedRes, 
+          fastRes, 
+          fashionRes, 
+          accessoriesRes
+        ] = await Promise.all([
+          axios.get(`${API_URL}/storefront/products?sort=trending&limit=8`),
+          axios.get(`${API_URL}/storefront/products?category=beauty-skincare&limit=8`),
+          axios.get(`${API_URL}/storefront/products?maxPrice=10000&limit=8`),
+          axios.get(`${API_URL}/storefront/products?sort=newest&limit=8`),
+          axios.get(`${API_URL}/storefront/products?origin=INTERNATIONAL&limit=8`),
+          axios.get(`${API_URL}/storefront/products?origin=LOCAL&maxDeliveryDays=3&limit=8`),
+          axios.get(`${API_URL}/storefront/products?category=fashion&limit=8`),
+          axios.get(`${API_URL}/storefront/products?category=accessories&limit=8`),
+        ]);
+
+        setData({
+          trending: trendingRes.data?.products || trendingRes.data || [],
+          beauty: beautyRes.data?.products || beautyRes.data || [],
+          under10k: under10kRes.data?.products || under10kRes.data || [],
+          recent: recentRes.data?.products || recentRes.data || [],
+          imported: importedRes.data?.products || importedRes.data || [],
+          fastDelivery: fastRes.data?.products || fastRes.data || [],
+          fashion: fashionRes.data?.products || fashionRes.data || [],
+          accessories: accessoriesRes.data?.products || accessoriesRes.data || [],
+        });
+      } catch (err) {
+        console.error("Discovery_Engine_Crash_Sync", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHomepageDiscoveryData();
+  }, []);
+
+  
   useEffect(() => {
     const syncAvioreRegistry = async () => {
       try {
@@ -108,9 +168,79 @@ export default function HomePage() {
           {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
         </div>
 
+{/* 3. DENSE APP DISCOVERY ENGINE (ALL RAILS) */}
+        <Container className="py-12 space-y-6">
+          
+          <HomepageRail 
+            title="TRENDING NOW"
+            subtitle="Hottest drops calculated across the network"
+            products={data.trending}
+            href="/discover/trending"
+            loading={loading}
+          />
+
+          <HomepageRail 
+            title="BEAUTY PICKS"
+            subtitle="Pristine formulations & curated skincare"
+            products={data.beauty}
+            href="/category/beauty-skincare"
+            loading={loading}
+          />
+
+          <HomepageRail 
+            title="UNDER ₦10,000"
+            subtitle="Elite styles at immediate price thresholds"
+            products={data.under10k}
+            href="/discover/under-10000"
+            loading={loading}
+          />
+
+          <HomepageRail 
+            title="RECENTLY ADDED"
+            subtitle="Live mint condition artifacts uploaded today"
+            products={data.recent}
+            href="/discover/new-arrivals"
+            loading={loading}
+          />
+
+          <HomepageRail 
+            title="IMPORTED DEALS"
+            subtitle="Direct items sourced from overseas logistical nodes"
+            products={data.imported}
+            href="/discover/imported"
+            loading={loading}
+          />
+
+          <HomepageRail 
+            title="FAST LOCAL DELIVERY"
+            subtitle="Dispatched locally // Arrives within 48-72 hours max"
+            products={data.fastDelivery}
+            href="/discover/fast-delivery"
+            loading={loading}
+          />
+
+          <HomepageRail 
+            title="AVIORÈ FASHION"
+            subtitle="High garment cuts, statement archival denim & footwear"
+            products={data.fashion}
+            href="/category/fashion"
+            loading={loading}
+          />
+
+          <HomepageRail 
+            title="THE ACCESSORIES EDIT"
+            subtitle="Hardware accents, lifestyle accessories, and leather goods"
+            products={data.accessories}
+            href="/category/accessories"
+            loading={loading}
+          />
+
+        </Container>
         <div className="py-12">
           <PopularVendorsSection initialVendors={registry.vendors} />
         </div>
+
+      
 
 <BreakoutBannerGrid 
   items={[
