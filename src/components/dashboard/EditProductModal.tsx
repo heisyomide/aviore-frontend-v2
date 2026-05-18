@@ -59,100 +59,173 @@ export default function EditProductModal({
   const [generalImages, setGeneralImages] = useState<string[]>([]);   // Main images
   const [variants, setVariants] = useState<Variant[]>([]);
 
-  const [mainCategories, setMainCategories] = useState<Category[]>([]);
+const [mainCategories, setMainCategories] = useState<Category[]>([]);
+
 const [secondaryCategories, setSecondaryCategories] = useState<Category[]>([]);
+
 const [tertiaryCategories, setTertiaryCategories] = useState<Category[]>([]);
 
 const [mainCatId, setMainCatId] = useState('');
+
 const [secondaryCatId, setSecondaryCatId] = useState('');
 
-  const dragIndex = useRef<number | null>(null);
+/* =========================
 
-  // ================= HYDRATION FROM PRODUCT =================
+   FETCH CATEGORIES
 
-
-  useEffect(() => {
-  if (isOpen) {
-    fetchCategories();
-  }
-}, [isOpen]);
+========================= */
 
 const fetchCategories = async () => {
+
   try {
+
     const res = await api.get('/categories');
 
-    setMainCategories(res.data);
-
-    if (product?.categoryId) {
-      hydrateCategoryTree(res.data, product.categoryId);
-    }
+    setMainCategories(res.data || []);
 
   } catch (err) {
-    console.error(err);
+
+    console.error('CATEGORY_FETCH_FAILED', err);
+
   }
+
 };
 
-const hydrateCategoryTree = (
-  categories: Category[],
-  targetCategoryId: string
-) => {
+/* =========================
 
-  for (const main of categories) {
+   INITIALIZE MODAL
 
-    if (!main.children) continue;
+========================= */
 
-    for (const secondary of main.children) {
+useEffect(() => {
 
-      if (!secondary.children) continue;
+  if (!isOpen) return;
 
-      const tertiary = secondary.children.find(
-        (t) => t.id === targetCategoryId
-      );
+  fetchCategories();
 
-      if (tertiary) {
+}, [isOpen]);
 
-        setMainCatId(main.id);
-        setSecondaryCategories(main.children);
+/* =========================
 
-        setSecondaryCatId(secondary.id);
-        setTertiaryCategories(secondary.children);
+   HYDRATE PRODUCT DATA
 
-        return;
-      }
-    }
+========================= */
+
+useEffect(() => {
+
+  if (
+
+    !isOpen ||
+
+    !product ||
+
+    mainCategories.length === 0
+
+  ) return;
+
+  /* -------------------------
+
+     BASIC FORM DATA
+
+  ------------------------- */
+
+  setFormData({
+
+    title: product.title || '',
+
+    description: product.description || '',
+
+    price: String(product.price || ''),
+
+    stock: String(product.stock || ''),
+
+    categoryId: product.categoryId || '',
+
+    origin: product.origin || 'LOCAL',
+
+    deliveryMin: String(product.deliveryMin || ''),
+
+    deliveryMax: String(product.deliveryMax || ''),
+
+  });
+
+  /* -------------------------
+
+     GENERAL IMAGES
+
+  ------------------------- */
+
+  setGeneralImages(
+
+    product.images?.map((img: any) => img.imageUrl) || []
+
+  );
+
+  /* -------------------------
+
+     VARIANTS
+
+  ------------------------- */
+
+  setVariants(
+
+    product.variants?.map((v: any) => ({
+
+      id: v.id,
+
+      color: v.color || '',
+
+      size: v.size || '',
+
+      price: String(v.price || ''),
+
+      stock: String(v.stock || ''),
+
+      images:
+
+        v.images?.map((img: any) => img.imageUrl) || [],
+
+    })) || []
+
+  );
+
+  /* -------------------------
+
+     CATEGORY TREE HYDRATION
+
+  ------------------------- */
+
+  for (const main of mainCategories) {
+
+    const secondary = (main.children || []).find(
+
+      (sec: any) =>
+
+        (sec.children || []).some(
+
+          (ter: any) => ter.id === product.categoryId
+
+        ) ||
+
+        sec.id === product.categoryId
+
+    );
+
+    if (!secondary) continue;
+
+    setMainCatId(main.id);
+
+    setSecondaryCategories(main.children || []);
+
+    setSecondaryCatId(secondary.id);
+
+    setTertiaryCategories(secondary.children || []);
+
+    break;
+
   }
-};
-  useEffect(() => {
-    if (!isOpen || !product) return;
 
-    setFormData({
-      title: product.title || '',
-      description: product.description || '',
-      price: String(product.price || ''),
-      stock: String(product.stock || ''),
-      categoryId: product.categoryId || '',
-      origin: product.origin || 'LOCAL',
-      deliveryMin: String(product.deliveryMin || ''),
-      deliveryMax: String(product.deliveryMax || ''),
-    });
-
-    // General Images
-    setGeneralImages(
-      product.images?.map((img: any) => img.imageUrl) || []
-    );
-
-    // Variants
-    setVariants(
-      product.variants?.map((v: any) => ({
-        id: v.id,
-        color: v.color || '',
-        size: Array.isArray(v.sizes) ? v.sizes.join(', ') : (v.size || v.sizes || ''),
-        price: String(v.price || ''),
-        stock: String(v.stock || ''),
-        images: v.images?.map((img: any) => img.imageUrl) || [],
-      })) || []
-    );
-  }, [isOpen, product]);
+}, [isOpen, product, mainCategories]);
 
   // ================= GENERAL IMAGE UPLOAD =================
   const handleGeneralImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,37 +281,68 @@ const hydrateCategoryTree = (
     }
   };
 
-  const handleMainChange = (id: string) => {
+const handleMainChange = (id: string) => {
 
   setMainCatId(id);
 
-  const selected = mainCategories.find(c => c.id === id);
+  const selected = mainCategories.find(
+
+    c => c.id === id
+
+  );
 
   setSecondaryCategories(selected?.children || []);
 
   setSecondaryCatId('');
+
   setTertiaryCategories([]);
 
   setFormData(prev => ({
+
     ...prev,
+
     categoryId: '',
+
   }));
+
 };
 
 const handleSecondaryChange = (id: string) => {
 
   setSecondaryCatId(id);
 
-  const selected = secondaryCategories.find(c => c.id === id);
+  const selected = secondaryCategories.find(
+
+    c => c.id === id
+
+  );
 
   const children = selected?.children || [];
 
   setTertiaryCategories(children);
 
+  /*
+
+    If no tertiary category exists,
+
+    use secondary as final category
+
+  */
+
   setFormData(prev => ({
+
     ...prev,
-    categoryId: '',
+
+    categoryId:
+
+      children.length === 0
+
+        ? id
+
+        : '',
+
   }));
+
 };
 
   // ================= SUBMIT =================
@@ -325,321 +429,446 @@ variants: variants.map(v => ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 lg:p-10 grid lg:grid-cols-2 gap-8 overflow-y-auto">
-          
-          {/* LEFT COLUMN - General Info & Images */}
-          <div className="space-y-8">
-            {/* General Images */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200">
-              <h3 className="font-bold mb-4">General Product Images</h3>
-              <div className="flex gap-3 overflow-x-auto pb-4">
-                <label className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500">
-                  <Plus size={28} className="text-slate-400" />
-                  <input type="file" multiple hidden onChange={handleGeneralImageUpload} />
-                </label>
+        <form
+  onSubmit={handleSubmit}
+  className="p-6 lg:p-10 grid lg:grid-cols-[1.3fr_0.7fr] gap-8 overflow-y-auto"
+>
 
-                {generalImages.map((img, idx) => (
-                  <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 shrink-0">
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeGeneralImage(idx)}
-                      className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+  {/* ================= LEFT COLUMN ================= */}
+  <div className="space-y-8">
 
+    {/* CATEGORY ENGINE */}
+    <div className="bg-[#1E293B] p-6 rounded-[2rem] border border-slate-800">
 
-            {/* CATEGORY ENGINE */}
-<div className="bg-[#1E293B] p-6 rounded-4xl border border-slate-800">
+      <h3 className="text-[10px] font-black uppercase text-orange-500 mb-6 tracking-widest">
+        Categorization
+      </h3>
 
-  <h3 className="text-[10px] font-black uppercase text-orange-500 mb-6 tracking-widest">
-    Categorization
-  </h3>
+      <div className="space-y-5">
 
-  <div className="space-y-5">
+        {/* MAIN */}
+        <div>
+          <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
+            Department
+          </label>
 
-    {/* MAIN */}
-    <div>
-      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
-        Department
-      </label>
+          <select
+            required
+            value={mainCatId}
+            onChange={(e) => handleMainChange(e.target.value)}
+            className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
+          >
+            <option value="">Select Department</option>
 
-      <select
-        required
-        value={mainCatId}
-        onChange={(e) => handleMainChange(e.target.value)}
-        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
-      >
-        <option value="">Select Department</option>
+            {mainCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {mainCategories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
+        {/* SECONDARY */}
+        <div>
+          <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
+            Category
+          </label>
+
+          <select
+            required
+            value={secondaryCatId}
+            disabled={!secondaryCategories.length}
+            onChange={(e) => handleSecondaryChange(e.target.value)}
+            className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
+          >
+            <option value="">Select Category</option>
+
+            {secondaryCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* TERTIARY */}
+        <div>
+          <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
+            Sub Category
+          </label>
+
+          <select
+            required
+            value={formData.categoryId}
+            disabled={!tertiaryCategories.length}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                categoryId: e.target.value,
+              })
+            }
+            className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
+          >
+            <option value="">Select Sub Category</option>
+
+            {tertiaryCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+      </div>
     </div>
 
-    {/* SECONDARY */}
+    {/* PRODUCT TITLE */}
     <div>
-      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
-        Category
-      </label>
+      <label className={labelClasses}>Product Title</label>
 
-      <select
-        required
-        value={secondaryCatId}
-        disabled={!secondaryCategories.length}
-        onChange={(e) => handleSecondaryChange(e.target.value)}
-        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
-      >
-        <option value="">Select Category</option>
-
-        {secondaryCategories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
-    </div>
-
-    {/* TERTIARY */}
-    <div>
-      <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block ml-1">
-        Sub Category
-      </label>
-
-      <select
-        required
-        value={formData.categoryId}
-        disabled={!tertiaryCategories.length}
+      <input
+        className={inputClasses}
+        value={formData.title}
         onChange={(e) =>
           setFormData({
             ...formData,
-            categoryId: e.target.value,
+            title: e.target.value,
           })
         }
-        className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white"
-      >
-        <option value="">Select Sub Category</option>
-
-        {tertiaryCategories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
+      />
     </div>
 
-  </div>
-</div>
+    {/* PRICE + STOCK */}
+    <div className="grid grid-cols-2 gap-4">
 
-            {/* Title & Description */}
-            <div>
-              <label className={labelClasses}>Product Title</label>
-              <input
-                className={inputClasses}
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
+      <div>
+        <label className={labelClasses}>Price</label>
 
-            <div>
-              <label className={labelClasses}>Description</label>
-              <textarea
-                className={`${inputClasses} h-40 resize-none`}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
+        <input
+          type="number"
+          className={inputClasses}
+          value={formData.price}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              price: e.target.value,
+            })
+          }
+        />
+      </div>
+
+      <div>
+        <label className={labelClasses}>Stock</label>
+
+        <input
+          type="number"
+          className={inputClasses}
+          value={formData.stock}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              stock: e.target.value,
+            })
+          }
+        />
+      </div>
+
+    </div>
+
+    {/* ORIGIN */}
+    <div className="grid grid-cols-3 gap-4">
+
+      <div>
+        <label className={labelClasses}>Origin</label>
+
+        <select
+          className={inputClasses}
+          value={formData.origin}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              origin: e.target.value as 'LOCAL' | 'INTERNATIONAL',
+            })
+          }
+        >
+          <option value="LOCAL">Local</option>
+          <option value="INTERNATIONAL">International</option>
+        </select>
+      </div>
+
+      {formData.origin === 'INTERNATIONAL' && (
+        <>
+          <div>
+            <label className={labelClasses}>Delivery Min</label>
+
+            <input
+              type="number"
+              className={inputClasses}
+              value={formData.deliveryMin}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  deliveryMin: e.target.value,
+                })
+              }
+            />
           </div>
+
+          <div>
+            <label className={labelClasses}>Delivery Max</label>
+
+            <input
+              type="number"
+              className={inputClasses}
+              value={formData.deliveryMax}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  deliveryMax: e.target.value,
+                })
+              }
+            />
+          </div>
+        </>
+      )}
+
+    </div>
+
+    {/* VARIANTS */}
+    <div className="space-y-6">
+
+      <div className="flex justify-between items-center">
+        <h3 className="font-black text-lg text-slate-900">
+          Variants
+        </h3>
+
+        <button
+          type="button"
+          onClick={addVariant}
+          className="flex items-center gap-2 text-blue-600 text-sm font-bold"
+        >
+          <Plus size={18} />
+          Add Variant
+        </button>
+      </div>
+
+      {variants.map((variant, i) => (
+        <div
+          key={i}
+          className="p-6 bg-white border border-slate-200 rounded-3xl"
+        >
+
+          <button
+            type="button"
+            onClick={() => removeVariant(i)}
+            className="float-right text-red-500"
+          >
+            <Trash2 size={18} />
+          </button>
 
           <div className="grid grid-cols-2 gap-4">
 
-  <div>
-    <label className={labelClasses}>Price</label>
+            <div>
+              <label className="text-xs font-bold">
+                Color
+              </label>
 
-    <input
-      type="number"
-      className={inputClasses}
-      value={formData.price}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          price: e.target.value,
-        })
-      }
-    />
-  </div>
-
-  <div>
-    <label className={labelClasses}>Stock</label>
-
-    <input
-      type="number"
-      className={inputClasses}
-      value={formData.stock}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          stock: e.target.value,
-        })
-      }
-    />
-  </div>
-
-</div>
-
-          {/* RIGHT COLUMN - Variants */}
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="font-bold">Variants</h3>
-              <button
-                type="button"
-                onClick={addVariant}
-                className="flex items-center gap-2 text-blue-600 text-sm font-bold"
-              >
-                <Plus size={18} /> Add Variant
-              </button>
+              <input
+                value={variant.color}
+                onChange={(e) =>
+                  updateVariant(i, 'color', e.target.value)
+                }
+                className={inputClasses}
+              />
             </div>
 
-            {variants.map((variant, i) => (
-              <div key={i} className="p-6 bg-white border border-slate-200 rounded-3xl">
-                <button
-                  type="button"
-                  onClick={() => removeVariant(i)}
-                  className="float-right text-red-500"
-                >
-                  <Trash2 size={18} />
-                </button>
+            <div>
+              <label className="text-xs font-bold">
+                Size
+              </label>
 
-                <div className="grid grid-cols-2 gap-4">
-  {/* COLOR */}
-  <div>
-    <label className="text-xs font-bold">
-      Color
-    </label>
+              <input
+                value={variant.size}
+                onChange={(e) =>
+                  updateVariant(i, 'size', e.target.value)
+                }
+                className={inputClasses}
+              />
+            </div>
 
-    <input
-      value={variant.color}
-      onChange={(e) =>
-        updateVariant(
-          i,
-          'color',
-          e.target.value
-        )
-      }
-      className={inputClasses}
-      placeholder="Red, Blue..."
-    />
-  </div>
+            <div>
+              <label className="text-xs font-bold">
+                Price
+              </label>
 
-  {/* SIZE */}
-  <div>
-    <label className="text-xs font-bold">
-      Size
-    </label>
+              <input
+                type="number"
+                value={variant.price || ''}
+                onChange={(e) =>
+                  updateVariant(i, 'price', e.target.value)
+                }
+                className={inputClasses}
+              />
+            </div>
 
-    <input
-      value={variant.size}
-      onChange={(e) =>
-        updateVariant(
-          i,
-          'size',
-          e.target.value
-        )
-      }
-      className={inputClasses}
-      placeholder="S, M, L..."
-    />
-  </div>
+            <div>
+              <label className="text-xs font-bold">
+                Stock
+              </label>
 
-  {/* PRICE */}
-  <div>
-    <label className="text-xs font-bold">
-      Price
-    </label>
+              <input
+                type="number"
+                value={variant.stock || ''}
+                onChange={(e) =>
+                  updateVariant(i, 'stock', e.target.value)
+                }
+                className={inputClasses}
+              />
+            </div>
 
-    <input
-      type="number"
-      value={variant.price || ''}
-      onChange={(e) =>
-        updateVariant(
-          i,
-          'price',
-          e.target.value
-        )
-      }
-      className={inputClasses}
-      placeholder="15000"
-    />
-  </div>
-
-  {/* STOCK */}
-  <div>
-    <label className="text-xs font-bold">
-      Stock
-    </label>
-
-    <input
-      type="number"
-      value={variant.stock || ''}
-      onChange={(e) =>
-        updateVariant(
-          i,
-          'stock',
-          e.target.value
-        )
-      }
-      className={inputClasses}
-      placeholder="10"
-    />
-  </div>
-</div>
-
-                {/* Variant Images */}
-                <div className="mt-6">
-                  <label className="text-xs font-bold mb-2 block">Variant Images</label>
-                  <div className="flex gap-2 overflow-x-auto">
-                    <label className="w-12 h-12 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer">
-                      <Plus size={16} />
-                      <input type="file" multiple hidden onChange={(e) => handleVariantImageUpload(e, i)} />
-                    </label>
-
-                    {variant.images.map((img, idx) => (
-                      <div key={idx} className="relative w-12 h-12 rounded-xl overflow-hidden">
-                        <img src={img} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newImages = variant.images.filter((_, j) => j !== idx);
-                            updateVariant(i, 'images', newImages as any);
-                          }}
-                          className="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="lg:col-span-2 w-full bg-black text-white py-6 rounded-2xl font-bold text-sm tracking-widest"
+          {/* VARIANT IMAGES */}
+          <div className="mt-6">
+
+            <label className="text-xs font-bold mb-2 block">
+              Variant Images
+            </label>
+
+            <div className="flex gap-2 overflow-x-auto">
+
+              <label className="w-12 h-12 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer">
+                <Plus size={16} />
+
+                <input
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(e) =>
+                    handleVariantImageUpload(e, i)
+                  }
+                />
+              </label>
+
+              {variant.images.map((img, idx) => (
+                <div
+                  key={idx}
+                  className="relative w-12 h-12 rounded-xl overflow-hidden"
+                >
+                  <img
+                    src={img}
+                    className="w-full h-full object-cover"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newImages = variant.images.filter(
+                        (_, j) => j !== idx
+                      );
+
+                      updateVariant(
+                        i,
+                        'images',
+                        newImages as any
+                      );
+                    }}
+                    className="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+            </div>
+
+          </div>
+
+        </div>
+      ))}
+
+    </div>
+
+    {/* DESCRIPTION */}
+    <div>
+      <label className={labelClasses}>Description</label>
+
+      <textarea
+        className={`${inputClasses} h-40 resize-none`}
+        value={formData.description}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            description: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    {/* SUBMIT */}
+    <button
+      type="submit"
+      disabled={loading}
+      className="w-full bg-black text-white py-6 rounded-2xl font-bold text-sm tracking-widest"
+    >
+      {loading ? 'Updating...' : 'Save Changes'}
+    </button>
+
+  </div>
+
+  {/* ================= RIGHT COLUMN ================= */}
+  <div className="space-y-8">
+
+    {/* GENERAL IMAGES */}
+    <div className="bg-white p-6 rounded-3xl border border-slate-200 sticky top-0">
+
+      <h3 className="font-bold mb-4">
+        General Product Images
+      </h3>
+
+      <div className="flex gap-3 overflow-x-auto pb-4">
+
+        <label className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 shrink-0">
+          <Plus size={28} className="text-slate-400" />
+
+          <input
+            type="file"
+            multiple
+            hidden
+            onChange={handleGeneralImageUpload}
+          />
+        </label>
+
+        {generalImages.map((img, idx) => (
+          <div
+            key={idx}
+            className="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 shrink-0"
           >
-            {loading ? 'Updating...' : 'Save Changes'}
-          </button>
-        </form>
+
+            <img
+              src={img}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+
+            <button
+              type="button"
+              onClick={() => removeGeneralImage(idx)}
+              className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full"
+            >
+              <Trash2 size={14} />
+            </button>
+
+          </div>
+        ))}
+
+      </div>
+
+    </div>
+
+  </div>
+
+</form>
       </div>
     </div>
   );
