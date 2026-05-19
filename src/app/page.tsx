@@ -199,7 +199,7 @@ useEffect(() => {
             title="RECENTLY ADDED"
             subtitle="Live mint condition artifacts uploaded today"
             products={data.recent}
-            href="/discover/new-arrivals"
+            href="/discover/new-arrival"
             loading={loading}
           />
 
@@ -241,80 +241,6 @@ useEffect(() => {
         </div>
 
       
-
-<BreakoutBannerGrid 
-  items={[
-    { 
-      tag: "Get Rewarded", 
-      heading: "Save Up", 
-      discount: "50% Off", 
-      subtext: "Best price on the market", 
-      image: "/cta.jpg", 
-      link: "/shop/women" 
-    },
-    { 
-      tag: "New Arrivals", 
-      heading: "B&O Beoplay", 
-      subtext: "Free delivery over ₦25000", 
-      image: "/cta2.png", 
-      link: "/shop/audio" 
-    },
-    { 
-      tag: "Top Seller", 
-      heading: "Beauty on Your Wrist", 
-      subtext: "Buy 1 get 1 free", 
-      image: "/cta3.png", 
-      link: "/shop/jewelry" 
-    },
-  ]} 
-/>
-
-        {/* 2. DYNAMIC DEPARTMENTS */}
-<div className="px-4 md:px-8">
-
-  {registry.departments.map((section: any) => (
-
-    section.data?.length > 0 && (
-
-      <CategoryWorldSection
-        key={section.slug}
-        title={section.title}
-        slug={section.slug}
-        products={section.data}
-      />
-
-    )
-
-  ))}
-
-</div>
-
-<BreakoutBannerGrid 
-  items={[
-    { 
-      tag: "Get Rewarded", 
-      heading: "Super Cheap Price", 
-      subtext: "Earn 20% Back", 
-      image: "/cta1.png", 
-      link: "/shop/electronics" 
-    },
-    { 
-      tag: "Power", 
-      heading: "Charger Power Bank", 
-      subtext: "Starting at ₦14000.99", 
-      image: "/cta5.png", 
-      link: "/shop/accessories" 
-    },
-    { 
-      tag: "Gaming", 
-      heading: "Switch Controller", 
-      discount: "30% Off", 
-      subtext: "Nintendo OLED Ready", 
-      image: "https://images.unsplash.com/photo-1592840496694-26d035b52b48?q=80&w=1915", 
-      link: "/shop/gaming" 
-    },
-  ]} 
-/>
 
         <div className="mt-6 md:mt-12">
           <TopDealsSection initialDeals={registry.topSaver} />

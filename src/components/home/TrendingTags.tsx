@@ -2,14 +2,14 @@
 import Link from 'next/link';
 
 const TRENDING_LINKS = [
-  { label: "New Arrivals", href: "/shop?sort=newest" },
+  { label: "New Arrivals", href: "/new-arrival" },
   { label: "Best Sellers", href: "/best-sellers" }, // 🚀 Points to your new page!
-  { label: "Under ₦5,000", href: "/shop?maxPrice=5000" },
-  { label: "Top Rated", href: "/shop?minRating=4" },
-  { label: "Industrial", href: "/search?q=industrial" },
-  { label: "Handmade", href: "/search?q=handmade" },
-  { label: "Vintage", href: "/search?q=vintage" },
-  { label: "Limited Edition", href: "/search?q=limited" },
+  { label: "Under ₦10,000", href: "/shop?maxPrice=5000" },
+  { label: "Trending Now", href: "/trending-now" },
+  { label: "Fashion", href: "/category/fashion" },
+  { label: "Beauty & Skincare", href: "/category/beauty-skincare" },
+  { label: "Accessories", href: "/category/accessories" },
+  { label: "Limited Edition", href: "/limited-edition" },
 ];
 
 export function TrendingTags() {
