@@ -31,21 +31,105 @@ const geistMono = Geist_Mono({
 
 // Metadata
 export const metadata: Metadata = {
+  metadataBase: new URL('https://shopaviore.com'),
+
   title: {
-    default: "Aviore Marketplace | Unique Artifacts & Global Deals",
-    template: "%s | Aviore",
+    default: 'Aviorè Marketplace | Global Shopping, Fashion & Luxury Deals',
+    template: '%s | Aviorè',
   },
+
   description:
-    "Experience the ultimate discovery loop. Shop artifacts, electronics, and fashion with 90-day returns and secure payments.",
+    'Shop fashion, beauty, gadgets, accessories, luxury items and trending global products on Aviorè Marketplace. Secure payments, trusted vendors, fast delivery and premium shopping experience.',
+
   keywords: [
-    "e-commerce",
-    "marketplace",
-    "artifacts",
-    "deals",
-    "industrial shopping",
-    "Aviore",
+    'Aviorè',
+    'Aviorè Marketplace',
+    'Nigeria marketplace',
+    'online shopping',
+    'fashion',
+    'beauty',
+    'electronics',
+    'gadgets',
+    'luxury marketplace',
+    'vendor storefront',
+    'global deals',
+    'secure shopping',
+    'marketplace Nigeria',
+    'buy online',
+    'sell online',
   ],
-  icons: { icon: "/favicon.ico" },
+
+  authors: [
+    {
+      name: 'Aviorè',
+      url: 'https://shopaviore.com',
+    },
+  ],
+
+  creator: 'Aviorè',
+  publisher: 'Aviorè',
+
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://shopaviore.com',
+    siteName: 'Aviorè',
+    title: 'Aviorè Marketplace',
+    description:
+      'Discover trending fashion, gadgets, beauty products and global marketplace deals on Aviorè.',
+    images: [
+      {
+        url: '/appicon.png',
+        width: 1200,
+        height: 630,
+        alt: 'Aviorè Marketplace',
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Aviorè Marketplace',
+    description:
+      'Fashion, beauty, electronics & luxury deals from trusted vendors.',
+    images: ['/appicon.png'],
+    creator: '@aviorè',
+  },
+
+  icons: {
+    icon: [
+      { url: '/public/appicon.png' },
+      { url: '/appicon.png', type: 'image/png', sizes: '32x32' },
+    ],
+
+  
+
+    apple: [
+      {
+        url: '/public/apple-icon.png',
+        sizes: '180x180',
+        type: 'image/png',
+      },
+    ],
+  },
+
+  manifest: '/site.webmanifest',
+
+  category: 'shopping',
 };
 
 // Viewport
