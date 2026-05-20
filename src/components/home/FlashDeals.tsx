@@ -50,7 +50,7 @@ export function FlashDeals({ products }: { products: any[] }) {
       </div>
 
       {/* Uses the reusable grid we built in Phase 2 */}
-      <ProductGrid products={products.slice(0, 6)} />
+      <ProductGrid products={[...products].slice(0, 6)} />
     </Section>
   );
 }

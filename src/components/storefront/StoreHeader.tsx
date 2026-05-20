@@ -68,7 +68,7 @@ export function StoreHeader({
 
               <div className="flex items-center gap-1">
                 <MapPin size={14} />
-                <span>Lagos, Nigeria</span>
+                <span>Nigeria</span>
               </div>
             </div>
 
