@@ -1,58 +1,67 @@
 import axios from 'axios';
-import { getDeviceFingerprint } from '../utils/fingerprint'; // 👈 Make sure to import your utility function here
+import { getDeviceFingerprint } from '../utils/fingerprint'; 
 
-// 🚀 REGISTRY_ENDPOINT: Ensuring a fallback to localhost for development
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// 🚀 REGISTRY_ENDPOINT: Ensuring a clean inline fallback to localhost for development
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:10000/api';
+console.log('API_URL:', API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // 👈 REQUIRED: Allows your httpOnly refresh tokens/session cookies to pass through safely
+  withCredentials: true, // 👈 REQUIRED: Allows httpOnly cookies/refresh tokens to pass through safely
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+// 1. Synchronous in-memory variable cache backup
+let cachedFingerprint: string | null = null;
+
 /**
- * 🛰️ REQUEST_INTERCEPTOR: Injection of Identity Token & Anti-Fraud Telemetry
- * This ensures every call to NestJS includes the Bearer token and browser fingerprint.
+ * 🛰️ GLOBAL TELEMETRY INITIALIZATION ROUTINE
+ * Call this inside your client-side Providers (useEffect) to compute the hash out-of-band exactly once.
  */
-api.interceptors.request.use(async (config) => {
+export const initAntiFraudTelemetry = async () => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    // Check if it already exists inside the session registry
+    let fingerprint = sessionStorage.getItem('__avr_dfp');
+    
+    if (!fingerprint) {
+      // Run the heavier async browser/canvas fingerprint calculations safely
+      fingerprint = await getDeviceFingerprint(); 
+      if (fingerprint) {
+        sessionStorage.setItem('__avr_dfp', fingerprint);
+      }
+    }
+    
+    // Lock it directly into hot memory for instantaneous lookup access
+    cachedFingerprint = fingerprint;
+  } catch (err) {
+    console.error('⚠️ FINGERPRINT_INIT_FAILURE:', err);
+  }
+};
+
+/**
+ * 2. Optimized SYNCHRONOUS Axios Request Interceptor
+ * Drops async processing entirely so rapid-fire concurrent dashboard queries are never throttled.
+ */
+api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    // 1. Existing Authorization Token Extraction
+    // Standard Authorization JWT Header Assignment
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
-    // 2. 🛡️ NEW: Async Anti-Fraud Fingerprint Injection
-    try {
-      // Pull from temporary sessionStorage to prevent recalculating the canvas hash on every individual request
-      let fingerprint = sessionStorage.getItem('__avr_dfp');
-      
-      if (!fingerprint) {
-        fingerprint = await getDeviceFingerprint();
-        if (fingerprint) {
-          sessionStorage.setItem('__avr_dfp', fingerprint);
-        }
-      }
-
-      if (fingerprint) {
-        config.headers['x-device-fingerprint'] = fingerprint;
-      }
-    } catch (fingerprintError) {
-      // Soft-catch telemetry calculation failures so standard client requests never freeze or break
-      console.error('⚠️ TELEMETRY_INTERCEPTOR_EXCEPTION:', fingerprintError);
-    }
   }
+ 
+  
   return config;
-}, (error) => {
-  return Promise.reject(error);
 });
 
 /**
  * 🛡️ RESPONSE_INTERCEPTOR: Auth Integrity Watcher
- * If NestJS returns a 401 (Unauthorized), we purge the local registry 
- * to keep the user state honest.
+ * Purges the local registry if NestJS drops a 401 Unauthorized to stop ghost sessions.
  */
 api.interceptors.response.use(
   (response) => response,
@@ -60,7 +69,6 @@ api.interceptors.response.use(
     // ⚠️ AUTH_EXPIRATION_HANDLER
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        // Clear the registry to prevent "Ghost Sessions"
         localStorage.removeItem('token');
         console.warn("IDENTITY_EXPIRED: Session terminated by NestJS Registry.");
       }
