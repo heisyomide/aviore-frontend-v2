@@ -112,7 +112,7 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: '/public/appicon.png' },
+      { url: '/appicon.png' },
       { url: '/appicon.png', type: 'image/png', sizes: '32x32' },
     ],
 
@@ -120,7 +120,7 @@ export const metadata: Metadata = {
 
     apple: [
       {
-        url: '/public/apple-icon.png',
+        url: '/appicon.png',
         sizes: '180x180',
         type: 'image/png',
       },
