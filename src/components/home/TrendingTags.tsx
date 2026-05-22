@@ -2,9 +2,9 @@
 import Link from 'next/link';
 
 const TRENDING_LINKS = [
-  { label: "New Arrivals", href: "/new-arrival" },
+  { label: "New Arrivals", href: "/discover/new-arrival" },
   { label: "Best Sellers", href: "/best-sellers" }, // 🚀 Points to your new page!
-  { label: "Under ₦10,000", href: "/shop?maxPrice=5000" },
+  { label: "Under ₦10,000", href: "/discover/under-10000" },
   { label: "Trending Now", href: "/trending-now" },
   { label: "Fashion", href: "/category/fashion" },
   { label: "Beauty & Skincare", href: "/category/beauty-skincare" },

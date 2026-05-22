@@ -1,24 +1,47 @@
 import axios from 'axios';
+import { getDeviceFingerprint } from '../utils/fingerprint'; // 👈 Make sure to import your utility function here
 
 // 🚀 REGISTRY_ENDPOINT: Ensuring a fallback to localhost for development
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true, // 👈 REQUIRED: Allows your httpOnly refresh tokens/session cookies to pass through safely
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 /**
- * 🛰️ REQUEST_INTERCEPTOR: Injection of Identity Token
- * This ensures every call to NestJS/Prisma includes the Bearer token.
+ * 🛰️ REQUEST_INTERCEPTOR: Injection of Identity Token & Anti-Fraud Telemetry
+ * This ensures every call to NestJS includes the Bearer token and browser fingerprint.
  */
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   if (typeof window !== 'undefined') {
+    // 1. Existing Authorization Token Extraction
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // 2. 🛡️ NEW: Async Anti-Fraud Fingerprint Injection
+    try {
+      // Pull from temporary sessionStorage to prevent recalculating the canvas hash on every individual request
+      let fingerprint = sessionStorage.getItem('__avr_dfp');
+      
+      if (!fingerprint) {
+        fingerprint = await getDeviceFingerprint();
+        if (fingerprint) {
+          sessionStorage.setItem('__avr_dfp', fingerprint);
+        }
+      }
+
+      if (fingerprint) {
+        config.headers['x-device-fingerprint'] = fingerprint;
+      }
+    } catch (fingerprintError) {
+      // Soft-catch telemetry calculation failures so standard client requests never freeze or break
+      console.error('⚠️ TELEMETRY_INTERCEPTOR_EXCEPTION:', fingerprintError);
     }
   }
   return config;
@@ -39,7 +62,6 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         // Clear the registry to prevent "Ghost Sessions"
         localStorage.removeItem('token');
-        // Optional: Trigger a redirect or toast here
         console.warn("IDENTITY_EXPIRED: Session terminated by NestJS Registry.");
       }
     }

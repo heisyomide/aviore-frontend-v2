@@ -5,9 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/axios';
 import { Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
-import { Navbar } from '@/src/components/navbar/Navbar';
 
-// 1. Updated Interface to match DTO
 interface RegisterInput {
   firstName: string;
   lastName: string;
@@ -18,7 +16,7 @@ interface RegisterInput {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, handleSubmit, watch } = useForm<RegisterInput>();
+  const { register, handleSubmit } = useForm<RegisterInput>();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -35,19 +33,35 @@ export default function RegisterPage() {
       setLoading(true);
       setError(null);
 
-      // 2. Payload matches exactly what the NestJS DTO expects
+      // 1. TELEMETRY: Resolve client-side fingerprints out-of-band
+      let clientIp = null;
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        clientIp = ipData.ip;
+      } catch (ipErr) {
+        console.warn('⚠️ Telemetry bypass: IP fetch timed out.');
+      }
+
+      // Generate a canvas/user-agent fingerprint string hash
+      const fingerprint = typeof window !== 'undefined' 
+        ? btoa(navigator.userAgent).slice(0, 32) 
+        : null;
+
+      // 2. PAYLOAD: Match your security-enhanced NestJS DTO architecture
       const payload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         password: data.password,
+        signupIp: clientIp,
+        deviceFingerprint: fingerprint,
       };
 
       await api.post('/auth/register', payload);
       router.push('/login');
     } catch (err: any) {
       console.error(err.response?.data);
-      // Handle the array of error messages from NestJS
       const errorMessage = Array.isArray(err.response?.data?.message) 
         ? err.response.data.message[0] 
         : err.response?.data?.message || 'Registration failed.';
@@ -59,7 +73,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4">
-       
       <div className="w-full max-w-sm bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">
         
         <div className="mb-8 text-center">
@@ -72,7 +85,6 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           
-          {/* 3. Split Name into First and Last */}
           <div className="flex gap-3">
             <input
               {...register('firstName')}
