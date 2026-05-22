@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Zap, ChevronRight } from 'lucide-react';
 import { ProductGrid } from '../product/ProductGrid';
 import { Section } from '../layout/Section';
-import Link from 'next/link';
 
 export function FlashDeals({ products }: { products: any[] }) {
   const [timeLeft, setTimeLeft] = useState(3600 * 5); // 5 hours in seconds
@@ -45,12 +44,9 @@ export function FlashDeals({ products }: { products: any[] }) {
           </div>
         </div>
 
-        <Link 
-          href="/discovery/flash-deals" 
-          className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-black transition-colors uppercase tracking-widest group"
-        >
+        <button className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-black transition-colors uppercase tracking-widest group">
           View All <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-        </Link>
+        </button>
       </div>
 
       {/* Uses the reusable grid we built in Phase 2 */}
