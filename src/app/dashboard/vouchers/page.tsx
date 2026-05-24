@@ -18,31 +18,43 @@ export default function VoucherWalletPage() {
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchVouchers() {
-      try {
-        const response = await fetch('/storefront/vouchers/my-vouchers', {
+useEffect(() => {
+  async function fetchVouchers() {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token missing.');
+      }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/storefront/vouchers/my-vouchers`,
+        {
+          method: 'GET',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to retrieve your wallet vouchers.');
         }
-
-        const result = await response.json();
-        setVouchers(result.success ? result.data : result);
-      } catch (err: any) {
-        setError(err.message || 'Communication layer failure.');
-      } finally {
-        setLoading(false);
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(errorText);
+        throw new Error(
+          'Failed to retrieve your wallet vouchers.'
+        );
       }
+      const result = await response.json();
+      setVouchers(result);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Communication layer failure.');
+    } finally {
+      setLoading(false);
     }
+  }
+  fetchVouchers();
+}, []);
 
-    fetchVouchers();
-  }, []);
 
   const handleCopyCode = async (id: string, code: string) => {
     try {

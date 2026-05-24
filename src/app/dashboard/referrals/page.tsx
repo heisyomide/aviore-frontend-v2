@@ -19,33 +19,42 @@ export default function ReferralDashboardPage() {
   const [copied, setCopied] = useState<boolean>(false);
 
   // Fetch real-time progress data from your NestJS backend
-  useEffect(() => {
-    async function fetchReferralProgress() {
-      try {
-        // Adjust this URL path to match your API gateway configuration
-        const response = await fetch('/storefront/referrals/dashboard', {
+useEffect(() => {
+  async function fetchReferralProgress() {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token missing.');
+      }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/storefront/referrals/dashboard`,
+        {
+          method: 'GET',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assumes standard JWT client storage
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to synchronize referral milestones telemetry.');
         }
-
-        const result = await response.json();
-        // If your backend wraps response data in a standard success object, extract it safely
-        setData(result.success === false ? result : result);
-      } catch (err: any) {
-        setError(err.message || 'An unexpected communication error occurred.');
-      } finally {
-        setLoading(false);
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(errorText);
+        throw new Error(
+          'Failed to synchronize referral milestones telemetry.'
+        );
       }
+      const result = await response.json();
+      setData(result);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Unexpected communication failure.');
+    } finally {
+      setLoading(false);
     }
-
-    fetchReferralProgress();
-  }, []);
+  }
+  fetchReferralProgress();
+}, []);
 
   const handleCopyCode = async () => {
     if (!data?.referralCode) return;
