@@ -23,7 +23,7 @@ export default function ReferralDashboardPage() {
     async function fetchReferralProgress() {
       try {
         // Adjust this URL path to match your API gateway configuration
-        const response = await fetch('/api/storefront/referrals/dashboard', {
+        const response = await fetch('/storefront/referrals/dashboard', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assumes standard JWT client storage
             'Content-Type': 'application/json',

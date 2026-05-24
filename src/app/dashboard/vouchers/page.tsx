@@ -21,7 +21,7 @@ export default function VoucherWalletPage() {
   useEffect(() => {
     async function fetchVouchers() {
       try {
-        const response = await fetch('/api/storefront/vouchers/my-vouchers', {
+        const response = await fetch('/storefront/vouchers/my-vouchers', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json',
