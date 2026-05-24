@@ -48,14 +48,14 @@ export const initAntiFraudTelemetry = async () => {
  */
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    // Standard Authorization JWT Header Assignment
+    // JWT
     const token = localStorage.getItem('token');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
- 
-  
+
   return config;
 });
 

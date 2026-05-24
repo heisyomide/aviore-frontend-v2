@@ -7,6 +7,7 @@ import { api } from '../../lib/axios';
 import { LoginInput } from '../../types/auth';
 import { Eye, EyeOff, Loader2, User, CheckCircle2 } from 'lucide-react';
 import { Navbar } from '@/src/components/navbar/Navbar';
+import { getDeviceFingerprint } from '@/src/utils/fingerprint';
 
 // 🚀 1. This wrapper is the only structural change needed to fix the error
 export default function LoginPage() {
@@ -38,6 +39,7 @@ function LoginFormContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+ 
 
   useEffect(() => {
     if (initialEmail) {
@@ -45,76 +47,78 @@ function LoginFormContent() {
     }
   }, [initialEmail, setValue]);
 
-  const onSubmit = async (data: LoginInput) => {
-  try {
-    setLoading(true);
-    setError(null);
+ const onSubmit = async (data: LoginInput) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const response = await api.post('/auth/login', data);
+      // 🛡️ TELEMETRY: Generate fingerprint ONLY on explicit form submission
+      let fingerprint: string | null = null;
+      try {
+        const { getDeviceFingerprint } = await import('../../utils/fingerprint');
+        fingerprint = await getDeviceFingerprint();
+      } catch (telemetryErr) {
+        console.warn('⚠️ Telemetry bypass: Fingerprint calculation deferred.', telemetryErr);
+      }
 
-    const { access_token, user } = response.data;
+      // Combine login data with the fingerprint key expected by NestJS DTO
+      const payload = {
+        ...data,
+        deviceFingerprint: fingerprint,
+      };
 
-    const role = String(user?.role || '')
-      .toLowerCase()
-      .trim();
+      const response = await api.post('/auth/login', payload);
 
-    // ✅ VERY IMPORTANT
-    // THIS IS WHAT MIDDLEWARE READS
+      const { access_token, user } = response.data;
+      const role = String(user?.role || '').toLowerCase().trim();
+
+      // ✅ MIDDLEWARE SEEDING
       document.cookie = `token=${access_token}; path=/; max-age=604800; SameSite=Lax; ${
         window.location.protocol === 'https:' ? 'Secure' : ''
       }`;
-    // ✅ LOCAL STORAGE
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('role', role);
-    localStorage.setItem('firstName', user?.firstName || '');
-    localStorage.setItem('lastName', user?.lastName || '');
+      
+      // ✅ LOCAL STORAGE SAVES
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('role', role);
+      localStorage.setItem('firstName', user?.firstName || '');
+      localStorage.setItem('lastName', user?.lastName || '');
 
-    // ✅ FORCE COOKIE SAVE BEFORE REDIRECT
-    await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // ✅ RETURN USER TO ORIGINAL PAGE
-    if (from) {
-      router.replace(from);
-      return;
-    }
-
-    // ✅ ADMIN
-    if (role === 'admin') {
-      router.replace('/admin/products');
-      return;
-    }
-
-    // ✅ VENDOR
-    if (role === 'vendor') {
-
-      if (user.isVerified) {
-        router.replace('/vendor');
+      // ✅ NAVIGATION ROUTING
+      if (from) {
+        router.replace(from);
         return;
       }
 
-      if (user.kycStatus === 'PENDING') {
-        router.replace('/dashboard/waiting-room');
+      if (role === 'admin') {
+        router.replace('/admin/products');
         return;
       }
 
-      router.replace('/kyc-verification');
-      return;
+      if (role === 'vendor') {
+        if (user.isVerified) {
+          router.replace('/vendor');
+          return;
+        }
+        if (user.kycStatus === 'PENDING') {
+          router.replace('/dashboard/waiting-room');
+          return;
+        }
+        router.replace('/kyc-verification');
+        return;
+      }
+
+      router.replace('/dashboard');
+
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || 'Invalid email or password'
+      );
+    } finally {
+      setLoading(false);
     }
-
-    // ✅ DEFAULT USER
-    router.replace('/dashboard');
-
-  } catch (err: any) {
-
-    setError(
-      err?.response?.data?.message ||
-      'Invalid email or password'
-    );
-
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
      

@@ -23,7 +23,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async (data: RegisterInput) => {
+const onSubmit = async (data: RegisterInput) => {
     if (data.password !== data.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -33,7 +33,7 @@ export default function RegisterPage() {
       setLoading(true);
       setError(null);
 
-      // 1. TELEMETRY: Resolve client-side fingerprints out-of-band
+      // 1. IP TELEMETRY
       let clientIp = null;
       try {
         const ipResponse = await fetch('https://api.ipify.org?format=json');
@@ -43,12 +43,16 @@ export default function RegisterPage() {
         console.warn('⚠️ Telemetry bypass: IP fetch timed out.');
       }
 
-      // Generate a canvas/user-agent fingerprint string hash
-      const fingerprint = typeof window !== 'undefined' 
-        ? btoa(navigator.userAgent).slice(0, 32) 
-        : null;
+      // 2. DEVICE TELEMETRY: Pull official canvas/entropy fingerprint hash inline
+      let fingerprint: string | null = null;
+      try {
+        const { getDeviceFingerprint } = await import('../../utils/fingerprint');
+        fingerprint = await getDeviceFingerprint();
+      } catch (telemetryErr) {
+        console.warn('⚠️ Telemetry bypass: Registration fingerprint skipped.', telemetryErr);
+      }
 
-      // 2. PAYLOAD: Match your security-enhanced NestJS DTO architecture
+      // 3. PAYLOAD: Matches NestJS Account Creation Security Architecture
       const payload = {
         firstName: data.firstName,
         lastName: data.lastName,
@@ -59,7 +63,7 @@ export default function RegisterPage() {
       };
 
       await api.post('/auth/register', payload);
-      router.push('/login');
+      router.push(`/login?registered=true&email=${encodeURIComponent(data.email)}`);
     } catch (err: any) {
       console.error(err.response?.data);
       const errorMessage = Array.isArray(err.response?.data?.message) 
@@ -71,6 +75,7 @@ export default function RegisterPage() {
     }
   };
 
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4">
       <div className="w-full max-w-sm bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">

@@ -21,11 +21,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
-  // 🛡️ ANTI-FRAUD TELEMETRY BOOTSTRAP
-  useEffect(() => {
-    // Computes and caches device fingerprint safely once on initial mount
-    initAntiFraudTelemetry();
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
