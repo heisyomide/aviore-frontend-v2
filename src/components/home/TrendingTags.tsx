@@ -9,7 +9,7 @@ const TRENDING_LINKS = [
   { label: "Fashion", href: "/category/fashion" },
   { label: "Beauty & Skincare", href: "/category/beauty-skincare" },
   { label: "Accessories", href: "/category/accessories" },
-  { label: "Limited Edition", href: "/limited-edition" },
+  { label: "Verified Vendors", href: "/vendors" },
 ];
 
 export function TrendingTags() {

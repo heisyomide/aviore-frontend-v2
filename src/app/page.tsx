@@ -3,22 +3,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Hero } from '../components/home/Hero';
 import { FlashDeals } from '../components/home/FlashDeals';
-import { CategoryCircle } from '../components/home/CategoryCircle';
-import { CategoryExplorer } from '../components/home/CategoryExplorer'; 
-import { Section } from '../components/layout/Section';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { SkeletonGrid } from '../components/product/SkeletonGrid';
 import { TrustBar } from '../components/home/TrustBar';
-import { HomeCategories } from '@/src/components/home/HomeCategories';
 import { TopDealsSection } from '../components/home/TopSaverDeals';
-import {  PromoBanner } from '../components/home/MultiBannerGrid';
 import { PopularVendorsSection } from '../components/home/PopularVendors';
 import { api } from '@/src/lib/axios';
 import { ChevronRight, Sparkles, Zap, Loader2, PackageSearch } from 'lucide-react';
 import { Container } from '../components/layout/Container';
 import { Navbar } from '../components/navbar/Navbar';
 import { Footer } from '../components/Footer';
-import { BreakoutBannerGrid } from '../components/home/BreakBannerGrid';
+
 import { VendorCTA } from '../components/home/VendorCTA';
 import { CategoryWorldSection } from '../components/home/CategoryWorldSection';
 import  { HomepageRail } from '../components/home/HomeRailSection';
@@ -37,7 +32,7 @@ export default function HomePage() {
   });
   const [loading, setLoading] = useState(true);
 
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(20);
   const [isSyncing, setIsSyncing] = useState(false);
   
   const [registry, setRegistry] = useState<{
@@ -69,14 +64,14 @@ useEffect(() => {
           fashionRes, 
           accessoriesRes
         ] = await Promise.all([
-          axios.get(`${API_URL}/storefront/products?sort=trending&limit=8`),
-          axios.get(`${API_URL}/storefront/products?category=beauty-skincare&limit=8`),
-          axios.get(`${API_URL}/storefront/products?maxPrice=10000&limit=8`),
-          axios.get(`${API_URL}/storefront/products?sort=newest&limit=8`),
-          axios.get(`${API_URL}/storefront/products?origin=INTERNATIONAL&limit=8`),
-          axios.get(`${API_URL}/storefront/products?origin=LOCAL&maxDeliveryDays=3&limit=8`),
-          axios.get(`${API_URL}/storefront/products?category=fashion&limit=8`),
-          axios.get(`${API_URL}/storefront/products?category=accessories&limit=8`),
+          axios.get(`${API_URL}/storefront/products?sort=trending&limit=10`),
+          axios.get(`${API_URL}/storefront/products?category=beauty-skincare&limit=10`),
+          axios.get(`${API_URL}/storefront/products?maxPrice=10000&limit=10`),
+          axios.get(`${API_URL}/storefront/products?sort=newest&limit=10`),
+          axios.get(`${API_URL}/storefront/products?origin=INTERNATIONAL&limit=10`),
+          axios.get(`${API_URL}/storefront/products?origin=LOCAL&maxDeliveryDays=3&limit=10`),
+          axios.get(`${API_URL}/storefront/products?category=fashion&limit=10`),
+          axios.get(`${API_URL}/storefront/products?category=accessories&limit=10`),
         ]);
 
         setData({

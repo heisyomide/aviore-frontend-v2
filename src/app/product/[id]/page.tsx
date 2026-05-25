@@ -80,6 +80,8 @@ export default function ProductDetailsPage() {
   const [vendorState, setVendorState] =
     useState<VendorType | null>(null);
 
+
+    
   // =========================
   // DYNAMIC VALUES
   // =========================
@@ -124,6 +126,8 @@ const galleryImages = useMemo(() => {
   // 5. If for some reason everything is empty, return empty array 
   // (ProductGallery will handle the placeholder)
   const finalImages = [...new Set(combined)];
+  
+  
 
   return finalImages.length > 0 ? finalImages : baseImages;
 }, [product, selectedVariant]);
@@ -144,28 +148,42 @@ const galleryImages = useMemo(() => {
   // FOLLOW STATE
   // =========================
 
-  useEffect(() => {
-    if (!vendor?.id) return;
+useEffect(() => {
+  if (!vendor?.id) return;
 
-    const fetchFollowState =
-      async () => {
-        try {
-          const res = await api.get(
-            `/vendor/${vendor.id}`
-          );
+  // 🚀 Prevent guest users from hitting protected route
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('token')
+      : null;
 
-          setIsFollowing(
-            res.data.isFollowing
-          );
-        } catch (err) {
-          console.error(
-            'Failed to fetch follow state'
-          );
-        }
-      };
+  if (!token) return;
 
-    fetchFollowState();
-  }, [vendor?.id]);
+  const fetchFollowState = async () => {
+    try {
+      const res = await api.get(
+        `/vendor/${vendor.id}`
+      );
+
+      setIsFollowing(
+        res.data.isFollowing
+      );
+
+    } catch (err: any) {
+
+      // Ignore unauthorized silently
+      if (err?.response?.status !== 401) {
+        console.error(
+          'Failed to fetch follow state',
+          err
+        );
+      }
+    }
+  };
+
+  fetchFollowState();
+
+}, [vendor?.id]);
 
   // =========================
   // RECENTLY VIEWED
@@ -307,6 +325,22 @@ const galleryImages = useMemo(() => {
 
     router.push('/cart');
   };
+
+
+  const relatedProducts = product?.recommendedProducts || [];
+const marketplaceProducts = recommended || [];
+
+const mergedRecommendations = [
+  ...relatedProducts,
+  ...marketplaceProducts,
+]
+  .filter(Boolean)
+  .filter(
+    (item, index, self) =>
+      index === self.findIndex((p) => p.id === item.id)
+  )
+  .filter((item) => item.id !== product.id);
+
 
   // =========================
   // LOADING
@@ -599,9 +633,11 @@ onSelectVariant={(v) => {
         {recommended &&
           recommended.length > 0 && (
             <div className="mt-20 lg:mt-28 border-t border-zinc-100 pt-16">
-              <RecommendedProducts
-                products={recommended}
-              />
+<RecommendedProducts
+  products={relatedProducts}
+  allProducts={marketplaceProducts}
+  currentProductId={product.id}
+/>
             </div>
           )}
       </Container>
