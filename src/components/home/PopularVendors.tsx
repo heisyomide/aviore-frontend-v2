@@ -26,31 +26,37 @@ export function PopularVendorsSection({
   const [vendors, setVendors] = useState<any[]>(initialVendors);
   const [loading, setLoading] = useState(vendors.length === 0);
 
-  useEffect(() => {
-    if (vendors.length === 0) {
-      const fetchVendors = async () => {
-        try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL;
+useEffect(() => {
+  if (vendors.length === 0) {
+    const fetchVendors = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-          const response = await axios.get(
-            `${API_URL}/storefront/vendors`
-          );
+        const response = await axios.get(
+          `${API_URL}/storefront/vendors`
+        );
 
-          const data = Array.isArray(response.data)
-            ? response.data
-            : [];
+        const data = Array.isArray(response.data)
+          ? response.data
+          : [];
 
-          setVendors(data.slice(0, 8));
-        } catch (err) {
-          console.error('Registry_Sync_Error', err);
-        } finally {
-          setLoading(false);
-        }
-      };
+        // 💡 FILTER OUT VENDORS WITH 0 PRODUCTS BEFORE THE SLICE
+        const activeVendors = data.filter(
+          (vendor) => (vendor._count?.products || 0) > 0
+        );
 
-      fetchVendors();
-    }
-  }, [vendors.length]);
+        // Keep the top 8 active vendors
+        setVendors(activeVendors.slice(0, 8));
+      } catch (err) {
+        console.error('Registry_Sync_Error', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }
+}, [vendors.length]);
 
   const doubleVendors = useMemo(
     () => [...vendors, ...vendors],
