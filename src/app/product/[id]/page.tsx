@@ -45,56 +45,101 @@ type VendorType = {
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
+
   const router = useRouter();
 
-  const addItem = useCartStore((state) => state.addItem);
+  const addItem = useCartStore(
+    (state) => state.addItem
+  );
 
   const {
     product,
     vendor,
+    
     loading,
+
     selectedVariant,
     setSelectedVariant,
+
     selectedSize,
     setSelectedSize,
+
     qty,
     setQty,
   } = useProductData(id as string);
 
-  // 💡 FIX 1: Use safe optional chaining so initialization doesn't throw a runtime crash
-  const {
-    recommended,
-    vendorProducts,
-    explore,
-  } = useRecommendations(product?.id);
+const {
+  recommended,
+  vendorProducts,
+  explore,
+} = useRecommendations(
+  product?.id,
+  vendor?.id
+);
 
-  const [mounted, setMounted] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [vendorState, setVendorState] = useState<VendorType | null>(null);
+  const [mounted, setMounted] =
+    useState(false);
 
+  const [isFollowing, setIsFollowing] =
+    useState(false);
+
+  const [followLoading, setFollowLoading] =
+    useState(false);
+
+  const [vendorState, setVendorState] =
+    useState<VendorType | null>(null);
+
+
+    
   // =========================
   // DYNAMIC VALUES
   // =========================
 
-  const currentPrice = selectedVariant?.price ?? product?.displayPrice ?? 0;
-  const currentStock = selectedVariant?.stock ?? product?.totalStock ?? 0;
+  const currentPrice =
+    selectedVariant?.price ??
+    product?.displayPrice ??
+    0;
 
-  const galleryImages = useMemo(() => {
-    if (!product) return [];
-    
-    const getUrl = (img: any) => {
-      if (typeof img === 'string') return img;
-      return img?.imageUrl || img?.url || '';
-    };
+  const currentStock =
+    selectedVariant?.stock ??
+    product?.totalStock ??
+    0;
 
-    const baseImages = (product.images || []).map(getUrl).filter(Boolean);
-    const variantImages = (selectedVariant?.images || []).map(getUrl).filter(Boolean);
-    const combined = [...variantImages, ...baseImages];
-    const finalImages = [...new Set(combined)];
+  /**
+   * IMPORTANT:
+   * Show normal product images FIRST.
+   * Only switch to variant images after
+   * user selects a variant with images.
+   */
 
-    return finalImages.length > 0 ? finalImages : baseImages;
-  }, [product, selectedVariant]);
+
+const galleryImages = useMemo(() => {
+  if (!product) return [];
+  
+  // 1. Helper to extract URL from various image formats
+  const getUrl = (img: any) => {
+    if (typeof img === 'string') return img;
+    return img?.imageUrl || img?.url || '';
+  };
+
+  // 2. Normalize Base Images
+  const baseImages = (product.images || []).map(getUrl).filter(Boolean);
+
+  // 3. Normalize Variant Images (if any)
+  const variantImages = (selectedVariant?.images || []).map(getUrl).filter(Boolean);
+
+  // 4. Logic: If we have variant images, show them first. 
+  // Then append base images so the gallery isn't empty.
+  const combined = [...variantImages, ...baseImages];
+  
+  // 5. If for some reason everything is empty, return empty array 
+  // (ProductGallery will handle the placeholder)
+  const finalImages = [...new Set(combined)];
+  
+  
+
+  return finalImages.length > 0 ? finalImages : baseImages;
+}, [product, selectedVariant]);
 
   // =========================
   // EFFECTS
@@ -112,42 +157,70 @@ export default function ProductDetailsPage() {
   // FOLLOW STATE
   // =========================
 
-  useEffect(() => {
-    if (!vendor?.id) return;
+useEffect(() => {
+  if (!vendor?.id) return;
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) return;
+  // 🚀 Prevent guest users from hitting protected route
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('token')
+      : null;
 
-    const fetchFollowState = async () => {
-      try {
-        const res = await api.get(`/vendor/${vendor.id}`);
-        setIsFollowing(res.data.isFollowing);
-      } catch (err: any) {
-        if (err?.response?.status !== 401) {
-          console.error('Failed to fetch follow state', err);
-        }
+  if (!token) return;
+
+  const fetchFollowState = async () => {
+    try {
+      const res = await api.get(
+        `/vendor/${vendor.id}`
+      );
+
+      setIsFollowing(
+        res.data.isFollowing
+      );
+
+    } catch (err: any) {
+
+      // Ignore unauthorized silently
+      if (err?.response?.status !== 401) {
+        console.error(
+          'Failed to fetch follow state',
+          err
+        );
       }
-    };
+    }
+  };
 
-    fetchFollowState();
-  }, [vendor?.id]);
+  fetchFollowState();
+
+}, [vendor?.id]);
 
   // =========================
   // RECENTLY VIEWED
   // =========================
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('token')
+        : null;
+
     if (!token) return;
+
     if (!product?.id) return;
 
-    const recordHistory = async () => {
-      try {
-        await api.post(`/user/history/${product.id}`);
-      } catch (error) {
-        console.error('History record failed:', error);
-      }
-    };
+    const recordHistory =
+      async () => {
+        try {
+          await api.post(
+            `/user/history/${product.id}`
+          );
+        } catch (error) {
+          console.error(
+            'History record failed:',
+            error
+          );
+        }
+      };
 
     recordHistory();
   }, [product?.id]);
@@ -156,56 +229,95 @@ export default function ProductDetailsPage() {
   // ADD TO CART
   // =========================
 
-  const handleAddToCart = useCallback(async () => {
-    if (!product || !selectedVariant) {
-      alert('Please select a color and size');
-      return;
-    }
+  const handleAddToCart =
+    useCallback(async () => {
+      if (!product || !selectedVariant) {
+        alert(
+          'Please select a color and size'
+        );
 
-    addItem({
-      id: product.id,
-      productId: product.id,
-      name: product.title,
-      price: currentPrice,
-      image: selectedVariant.images?.[0]?.imageUrl || product.images?.[0]?.imageUrl || '/placeholder.jpg',
-      vendorId: product.vendorId,
-      stock: selectedVariant.stock,
-      quantity: qty,
-      color: selectedVariant.color,
-      size: selectedVariant.size,
-      variantId: selectedVariant.id,
-      variant: selectedVariant,
-    });
-  }, [product, selectedVariant, qty, currentPrice, addItem]);
+        return;
+      }
+
+      addItem({
+        id: product.id,
+
+        productId: product.id,
+
+        name: product.title,
+
+        price: currentPrice,
+
+        image:
+          selectedVariant.images?.[0]
+            ?.imageUrl ||
+          product.images?.[0]?.imageUrl ||
+          '/placeholder.jpg',
+
+        vendorId: product.vendorId,
+
+        stock: selectedVariant.stock,
+
+        quantity: qty,
+
+        color: selectedVariant.color,
+
+        size: selectedVariant.size,
+
+        variantId: selectedVariant.id,
+
+        variant: selectedVariant,
+      });
+    }, [
+      product,
+      selectedVariant,
+      qty,
+      currentPrice,
+      addItem,
+    ]);
 
   // =========================
   // FOLLOW VENDOR
   // =========================
 
   const handleFollow = async () => {
-    if (!vendor?.id || followLoading) return;
+    if (!vendor?.id || followLoading)
+      return;
 
     setFollowLoading(true);
+
     const prev = isFollowing;
+
     setIsFollowing(!prev);
 
     setVendorState((v) => {
       if (!v) return v;
+
       return {
         ...v,
-        followers: !prev ? (v.followers || 0) + 1 : (v.followers || 1) - 1,
+
+        followers: !prev
+          ? (v.followers || 0) + 1
+          : (v.followers || 1) - 1,
       };
     });
 
     try {
-      await api.post(`/vendor/${vendor.id}/follow`);
+      await api.post(
+        `/vendor/${vendor.id}/follow`
+      );
     } catch {
       setIsFollowing(prev);
+
       setVendorState((v) => {
         if (!v) return v;
+
         return {
           ...v,
-          followers: prev ? (v.followers || 0) + 1 : (v.followers || 1) - 1,
+
+          followers: prev
+            ? (v.followers || 0) + 1
+            : (v.followers || 1) - 1,
         };
       });
     } finally {
@@ -219,35 +331,61 @@ export default function ProductDetailsPage() {
 
   const handleBuyNow = async () => {
     await handleAddToCart();
+
     router.push('/cart');
   };
 
+
+
+
+
   // =========================
-  // LOADING GUARD
+  // LOADING
   // =========================
 
-  if (!mounted || loading || !product?.id) {
+  if (
+    !mounted ||
+    loading ||
+    !product?.id
+  ) {
     return <ProductSkeleton />;
   }
+
+  // =========================
+  // UI
+  // =========================
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
       <Container className="py-4 lg:py-10">
+        {/* ========================= */}
         {/* BREADCRUMB */}
+        {/* ========================= */}
+
         <nav className="hidden lg:flex gap-2 text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-8">
           <span>Home</span>
+
           <span>/</span>
-          <span>{product.category?.name}</span>
+
+          <span>
+            {product.category?.name}
+          </span>
+
           <span>/</span>
-          <span className="text-zinc-900">{product.title}</span>
+
+          <span className="text-zinc-900">
+            {product.title}
+          </span>
         </nav>
 
         {/* ================================================= */}
         {/* MOBILE LAYOUT */}
         {/* ================================================= */}
+
         <div className="lg:hidden">
+          {/* GALLERY */}
           <ProductGallery
             images={galleryImages}
             title={product.title}
@@ -255,62 +393,115 @@ export default function ProductDetailsPage() {
             price={currentPrice}
           />
 
+          {/* PRODUCT INFO */}
           <div className="mt-6">
             <ProductInfo
               title={product.title}
               basePrice={product.basePrice}
-              displayPrice={product.displayPrice}
-              totalStock={product.totalStock}
-              selectedVariant={selectedVariant}
+              displayPrice={
+                product.displayPrice
+              }
+              totalStock={
+                product.totalStock
+              }
+              selectedVariant={
+                selectedVariant
+              }
               rating={product.rating}
-              reviewCount={product.reviewCount}
+              reviewCount={
+                product.reviewCount
+              }
             />
           </div>
 
+          {/* VARIANTS */}
           <div className="mt-8">
             <VariantSelector
               variants={product.variants}
-              selectedVariant={selectedVariant}
-              onSelectVariant={(v) => {
-                setSelectedVariant(v);
-                setSelectedSize(v.size);
-              }}
+              selectedVariant={
+                selectedVariant
+              }
+onSelectVariant={(v) => {
+  setSelectedVariant(v);
+  setSelectedSize(v.size);
+}}
             />
           </div>
 
-          <div className="mt-8 rounded-4xl border border-zinc-100 bg-zinc-50 p-5 space-y-6">
-            <QuantitySelector qty={qty} setQty={setQty} maxStock={currentStock} />
-            <ProductActions stockCount={currentStock} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />
+          {/* ACTION BOX */}
+          <div className="mt-8 rounded-[2rem] border border-zinc-100 bg-zinc-50 p-5 space-y-6">
+            <QuantitySelector
+              qty={qty}
+              setQty={setQty}
+              maxStock={currentStock}
+            />
+
+            <ProductActions
+              stockCount={currentStock}
+              onAddToCart={
+                handleAddToCart
+              }
+              onBuyNow={handleBuyNow}
+            />
           </div>
 
+          {/* DESCRIPTION */}
           <div className="mt-12">
-            <ProductDescription description={product.description} />
+            <ProductDescription
+              description={
+                product.description
+              }
+            />
           </div>
 
+          {/* REVIEWS */}
           <div className="mt-14">
             <ProductReviews
-              reviews={product.reviews || []}
-              averageRating={product.rating || 0}
-              totalReviews={product.reviewCount || 0}
+              reviews={
+                product.reviews || []
+              }
+              averageRating={
+                product.rating || 0
+              }
+              totalReviews={
+                product.reviewCount || 0
+              }
             />
           </div>
 
+          {/* VENDOR */}
           {vendor && (
             <div className="mt-14">
-              <VendorCard vendor={vendorState || vendor} isFollowing={isFollowing} onFollow={handleFollow} />
+              <VendorCard
+                vendor={
+                  vendorState || vendor
+                }
+                isFollowing={
+                  isFollowing
+                }
+                onFollow={
+                  handleFollow
+                }
+              />
             </div>
           )}
 
+          {/* DELIVERY */}
           <div className="mt-10">
-            <DeliveryInfo origin={product.origin} min={product.deliveryMin} max={product.deliveryMax} />
+            <DeliveryInfo
+              origin={product.origin}
+              min={product.deliveryMin}
+              max={product.deliveryMax}
+            />
           </div>
         </div>
 
         {/* ================================================= */}
         {/* DESKTOP LAYOUT */}
         {/* ================================================= */}
+
         <div className="hidden lg:grid lg:grid-cols-[1.1fr_0.9fr] gap-14 h-[calc(100vh-90px)] overflow-hidden">
-          {/* LEFT COLUMN */}
+          {/* LEFT SCROLL */}
           <div className="h-full overflow-y-auto pr-6 scrollbar-hide">
             <ProductGallery
               images={galleryImages}
@@ -319,86 +510,148 @@ export default function ProductDetailsPage() {
               price={currentPrice}
             />
 
+            {/* REVIEWS */}
             <div className="mt-20">
               <ProductReviews
-                reviews={product.reviews || []}
-                averageRating={product.rating || 0}
-                totalReviews={product.reviewCount || 0}
+                reviews={
+                  product.reviews || []
+                }
+                averageRating={
+                  product.rating || 0
+                }
+                totalReviews={
+                  product.reviewCount || 0
+                }
               />
             </div>
 
+            {/* DESCRIPTION */}
             <div className="mt-20">
-              <ProductDescription description={product.description} />
+              <ProductDescription
+                description={
+                  product.description
+                }
+              />
             </div>
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* RIGHT SCROLL */}
           <aside className="h-full overflow-y-auto pl-2 pr-2 scrollbar-hide">
             <div className="space-y-10 pb-20">
+              {/* PRODUCT INFO */}
               <ProductInfo
                 title={product.title}
-                basePrice={product.basePrice}
-                displayPrice={product.displayPrice}
-                totalStock={product.totalStock}
-                selectedVariant={selectedVariant}
+                basePrice={
+                  product.basePrice
+                }
+                displayPrice={
+                  product.displayPrice
+                }
+                totalStock={
+                  product.totalStock
+                }
+                selectedVariant={
+                  selectedVariant
+                }
                 rating={product.rating}
-                reviewCount={product.reviewCount}
+                reviewCount={
+                  product.reviewCount
+                }
               />
 
+              {/* VARIANTS */}
               <VariantSelector
                 variants={product.variants}
-                selectedVariant={selectedVariant}
-                onSelectVariant={(v) => {
-                  setSelectedVariant(v);
-                  setSelectedSize(v.size);
-                }}
+                selectedVariant={
+                  selectedVariant
+                }
+onSelectVariant={(v) => {
+  setSelectedVariant(v);
+
+  setSelectedSize(v.size);
+}}
               />
 
-              <div className="rounded-4xl border border-zinc-100 bg-zinc-50 p-7 space-y-7">
-                <QuantitySelector qty={qty} setQty={setQty} maxStock={currentStock} />
-                <ProductActions stockCount={currentStock} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />
+              {/* ACTIONS */}
+              <div className="rounded-[2.5rem] border border-zinc-100 bg-zinc-50 p-7 space-y-7">
+                <QuantitySelector
+                  qty={qty}
+                  setQty={setQty}
+                  maxStock={
+                    currentStock
+                  }
+                />
+
+                <ProductActions
+                  stockCount={
+                    currentStock
+                  }
+                  onAddToCart={
+                    handleAddToCart
+                  }
+                  onBuyNow={
+                    handleBuyNow
+                  }
+                />
               </div>
 
+              {/* VENDOR */}
               {vendor && (
                 <div className="pt-8 border-t border-zinc-100">
-                  <VendorCard vendor={vendorState || vendor} isFollowing={isFollowing} onFollow={handleFollow} />
+                  <VendorCard
+                    vendor={
+                      vendorState ||
+                      vendor
+                    }
+                    isFollowing={
+                      isFollowing
+                    }
+                    onFollow={
+                      handleFollow
+                    }
+                  />
                 </div>
               )}
 
-              <DeliveryInfo origin={product.origin} min={product.deliveryMin} max={product.deliveryMax} />
+              {/* DELIVERY */}
+              <DeliveryInfo
+                origin={product.origin}
+                min={product.deliveryMin}
+                max={product.deliveryMax}
+              />
             </div>
           </aside>
         </div>
 
         {/* ================================================= */}
-        {/* MULTI-LAYER API RECOMMENDATIONS */}
+        {/* RECOMMENDED */}
         {/* ================================================= */}
-        {/* 💡 FIX 2: Remove the strict recommended.length guard so all fallback streams get their turn to display */}
-        <div className="mt-20 lg:mt-28 border-t border-zinc-100 pt-16 space-y-16">
-          {/* Layer 1: Collaborative Related Products */}
-          <RecommendedProducts
-            products={recommended}
-            currentProductId={product.id}
-            title="You May Also Like"
-            subtitle="Curated selections based on your style."
-          />
 
-          {/* Layer 2: Vendor Specific In-House Inventory */}
-          <RecommendedProducts
-            products={vendorProducts}
-            currentProductId={product.id}
-            title="More From This Vendor"
-            subtitle="Discover other design additions from this seller's workshop."
-          />
+<div className="mt-20 lg:mt-28 border-t border-zinc-100 pt-16">
 
-          {/* Layer 3: Broad Global Feed Backfill */}
-          <RecommendedProducts
-            products={explore}
-            currentProductId={product.id}
-            title="Explore Marketplace"
-            subtitle="Trending styles across our global community."
-          />
-        </div>
+  <RecommendedProducts
+    products={recommended}
+    currentProductId={product.id}
+    title="You May Also Like"
+    subtitle="Related products based on this artifact."
+  />
+
+  <RecommendedProducts
+    products={vendorProducts}
+    currentProductId={product.id}
+    title="More From This Vendor"
+    subtitle="More inventory from this storefront."
+  />
+
+  <RecommendedProducts
+    products={explore}
+    currentProductId={product.id}
+    title="Explore Marketplace"
+    subtitle="Discover more across Aviorè."
+  />
+
+</div>
+         
       </Container>
     </div>
   );
