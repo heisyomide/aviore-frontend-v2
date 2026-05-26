@@ -14,7 +14,6 @@ export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
     items.reduce((acc, item) => acc + item.quantity, 0), 
   [items]);
 
-  const subCats = ["All", "Men", "Women", "Health", "Home", "Pets", "Electronics"];
 
   return (
     <div className="md:hidden flex flex-col w-full bg-white sticky top-0 z-[200] shadow-sm">
@@ -60,20 +59,7 @@ export function MobileHeader({ openSidebar }: { openSidebar: () => void }) {
         </div>
       </div>
       
-      {/* --- DISCOVERY SCROLL BAR --- */}
-      <div className="flex gap-6 overflow-x-auto no-scrollbar px-4 py-3 bg-white border-b border-gray-50">
-        {subCats.map((cat, i) => (
-          <Link 
-            key={cat} 
-            href={`/shop?category=${cat.toLowerCase()}`}
-            className={`shrink-0 whitespace-nowrap text-[10px] font-black uppercase tracking-widest transition-all
-              ${i === 0 ? "text-[#A4143D] border-b-2 border-[#A4143D] pb-1" : "text-gray-400 hover:text-zinc-900"}
-            `}
-          >
-            {cat}
-          </Link>
-        ))}
-      </div>
+
     </div>
   );
 }
