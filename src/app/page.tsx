@@ -18,6 +18,7 @@ import { VendorCTA } from '../components/home/VendorCTA';
 import { CategoryWorldSection } from '../components/home/CategoryWorldSection';
 import  { HomepageRail } from '../components/home/HomeRailSection';
 import axios from 'axios';
+import CategoryGrid from '../components/storefront/CategoryGrid';
 
 export default function HomePage() {
   const [data, setData] = useState({
@@ -157,6 +158,9 @@ useEffect(() => {
           ensuring the footer stack below it is always at the bottom. */}
       <div className="grow">
         <Hero />
+
+        {/* 2. Our New Hardcoded Category Grid */}
+      <CategoryGrid />
 
         {/* 3. URGENCY ZONE */}
         <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-7">

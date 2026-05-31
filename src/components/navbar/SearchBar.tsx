@@ -1,10 +1,10 @@
 'use client';
 
 import {
-  useState,
   useEffect,
-  useRef,
   useMemo,
+  useRef,
+  useState,
 } from 'react';
 
 import {
@@ -18,7 +18,10 @@ import {
 
 import { useRouter } from 'next/navigation';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AnimatePresence,
+  motion,
+} from 'framer-motion';
 
 import { api } from '@/src/lib/axios';
 
@@ -31,6 +34,7 @@ interface SearchProduct {
   id: string;
   title: string;
   displayPrice: number;
+
   images?: {
     imageUrl?: string;
   }[];
@@ -53,12 +57,12 @@ interface SearchPreviewResponse {
 // ======================================================
 
 const TRENDING_SEARCHES = [
-  'Luxury Watches 🔥',
-  'Vintage Artifacts 🔥',
-  'Minimal Decor 🔥',
-  'Designer Bags 🔥',
-  'Silk Shirts 🔥',
-  'Premium Sneakers 🔥',
+  'Luxury Watches',
+  'Vintage Artifacts',
+  'Minimal Decor',
+  'Designer Bags',
+  'Silk Shirts',
+  'Premium Sneakers',
 ];
 
 
@@ -94,7 +98,7 @@ export function SearchBar() {
 
 
   // ======================================================
-  // LOAD RECENT SEARCHES
+  // LOAD RECENTS
   // ======================================================
 
   useEffect(() => {
@@ -114,7 +118,7 @@ export function SearchBar() {
 
 
   // ======================================================
-  // SAVE RECENT SEARCH
+  // SAVE RECENT
   // ======================================================
 
   const saveRecentSearch = (
@@ -154,6 +158,7 @@ export function SearchBar() {
         if (
           query.trim().length < 2
         ) {
+
           setResults({
             products: [],
             suggestions: [],
@@ -167,16 +172,22 @@ export function SearchBar() {
 
           setLoading(true);
 
+          // ==========================================
+          // STOREFRONT SEARCH ENDPOINT
+          // ==========================================
+
           const res =
             await api.get(
-              `/products/search/preview?q=${query}`
+              `/products/search/preview?q=${encodeURIComponent(query)}`
             );
 
           setResults({
             products:
               res.data?.products || [],
+
             suggestions:
               res.data?.suggestions || [],
+
             categories:
               res.data?.categories || [],
           });
@@ -187,6 +198,12 @@ export function SearchBar() {
             'Search preview failed',
             err
           );
+
+          setResults({
+            products: [],
+            suggestions: [],
+            categories: [],
+          });
 
         } finally {
 
@@ -265,7 +282,7 @@ export function SearchBar() {
 
 
   // ======================================================
-  // CLEANED PRODUCTS
+  // CLEAN PRODUCTS
   // ======================================================
 
   const displayProducts =
@@ -288,9 +305,7 @@ export function SearchBar() {
       className="relative w-full max-w-xl"
     >
 
-      {/* ================================================= */}
       {/* SEARCH INPUT */}
-      {/* ================================================= */}
 
       <div
         className={`
@@ -324,18 +339,22 @@ export function SearchBar() {
             setIsOpen(true)
           }
           onChange={(e) => {
+
             setQuery(
               e.target.value
             );
 
             setIsOpen(true);
+
           }}
           onKeyDown={(e) => {
+
             if (
               e.key === 'Enter'
             ) {
               handleSearch();
             }
+
           }}
           className="
             flex-1
@@ -375,547 +394,184 @@ export function SearchBar() {
       </div>
 
 
-      {/* ================================================= */}
-      {/* DROPDOWN */}
-      {/* ================================================= */}
+      {/* RESULTS */}
 
       <AnimatePresence>
 
         {isOpen && (
 
-          <>
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: 10,
+            }}
+            transition={{
+              duration: 0.2,
+            }}
+            className="
+              absolute
+              top-full
+              left-0
+              right-0
+              mt-3
+              z-50
+              overflow-hidden
+              rounded-3xl
+              border
+              border-zinc-100
+              bg-white
+              shadow-2xl
+            "
+          >
 
-            {/* BACKDROP */}
-            <div
-              className="
-                fixed
-                inset-0
-                bg-black/20
-                z-40
-              "
-              onClick={() =>
-                setIsOpen(false)
-              }
-            />
+            <div className="p-5">
 
+              {/* TRENDING */}
 
-            {/* DESKTOP */}
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 10,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: 10,
-              }}
-              transition={{
-                duration: 0.2,
-              }}
-              className="
-                hidden md:block
-                absolute
-                top-full
-                left-0
-                right-0
-                mt-3
-                z-50
-                overflow-hidden
-                rounded-3xl
-                border
-                border-zinc-100
-                bg-white
-                shadow-2xl
-              "
-            >
+              {query.length < 2 && (
 
-              <div className="p-5">
+                <div className="space-y-6">
 
-                {/* ========================================= */}
-                {/* EMPTY STATE */}
-                {/* ========================================= */}
+                  <div>
 
-                {query.length < 2 && (
+                    <div className="flex items-center gap-2 mb-3">
 
-                  <div className="space-y-6">
+                      <TrendingUp
+                        size={14}
+                      />
 
-                    {/* TRENDING */}
-                    <SectionTitle
-                      icon={
-                        <TrendingUp
-                          size={14}
-                        />
-                      }
-                      title="Trending Searches"
-                    />
+                      <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                        Trending Searches
+                      </p>
 
-                    <div className="flex text-zinc-900 flex-wrap gap-2">
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
 
                       {TRENDING_SEARCHES.map(
                         (item) => (
-                          <TagButton
+                          <button
                             key={item}
-                            label={item}
                             onClick={() =>
-                              handleSearch(
-                                item
-                              )
+                              handleSearch(item)
                             }
-                          />
+                            className="
+                              rounded-full
+                              bg-zinc-100
+                              px-4
+                              py-2
+                              text-xs
+                              font-medium
+                              hover:bg-black
+                              hover:text-white
+                              transition-all
+                            "
+                          >
+                            {item}
+                          </button>
                         )
                       )}
 
                     </div>
 
-
-                    {/* RECENT */}
-                    {recentSearches.length >
-                      0 && (
-                      <>
-                        <SectionTitle
-                          icon={
-                            <Clock3
-                              size={14}
-                            />
-                          }
-                          title="Recent Searches"
-                        />
-
-                        <div className="space-y-2">
-
-                          {recentSearches.map(
-                            (
-                              item
-                            ) => (
-                              <RecentButton
-                                key={
-                                  item
-                                }
-                                label={
-                                  item
-                                }
-                                onClick={() =>
-                                  handleSearch(
-                                    item
-                                  )
-                                }
-                              />
-                            )
-                          )}
-
-                        </div>
-                      </>
-                    )}
-
                   </div>
-                )}
+
+                </div>
+              )}
 
 
-                {/* ========================================= */}
-                {/* RESULTS */}
-                {/* ========================================= */}
+              {/* PRODUCTS */}
 
-                {query.length >= 2 && (
+              {query.length >= 2 && (
 
-                  <div className="space-y-6">
+                <div className="space-y-2">
 
-                    {/* PRODUCTS */}
-                    {displayProducts.length >
-                      0 && (
-                      <div>
+                  {displayProducts.map(
+                    (product) => {
 
-                        <SectionTitle
-                          title="Products"
-                        />
+                      const image =
+                        product?.images?.[0]
+                          ?.imageUrl ||
+                        '/placeholder.jpg';
 
-                        <div className="space-y-2 mt-3">
+                      return (
+                        <button
+                          key={product.id}
+                          onClick={() => {
 
-                          {displayProducts.map(
-                            (
-                              product
-                            ) => {
+                            router.push(
+                              `/product/${product.id}`
+                            );
 
-                              const image =
-                                product
-                                  ?.images?.[0]
-                                  ?.imageUrl ||
-                                '/placeholder.jpg';
+                            setIsOpen(false);
 
-                              return (
-                                <button
-                                  key={
-                                    product.id
-                                  }
-                                  onClick={() => {
-                                    router.push(
-                                      `/product/${product.id}`
-                                    );
-
-                                    setIsOpen(
-                                      false
-                                    );
-                                  }}
-                                  className="
-                                    flex
-                                    w-full
-                                    items-center
-                                    gap-3
-                                    rounded-2xl
-                                    p-2
-                                    hover:bg-zinc-50
-                                    transition-all
-                                  "
-                                >
-
-                                  <img
-                                    src={
-                                      image
-                                    }
-                                    alt={
-                                      product.title
-                                    }
-                                    className="
-                                      h-14
-                                      w-14
-                                      rounded-xl
-                                      object-cover
-                                    "
-                                  />
-
-                                  <div className="flex-1 text-left">
-
-                                    <p className="line-clamp-1 text-sm font-medium text-zinc-900">
-                                      {
-                                        product.title
-                                      }
-                                    </p>
-
-                                    <p className="mt-1 text-xs text-zinc-500">
-                                      ₦
-                                      {Number(
-                                        product.displayPrice
-                                      ).toLocaleString()}
-                                    </p>
-
-                                  </div>
-
-                                  <ArrowRight
-                                    size={
-                                      16
-                                    }
-                                    className="
-                                      text-zinc-400
-                                    "
-                                  />
-
-                                </button>
-                              );
-                            }
-                          )}
-
-                        </div>
-
-                      </div>
-                    )}
-
-
-                    {/* SUGGESTIONS */}
-                    {results.suggestions
-                      ?.length >
-                      0 && (
-                      <div>
-
-                        <SectionTitle
-                          title="Suggestions"
-                        />
-
-                        <div className="flex flex-wrap gap-2 mt-3">
-
-                          {results.suggestions.map(
-                            (
-                              item
-                            ) => (
-                              <TagButton
-                                key={
-                                  item
-                                }
-                                label={
-                                  item
-                                }
-                                onClick={() =>
-                                  handleSearch(
-                                    item
-                                  )
-                                }
-                              />
-                            )
-                          )}
-
-                        </div>
-
-                      </div>
-                    )}
-
-
-                    {/* VIEW ALL */}
-                    <button
-                      onClick={() =>
-                        handleSearch()
-                      }
-                      className="
-                        mt-2
-                        flex
-                        h-12
-                        w-full
-                        items-center
-                        justify-center
-                        rounded-2xl
-                        bg-black
-                        text-sm
-                        font-semibold
-                        text-white
-                        transition-all
-                        hover:opacity-90
-                      "
-                    >
-                      View All Results
-                    </button>
-
-                  </div>
-                )}
-
-              </div>
-
-            </motion.div>
-
-
-            {/* ================================================= */}
-            {/* MOBILE SHEET */}
-            {/* ================================================= */}
-
-            <motion.div
-              initial={{
-                y: '100%',
-              }}
-              animate={{
-                y: 0,
-              }}
-              exit={{
-                y: '100%',
-              }}
-              transition={{
-                duration: 0.3,
-              }}
-              className="
-                fixed
-                bottom-0
-                left-0
-                right-0
-                z-50
-                max-h-[80vh]
-                overflow-y-auto
-                rounded-t-[2rem]
-                bg-white
-                p-5
-                shadow-2xl
-                md:hidden
-              "
-            >
-
-              <div className="mb-6 flex items-center justify-between">
-
-                <h2 className="text-lg font-bold">
-                  Search
-                </h2>
-
-                <button
-                  onClick={() =>
-                    setIsOpen(false)
-                  }
-                >
-                  <X size={20} />
-                </button>
-
-              </div>
-
-
-              {/* MOBILE PRODUCTS */}
-              <div className="space-y-4">
-
-                {displayProducts.map(
-                  (product) => {
-
-                    const image =
-                      product
-                        ?.images?.[0]
-                        ?.imageUrl ||
-                      '/placeholder.jpg';
-
-                    return (
-                      <button
-                        key={product.id}
-                        onClick={() => {
-                          router.push(
-                            `/product/${product.id}`
-                          );
-
-                          setIsOpen(
-                            false
-                          );
-                        }}
-                        className="
-                          flex
-                          w-full
-                          items-center
-                          gap-3
-                        "
-                      >
-
-                        <img
-                          src={image}
-                          alt={product.title}
+                          }}
                           className="
-                            h-14
-                            w-14
-                            rounded-xl
-                            object-cover
+                            flex
+                            w-full
+                            items-center
+                            gap-3
+                            rounded-2xl
+                            p-2
+                            hover:bg-zinc-50
+                            transition-all
                           "
-                        />
+                        >
 
-                        <div className="text-left">
+                          <img
+                            src={image}
+                            alt={product.title}
+                            className="
+                              h-14
+                              w-14
+                              rounded-xl
+                              object-cover
+                            "
+                          />
 
-                          <p className="line-clamp-1 text-sm font-medium">
-                            {
-                              product.title
-                            }
-                          </p>
+                          <div className="flex-1 text-left">
 
-                          <p className="mt-1 text-xs text-zinc-500">
-                            ₦
-                            {Number(
-                              product.displayPrice
-                            ).toLocaleString()}
-                          </p>
+                            <p className="line-clamp-1 text-sm font-medium text-zinc-900">
+                              {product.title}
+                            </p>
 
-                        </div>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              ₦
+                              {Number(
+                                product.displayPrice
+                              ).toLocaleString()}
+                            </p>
 
-                      </button>
-                    );
-                  }
-                )}
+                          </div>
 
-              </div>
+                          <ArrowRight
+                            size={16}
+                            className="text-zinc-400"
+                          />
 
-            </motion.div>
+                        </button>
+                      );
+                    }
+                  )}
 
-          </>
+                </div>
+              )}
+
+            </div>
+
+          </motion.div>
         )}
 
       </AnimatePresence>
 
     </div>
-  );
-}
-
-
-
-// ======================================================
-// SUB COMPONENTS
-// ======================================================
-
-function SectionTitle({
-  title,
-  icon,
-}: {
-  title: string;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      {icon}
-
-      <p
-        className="
-          text-xs
-          font-bold
-          uppercase
-          tracking-wider
-          text-zinc-400
-        "
-      >
-        {title}
-      </p>
-    </div>
-  );
-}
-
-
-function TagButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        rounded-full
-        bg-zinc-100
-        px-4
-        py-2
-        text-xs
-        font-medium
-        transition-all
-        hover:bg-black
-        hover:text-white
-      "
-    >
-      {label}
-    </button>
-  );
-}
-
-
-function RecentButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        flex
-        w-full
-        items-center
-        gap-2
-        rounded-xl
-        px-3
-        py-2
-        text-sm
-        text-zinc-700
-        transition-all
-        hover:bg-zinc-50
-      "
-    >
-
-      <Clock3
-        size={14}
-        className="
-          text-zinc-400
-        "
-      />
-
-      <span>{label}</span>
-
-    </button>
   );
 }
