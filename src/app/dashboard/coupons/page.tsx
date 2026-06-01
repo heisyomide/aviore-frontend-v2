@@ -74,6 +74,65 @@ export default function CouponsPage() {
         </h1>
       </header>
 
+      {/* REWARDS HUB */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <Link
+    href="/account/referral"
+    className="group relative overflow-hidden rounded-[2rem] border border-[#A4143D]/10 bg-gradient-to-br from-[#A4143D] to-[#7f0f2d] p-8 text-white transition-all duration-300 hover:scale-[1.02]"
+  >
+    <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+
+    <div className="relative z-10">
+      <div className="mb-4 flex items-center gap-3">
+        <Gift size={22} />
+        <span className="text-[11px] font-black uppercase tracking-[0.3em]">
+          Referral Program
+        </span>
+      </div>
+
+      <h3 className="text-3xl font-black uppercase">
+        Earn ₦2,500
+      </h3>
+
+      <p className="mt-3 text-sm text-white/80 max-w-sm">
+        Invite 5 verified customers and unlock a ₦2,500 voucher
+        usable on orders above ₦15,000.
+      </p>
+
+      <div className="mt-6 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em]">
+        Open Referral Center
+        <ArrowUpRight size={16} />
+      </div>
+    </div>
+  </Link>
+
+  <Link
+    href="/account/vouchers"
+    className="group rounded-[2rem] border border-zinc-200 bg-white p-8 transition-all duration-300 hover:border-[#A4143D]/20 hover:shadow-xl"
+  >
+    <div className="mb-4 flex items-center gap-3 text-[#A4143D]">
+      <Ticket size={22} />
+      <span className="text-[11px] font-black uppercase tracking-[0.3em]">
+        My Vouchers
+      </span>
+    </div>
+
+    <h3 className="text-3xl font-black uppercase text-zinc-900">
+      Voucher Wallet
+    </h3>
+
+    <p className="mt-3 text-sm text-zinc-500 max-w-sm">
+      View all referral rewards, active vouchers,
+      redeemed vouchers and expiration dates.
+    </p>
+
+    <div className="mt-6 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-[#A4143D]">
+      View Voucher Wallet
+      <ArrowUpRight size={16} />
+    </div>
+  </Link>
+</div>
+
       {/* 2. TAB HUD: Industrial Control System */}
       <div className="flex gap-10 border-b border-zinc-100">
         {['available', 'expired'].map((tab) => (
