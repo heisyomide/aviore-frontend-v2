@@ -29,7 +29,7 @@ const CATEGORY_DATA: Category[] = [
     subtitle: 'Glow with premium essentials.',
     badge: 'BEST DEALS',
     imageUrl: '/banners/skincare.png',
-    targetUrl: '/category/skincare',
+    targetUrl: 'category/beauty-skincare/skincare',
     bg: '#EAF8FF',
     accent: '#0EA5E9',
   },
