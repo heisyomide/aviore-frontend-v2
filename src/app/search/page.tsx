@@ -7,6 +7,7 @@ import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Navbar } from '@/src/components/navbar/Navbar';
 import { Container } from '@/src/components/layout/Container';
 import { ProductCard } from '@/src/components/product/ProductCard';
+import { Pagination } from '@/src/components/shop/Pagination';
 
 import { api } from '@/src/lib/axios';
 
@@ -29,13 +30,14 @@ interface Product {
   };
 }
 
-// 📦 1. INNER CONTENT COMPONENT (Holds all search logic & hooks safely)
+// 📦 1. INNER CONTENT COMPONENT
 function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const initialQuery = searchParams.get('q') || '';
 
+  // Filter and Query States
   const [query, setQuery] = useState(initialQuery);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,12 +47,19 @@ function SearchContent() {
   const [maxPrice, setMaxPrice] = useState('');
   const [mobileFilter, setMobileFilter] = useState(false);
 
-  // Sync state if initialQuery changes from router pushes
+  // Pagination & Server Response Matching States
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [matchedCount, setMatchedCount] = useState(0);
+  const [found, setFound] = useState(true);
+
+  // Sync state if initialQuery changes from address line updates
   useEffect(() => {
     setQuery(initialQuery);
+    setPage(1); // Reset to page 1 on a fresh query string execution
   }, [initialQuery]);
 
-  // FETCH PRODUCTS
+  // FETCH PRODUCTS DATA STREAM
   useEffect(() => {
     if (!initialQuery) return;
 
@@ -59,39 +68,39 @@ function SearchContent() {
         setLoading(true);
         setError('');
 
-        const queryParams: Record<string, string> = {
-          q: initialQuery,
-          sort: sortBy,
-        };
-
-        if (minPrice.trim() !== '') queryParams.minPrice = minPrice;
-        if (maxPrice.trim() !== '') queryParams.maxPrice = maxPrice;
-
         const res = await api.get('/products/search', {
-          params: queryParams,
+          params: {
+            q: initialQuery,
+            sort: sortBy,
+            page,
+            minPrice: minPrice.trim() !== '' ? minPrice : undefined,
+            maxPrice: maxPrice.trim() !== '' ? maxPrice : undefined,
+          },
         });
 
-        setProducts(res.data || []);
+        // Safe extraction of parameters sent back by NestJS API
+        setProducts(res.data?.products || []);
+        setFound(res.data?.found ?? true);
+        setMatchedCount(res.data?.matchedCount || 0);
+        setTotalPages(res.data?.totalPages || 1);
       } catch (err) {
-        console.error(err);
-        setError('Failed to fetch products.');
+        console.error('Search API Fetch Error: ', err);
+        setError('Failed to fetch marketplace products.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [initialQuery, sortBy, minPrice, maxPrice]);
+  }, [initialQuery, sortBy, minPrice, maxPrice, page]);
 
-  // SEARCH SUBMIT
+  // SEARCH FORM SUBMIT
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
     router.push(`/search?q=${encodeURIComponent(query.trim())}`);
   };
-
-  const resultCount = useMemo(() => products.length, [products]);
 
   return (
     <Container className="py-6 lg:py-10">
@@ -111,7 +120,9 @@ function SearchContent() {
         <div className="flex items-center justify-between mt-6">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Search Results</h1>
-            <p className="text-zinc-500 text-sm mt-1">{resultCount} products found</p>
+            <p className="text-zinc-500 text-sm mt-1">
+              {found ? `${matchedCount} matching products` : 'No exact match found'}
+            </p>
           </div>
 
           <button
@@ -126,7 +137,7 @@ function SearchContent() {
 
       {/* LAYOUT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-10">
-        {/* SIDEBAR */}
+        {/* SIDEBAR FILTERS */}
         <aside className={`${mobileFilter ? 'block' : 'hidden'} lg:block`}>
           <div className="sticky top-24 rounded-3xl border border-zinc-100 bg-zinc-50 p-6 space-y-6">
             <div>
@@ -165,31 +176,56 @@ function SearchContent() {
         </aside>
 
         {/* PRODUCTS STREAM */}
-        <main>
-          {loading && (
-            <div className="flex items-center justify-center py-24">
-              <Loader2 className="animate-spin text-zinc-400" />
-            </div>
-          )}
+        <main className="flex flex-col justify-between h-full min-h-[50vh]">
+          <div>
+            {loading && (
+              <div className="flex items-center justify-center py-24">
+                <Loader2 className="animate-spin text-zinc-400" size={28} />
+              </div>
+            )}
 
-          {!loading && error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-500 text-sm">
-              {error}
-            </div>
-          )}
+            {!loading && error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-500 text-sm mb-6">
+                {error}
+              </div>
+            )}
 
-          {!loading && !error && products.length === 0 && (
-            <div className="rounded-3xl border border-zinc-100 bg-zinc-50 py-24 text-center">
-              <h2 className="text-xl font-semibold">No products found</h2>
-              <p className="text-zinc-500 text-sm mt-2">Try searching with a different keyword.</p>
-            </div>
-          )}
+            {!loading && !found && products.length > 0 && (
+              <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                <h3 className="font-semibold text-amber-900">No exact match for "{initialQuery}"</h3>
+                <p className="text-sm text-amber-700 mt-1">Showing similar marketplace products.</p>
+              </div>
+            )}
 
-          {!loading && products.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+            {!loading && !error && products.length === 0 && (
+              <div className="rounded-3xl border border-zinc-100 bg-zinc-50 py-24 text-center">
+                <h2 className="text-xl font-semibold text-zinc-800">No products found</h2>
+                <p className="text-zinc-500 text-sm mt-2">Try adjusting your search criteria or price filters.</p>
+              </div>
+            )}
+
+            {!loading && products.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10">
+                {products.map((product) => {
+                  // Clean-up normalization layer to force cast correct price fields and fix the ₦0 fallback bug
+                  const clearDataProduct = {
+                    ...product,
+                    price: Number(product.price) > 0 ? Number(product.price) : 0,
+                  };
+                  return <ProductCard key={product.id} product={clearDataProduct} />;
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* PAGINATION PANEL FOOTER */}
+          {!loading && totalPages > 1 && (
+            <div className="mt-16 pt-6 border-t border-zinc-100">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={(nextPage: number) => setPage(nextPage)}
+              />
             </div>
           )}
         </main>
@@ -198,12 +234,11 @@ function SearchContent() {
   );
 }
 
-// 🛡️ 2. EXPORT DEFAULT ENTRYPOINT (Safe from prerender bailouts)
+// 🛡️ 2. EXPORT ENTRYPOINT WITH SUSPENSE BOUNDARY
 export default function SearchPage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
       <Suspense
         fallback={
           <Container className="py-24 flex items-center justify-center">
