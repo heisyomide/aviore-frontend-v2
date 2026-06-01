@@ -107,7 +107,7 @@ export function Footer() {
                 { label: "Service Terms", href: "/terms" },
                 { label: "Safety Center", href: "/safety" },
                 { label: "Returns Policy", href: "/returns" },
-                { label: "Help Desk", href: "/help" }
+                { label: "Shipping Policy", href: "/shipping-policy" }
               ]} 
             />
             <FooterList 
