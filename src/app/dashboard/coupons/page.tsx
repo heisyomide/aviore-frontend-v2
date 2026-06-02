@@ -77,7 +77,7 @@ export default function CouponsPage() {
       {/* REWARDS HUB */}
 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
   <Link
-    href="/account/referral"
+    href="dashboard/referrals"
     className="group relative overflow-hidden rounded-[2rem] border border-[#A4143D]/10 bg-gradient-to-br from-[#A4143D] to-[#7f0f2d] p-8 text-white transition-all duration-300 hover:scale-[1.02]"
   >
     <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
@@ -107,7 +107,7 @@ export default function CouponsPage() {
   </Link>
 
   <Link
-    href="/account/vouchers"
+    href="/dashboard/vouchers"
     className="group rounded-[2rem] border border-zinc-200 bg-white p-8 transition-all duration-300 hover:border-[#A4143D]/20 hover:shadow-xl"
   >
     <div className="mb-4 flex items-center gap-3 text-[#A4143D]">
