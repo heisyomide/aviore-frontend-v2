@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Building, 
@@ -10,33 +10,195 @@ import {
   Save, 
   CreditCard, 
   Sliders,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 
-export default function GrowthSettingsPage() {
-  // Mock Role Configuration to mimic the privileged ecosystem guardrails
-  const [currentUserRole] = useState<'HEAD' | 'SUB_MARKETER'>('HEAD');
+interface NotificationState {
+  onVendorSignup: boolean;
+  onSaleDelivered: boolean;
+  onPayoutSettled: boolean;
+  weeklyDigest: boolean;
+}
 
-  // Input states
-  const [notifications, setNotifications] = useState({
-    onVendorSignup: true,
-    onSaleDelivered: true,
-    onPayoutSettled: true,
-    weeklyDigest: false
-  });
+interface ProfileState {
+  fullName: string;
+  systemNodeTagId: string;
+  email: string;
+}
+
+interface SettlementState {
+  bankInstitution: string;
+  accountNumber: string;
+  verifiedAccountHolder: string;
+}
+
+interface StrategyState {
+  globalTeamAllocationSplit: number;
+  voucherMultiSignLimit: number;
+}
+
+export default function GrowthSettingsPage() {
+  // Operational State Vectors Hydrated Dynamically from NestJS
+  const [currentUserRole, setCurrentUserRole] = useState<'HEAD' | 'SUB_MARKETER'>('SUB_MARKETER');
+  const [profile, setProfile] = useState<ProfileState>({ fullName: '', systemNodeTagId: '', email: '' });
+  const [settlement, setSettlement] = useState<SettlementState>({ bankInstitution: 'Access Bank Plc', accountNumber: '', verifiedAccountHolder: '' });
+  const [notifications, setNotifications] = useState<NotificationState>({ onVendorSignup: true, onSaleDelivered: true, onPayoutSettled: true, weeklyDigest: false });
+  const [strategy, setStrategy] = useState<StrategyState>({ globalTeamAllocationSplit: 20, voucherMultiSignLimit: 5 });
+
+  // Infrastructure UX & Operation State Trackers
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [actionFeedback, setActionFeedback] = useState<{ status: 'SUCCESS' | 'ERROR' | null; message: string | null }>({ status: null, message: null });
+
+  const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  // Fetch current cluster parameters from the gateway node on mount
+  useEffect(() => {
+    const fetchOperatorSettings = async () => {
+      try {
+        setIsLoading(true);
+        const sessionToken = localStorage.getItem('aviore_auth_token');
+        if (!sessionToken) {
+          throw new Error('Active security authorization credentials not found in storage.');
+        }
+
+        const response = await fetch(`${backendBaseUrl}/v1/growth/settings`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Ecosystem node returned error status code: ${response.status}`);
+        }
+
+        const payload = await response.json();
+
+        // Hydrate data pools safely matching backend response payload schema
+        setCurrentUserRole(payload.role);
+        setProfile(payload.profile);
+        setSettlement(payload.settlementNode);
+        setNotifications(payload.notifications);
+        setStrategy(payload.privilegedStrategy);
+
+      } catch (err: any) {
+        console.error('[Settings Hydration Failure]:', err.message);
+        setActionFeedback({ status: 'ERROR', message: err.message || 'Failed to establish tunnel to setting configurations.' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOperatorSettings();
+  }, [backendBaseUrl]);
+
+  // Handle setting updates submission to the NestJS database transactional controller
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsSaving(true);
+      setActionFeedback({ status: null, message: null });
+
+      const sessionToken = localStorage.getItem('aviore_auth_token');
+      if (!sessionToken) {
+        throw new Error('Active security authorization credentials not found in storage.');
+      }
+
+      // Build out update data body schema matching UpdateSettingsDto structure expected by NestJS
+      const updatePayload = {
+        bankInstitution: settlement.bankInstitution,
+        accountNumber: settlement.accountNumber,
+        notifications: {
+          onVendorSignup: notifications.onVendorSignup,
+          onSaleDelivered: notifications.onSaleDelivered,
+          onPayoutSettled: notifications.onPayoutSettled,
+          weeklyDigest: notifications.weeklyDigest,
+        },
+        // Conditionally attach privileged configurations if user occupies HEAD role node
+        ...(currentUserRole === 'HEAD' && {
+          globalTeamAllocationSplit: Number(strategy.globalTeamAllocationSplit),
+          voucherMultiSignLimit: Number(strategy.voucherMultiSignLimit),
+        }),
+      };
+
+      const response = await fetch(`${backendBaseUrl}/v1/growth/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`,
+        },
+        body: JSON.stringify(updatePayload),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.message || 'Validation error intercepted settings cluster deployment.');
+      }
+
+      setActionFeedback({ status: 'SUCCESS', message: 'Ecosystem configuration matrices successfully propagated across cluster nodes.' });
+      
+      // Clear alert banner after a small delay window
+      setTimeout(() => setActionFeedback({ status: null, message: null }), 5000);
+
+    } catch (err: any) {
+      console.error('[Settings Save Failure]:', err.message);
+      setActionFeedback({ status: 'ERROR', message: err.message || 'Network processing failure encountered saving parameters.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-zinc-400 font-mono text-xs space-y-3">
+        <Loader2 className="h-6 w-6 animate-spin text-[#A4143D]" />
+        <span>Synchronizing operator configuration maps from gateway cluster...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSaveSettings} className="space-y-6 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
       {/* SECTION BANNER PROMPT */}
-      <div className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm">
-        <h2 className="text-xl font-bold tracking-tight text-zinc-900">
-          Global Settings & Access Management
-        </h2>
-        <p className="text-xs text-zinc-400 font-light mt-0.5">
-          Configure personal notification routing, adjust your disbursement nodes, and manage core operational parameters.
-        </p>
+      <div className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900">
+            Global Settings & Access Management
+          </h2>
+          <p className="text-xs text-zinc-400 font-light mt-0.5">
+            Configure personal notification routing, adjust your disbursement nodes, and manage core operational parameters.
+          </p>
+        </div>
+        <div className="bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-xl flex items-center space-x-2 self-start sm:self-center">
+          <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase">Active Role:</span>
+          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+            currentUserRole === 'HEAD' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
+          }`}>
+            {currentUserRole}
+          </span>
+        </div>
       </div>
+
+      {/* FEEDBACK SYSTEM ALERTS BAR */}
+      {actionFeedback.message && (
+        <div className={`p-4 rounded-xl border font-mono text-xs flex items-center space-x-2.5 shadow-xs transition-all ${
+          actionFeedback.status === 'SUCCESS' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
+        }`}>
+          {actionFeedback.status === 'SUCCESS' ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+          ) : (
+            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+          )}
+          <span>{actionFeedback.message}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         
@@ -55,26 +217,27 @@ export default function GrowthSettingsPage() {
                 <label className="text-[10px] uppercase font-mono font-bold text-zinc-400">Full Legal Name</label>
                 <input 
                   type="text" 
-                  defaultValue="Ayomide Oluwaseun Kofoworola" 
+                  value={profile.fullName}
                   disabled 
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-zinc-50 font-medium text-zinc-500 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-zinc-50 font-medium text-zinc-500 cursor-not-allowed outline-none"
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase font-mono font-bold text-zinc-400">System Node Tag ID</label>
                 <input 
                   type="text" 
-                  defaultValue="TEAM_OK" 
+                  value={profile.systemNodeTagId} 
                   disabled 
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-zinc-50 font-mono text-zinc-400 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-zinc-50 font-mono text-zinc-400 cursor-not-allowed outline-none"
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-[10px] uppercase font-mono font-bold text-zinc-400">Registered Communication Email</label>
                 <input 
                   type="email" 
-                  defaultValue="kofoworola.dev@gmail.com" 
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#A4143D] focus:border-[#A4143D] transition-all"
+                  value={profile.email}
+                  disabled
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-zinc-50 font-medium text-zinc-400 cursor-not-allowed outline-none"
                 />
               </div>
             </div>
@@ -93,7 +256,11 @@ export default function GrowthSettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase font-mono font-bold text-zinc-400">Bank Institution</label>
-                <select className="w-full px-3 py-2 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#A4143D] focus:border-[#A4143D] transition-all bg-white font-medium text-zinc-700">
+                <select 
+                  value={settlement.bankInstitution}
+                  onChange={(e) => setSettlement({ ...settlement, bankInstitution: e.target.value })}
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#A4143D] focus:border-[#A4143D] transition-all bg-white font-medium text-zinc-700"
+                >
                   <option>Access Bank Plc</option>
                   <option>Zenith Bank</option>
                   <option>Guaranty Trust Bank</option>
@@ -105,17 +272,19 @@ export default function GrowthSettingsPage() {
                 <input 
                   type="text" 
                   placeholder="0012345678"
+                  value={settlement.accountNumber}
                   maxLength={10}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl font-mono focus:outline-none focus:ring-1 focus:ring-[#A4143D] focus:border-[#A4143D] transition-all"
+                  onChange={(e) => setSettlement({ ...settlement, accountNumber: e.target.value.replace(/\D/g, '') })}
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl font-mono focus:outline-none focus:ring-1 focus:ring-[#A4143D] focus:border-[#A4143D] transition-all text-zinc-800"
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase font-mono font-bold text-zinc-400">Verified Account Holder</label>
                 <input 
                   type="text" 
-                  placeholder="A. O. KOFOWOROLA"
+                  value={settlement.verifiedAccountHolder}
                   disabled
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-zinc-50 font-medium text-zinc-400 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-zinc-50 font-medium text-zinc-400 cursor-not-allowed outline-none"
                 />
               </div>
             </div>
@@ -169,7 +338,7 @@ export default function GrowthSettingsPage() {
                 />
                 <div className="space-y-0.5">
                   <span className="font-semibold text-zinc-800 group-hover:text-[#A4143D] transition-colors">Payout Sweep Finalizations</span>
-                  <p className="text-[11px] text-zinc-400 font-light">Get confirmation emails detailing processing references when a payout clears into your Access Bank terminal.</p>
+                  <p className="text-[11px] text-zinc-400 font-light">Get confirmation emails detailing processing references when a payout clears into your settlement node.</p>
                 </div>
               </label>
             </div>
@@ -193,7 +362,8 @@ export default function GrowthSettingsPage() {
                   <label className="text-[10px] uppercase font-mono font-bold text-zinc-400 block">Global Team Allocation Cut Split (%)</label>
                   <input 
                     type="number" 
-                    defaultValue={20} 
+                    value={strategy.globalTeamAllocationSplit} 
+                    onChange={(e) => setStrategy({ ...strategy, globalTeamAllocationSplit: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-zinc-200 rounded-xl font-mono focus:outline-none focus:ring-1 focus:ring-[#A4143D] focus:border-[#A4143D] transition-all text-zinc-800 font-bold"
                   />
                 </div>
@@ -202,7 +372,8 @@ export default function GrowthSettingsPage() {
                   <label className="text-[10px] uppercase font-mono font-bold text-zinc-400 block">Voucher Multi-Sign Minimum Limit</label>
                   <input 
                     type="number" 
-                    defaultValue={5} 
+                    value={strategy.voucherMultiSignLimit} 
+                    onChange={(e) => setStrategy({ ...strategy, voucherMultiSignLimit: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-zinc-200 rounded-xl font-mono focus:outline-none focus:ring-1 focus:ring-[#A4143D] focus:border-[#A4143D] transition-all text-zinc-800 font-bold"
                   />
                 </div>
@@ -230,12 +401,25 @@ export default function GrowthSettingsPage() {
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
           <span>Altering routing endpoints requires secondary multi-factor vault signature clearance hooks.</span>
         </div>
-        <button className="w-full sm:w-auto bg-[#A4143D] hover:bg-[#801030] text-white px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide shadow-md transition-all flex items-center justify-center space-x-1.5 self-end">
-          <Save className="h-4 w-4" />
-          <span>Save Changes</span>
+        <button 
+          type="submit"
+          disabled={isSaving}
+          className="w-full sm:w-auto bg-[#A4143D] hover:bg-[#801030] disabled:bg-[#a414387a] text-white px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide shadow-md transition-all flex items-center justify-center space-x-1.5 self-end"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Propagating Changes...</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              <span>Save Changes</span>
+            </>
+          )}
         </button>
       </div>
 
-    </div>
+    </form>
   );
 }

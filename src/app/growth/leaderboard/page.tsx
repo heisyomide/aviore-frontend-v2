@@ -1,19 +1,18 @@
 // app/growth/leaderboard/page.tsx
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Trophy, 
   Medal, 
   Crown, 
-  TrendingUp, 
   Flame, 
-  Building2, 
-  ArrowUpRight, 
   Search, 
   Zap, 
   Info,
-  Sparkles
+  Sparkles,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 interface LeaderboardEntry {
@@ -28,17 +27,62 @@ interface LeaderboardEntry {
 }
 
 export default function GrowthLeaderboardPage() {
-  // Competitive growth matrix mapping individual and cohort performance tags
-  const [leaderboard] = useState<LeaderboardEntry[]>([
-    { rank: 1, name: 'Ify Onyedika', code: 'TEAM_IO', tier: 'ELITE', vendorsReferred: 14, activeVendors: 10, volumeRouted: 450000, growthStreak: 'HOT' },
-    { rank: 2, name: 'Tewogbola Adeola', code: 'TEAM_TA', tier: 'PRO', vendorsReferred: 12, activeVendors: 6, volumeRouted: 210000, growthStreak: 'HOT' },
-    { rank: 3, name: 'Ifeoluwa Olayinka', code: 'TEAM_IO2', tier: 'PRO', vendorsReferred: 9, activeVendors: 5, volumeRouted: 112000, growthStreak: 'STEADY' },
-    { rank: 4, name: 'Oluwaseun Kofoworola', code: 'TEAM_OK', tier: 'RISING', vendorsReferred: 3, activeVendors: 1, volumeRouted: 0, growthStreak: 'STABLE' },
-  ]);
-
+  // Competitive growth matrices synchronized straight from the ecosystem pipeline
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [cycleReset, setCycleReset] = useState<string>('June 30, 2026');
+  
+  // Infrastructure UX & Pipeline Flow Trackers
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter list securely
+  // Fallback / Environment Port Mapping Configurations 
+  const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  // Synchronize live pipeline metrics from the central tracking cluster on component mount
+  useEffect(() => {
+    const fetchGlobalCohortLeaderboard = async () => {
+      try {
+        setIsLoading(true);
+        setErrorMessage(null);
+
+        const sessionToken = localStorage.getItem('aviore_auth_token');
+        if (!sessionToken) {
+          throw new Error('Active security authorization credentials not found in storage.');
+        }
+
+        const response = await fetch(`${backendBaseUrl}/v1/growth/leaderboard`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.message || `Ecosystem node responded with error code: ${response.status}`);
+        }
+
+        // Hydrate live values from response payload architecture
+        setLeaderboard(payload.leaderboard || []);
+        if (payload.cycleReset) {
+          setCycleReset(payload.cycleReset);
+        }
+
+      } catch (err: any) {
+        console.error('[Leaderboard Hydration Failure]:', err.message);
+        setErrorMessage(err.message || 'Ecosystem processing issue intercepted ranking registry compilation.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGlobalCohortLeaderboard();
+  }, [backendBaseUrl]);
+
+  // Filter list securely across handles and keys
   const filteredLeaderboard = useMemo(() => {
     return leaderboard.filter(entry => 
       entry.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -46,7 +90,7 @@ export default function GrowthLeaderboardPage() {
     );
   }, [leaderboard, searchQuery]);
 
-  // Safely extract podium positions for layout focus wrappers
+  // Safely extract podium positions for layout focus wrappers dynamically from sorted state array
   const topThree = useMemo(() => {
     return {
       first: leaderboard.find(e => e.rank === 1),
@@ -55,8 +99,17 @@ export default function GrowthLeaderboardPage() {
     };
   }, [leaderboard]);
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-zinc-400 font-mono text-xs space-y-3">
+        <Loader2 className="h-6 w-6 animate-spin text-[#A4143D]" />
+        <span>Compiling performance rankings, conversion depths, and transaction paces...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
       {/* PAGE INTRO HEADER */}
       <div className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -71,9 +124,17 @@ export default function GrowthLeaderboardPage() {
         </div>
         <div className="bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-xl flex items-center space-x-2 self-start sm:self-center">
           <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-          <span className="text-[11px] font-mono font-bold text-amber-800 uppercase tracking-wide">Cycle Reset: June 30</span>
+          <span className="text-[11px] font-mono font-bold text-amber-800 uppercase tracking-wide">Cycle Reset: {cycleReset}</span>
         </div>
       </div>
+
+      {/* ERROR FEEDBACK ACTION BAR */}
+      {errorMessage && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 font-mono text-xs rounded-xl flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       {/* VISUAL PODIUM STACK FOR TOP 3 OPERATORS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-4">
@@ -96,7 +157,7 @@ export default function GrowthLeaderboardPage() {
         {/* FIRST PLACE */}
         {topThree.first && (
           <div className="bg-linear-to-b from-zinc-900 to-[#100C2A] text-white rounded-2xl p-6 shadow-md order-1 md:order-2 flex flex-col items-center relative text-center md:mb-4 pt-12 border border-white/5">
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-16 w-16 bg-gradient-to-b from-amber-300 to-amber-500 border-4 border-[#100C2A] rounded-full flex items-center justify-center text-white shadow-md animate-bounce-slow">
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-16 w-16 bg-gradient-to-b from-amber-300 to-amber-500 border-4 border-[#100C2A] rounded-full flex items-center justify-center text-white shadow-md">
               <Crown className="h-8 w-8 text-white drop-shadow-sm" />
             </div>
             <h3 className="text-base font-bold text-white">{topThree.first.name}</h3>
@@ -129,7 +190,7 @@ export default function GrowthLeaderboardPage() {
 
       </div>
 
-      {/* CORE MATRIX SEARCH REGISTRY CONTROL CONTROLS */}
+      {/* SEARCH REGISTRY PIPELINE CONTROLS */}
       <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm relative">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -164,7 +225,7 @@ export default function GrowthLeaderboardPage() {
                 filteredLeaderboard.map((entry) => (
                   <tr key={entry.rank} className="hover:bg-zinc-50/40 transition-colors group">
                     
-                    {/* Rank Numeric Flag */}
+                    {/* Rank Numeric Badge */}
                     <td className="p-4 pl-6 text-center">
                       <span className={`inline-flex items-center justify-center h-6 w-6 rounded-lg font-mono font-bold text-xs
                         ${entry.rank === 1 ? 'bg-amber-100 text-amber-800' : 
@@ -175,7 +236,7 @@ export default function GrowthLeaderboardPage() {
                       </span>
                     </td>
 
-                    {/* Operational Handle Name */}
+                    {/* Operational Handle Node */}
                     <td className="p-4 font-semibold text-zinc-900 group-hover:text-[#A4143D] transition-colors">
                       {entry.name}
                     </td>
@@ -196,12 +257,12 @@ export default function GrowthLeaderboardPage() {
                       </span>
                     </td>
 
-                    {/* Total Vendor Accounts Hooked */}
+                    {/* Total Sourced Vendor Metrics */}
                     <td className="p-4 text-center font-mono font-medium text-zinc-800">
                       {entry.vendorsReferred}
                     </td>
 
-                    {/* Onboard Activation Conversion Bar */}
+                    {/* Onboard Activation Conversion Slider Ratio */}
                     <td className="p-4">
                       <div className="flex flex-col items-center space-y-1">
                         <span className="font-mono text-[11px] font-semibold text-zinc-700">
@@ -210,18 +271,22 @@ export default function GrowthLeaderboardPage() {
                         <div className="w-16 bg-zinc-100 h-1 rounded-full overflow-hidden">
                           <div 
                             className="bg-indigo-500 h-full rounded-full"
-                            style={{ width: `${(entry.activeVendors / entry.vendorsReferred) * 100}%` }}
+                            style={{ 
+                              width: entry.vendorsReferred > 0 
+                                ? `${(entry.activeVendors / entry.vendorsReferred) * 100}%` 
+                                : '0%' 
+                            }}
                           />
                         </div>
                       </div>
                     </td>
 
-                    {/* Converted Gross GMV Flowing Through Node */}
+                    {/* Converted Gross Volume Routing Numbers */}
                     <td className="p-4 font-mono font-bold text-zinc-900">
                       ₦{entry.volumeRouted.toLocaleString()}.00
                     </td>
 
-                    {/* Velocity Pace Vector */}
+                    {/* Transaction Velocity Stabs */}
                     <td className="p-4 pr-6 text-center">
                       <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium border mx-auto w-fit
                         ${entry.growthStreak === 'HOT' ? 'bg-rose-50 text-rose-700 border-rose-100' : 
@@ -247,13 +312,13 @@ export default function GrowthLeaderboardPage() {
           </table>
         </div>
 
-        {/* RUNNING POLICY RULES SYSTEM BLOCKNOTE FOOTNOTE */}
+        {/* RUNNING SYSTEM STATEMENTS */}
         <div className="bg-zinc-50/50 p-4 border-t border-zinc-100 flex items-start space-x-2.5 text-[11px] text-zinc-400 font-light">
           <Info className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <p><strong>Ecosystem Ranking & Operational Performance Calculation Statement:</strong></p>
             <p>
-              Rank dynamics are updated automatically at midnight based on verified gross order volumes across tracking nodes. Performance milestones unlock access to enhanced target allocation rewards, priority support pipelines, and operational payout clearing tiers.
+              Rank dynamics are updated automatically based on verified gross order volumes across routing nodes. Performance milestones unlock access to enhanced target allocation rewards, priority support pipelines, and operational payout clearing tiers.
             </p>
           </div>
         </div>

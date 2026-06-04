@@ -10,6 +10,7 @@ const TRENDING_LINKS = [
   { label: "Beauty & Skincare", href: "/category/beauty-skincare" },
   { label: "Accessories", href: "/category/accessories" },
   { label: "Verified Vendors", href: "/vendors" },
+  { label: "Team_IO", href: "/Team_io/login" },
 ];
 
 export function TrendingTags() {

@@ -1,7 +1,7 @@
 // app/growth/tools/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Copy, 
   Check, 
@@ -11,40 +11,104 @@ import {
   Image as ImageIcon, 
   Share2, 
   Sparkles, 
-  ExternalLink,
   Layers,
-  ArrowRight
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
-interface AssetCardProps {
+interface PitchTemplate {
+  id: number;
+  label: string;
+  text: string;
+}
+
+interface MediaAsset {
   title: string;
   description: string;
   type: 'IMAGE' | 'DOCUMENT' | 'TEMPLATE';
   sizeOrFormat: string;
+  downloadUrl?: string;
+}
+
+interface AssetCardProps {
+  asset: MediaAsset;
 }
 
 export default function GrowthMarketingToolsPage() {
-  // Mock personal operational parameters derived from the ecosystem infrastructure
-  const [trackingCode] = useState('AVR-OKOF-2026');
-  const [referralLink] = useState('https://aviore.africa/join/vendor?ref=AVR-OKOF-2026');
-  
+  // Live Active Operational Parameters Sync States
+  const [trackingCode, setTrackingCode] = useState<string>('');
+  const [referralLink, setReferralLink] = useState<string>('');
+  const [pitchTemplates, setPitchTemplates] = useState<PitchTemplate[]>([]);
+  const [mediaKitAssets, setMediaKitAssets] = useState<MediaAsset[]>([]);
+
+  // UX Infrastructure Pipeline Trackers
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Copy Feedback Interaction Micro-states
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedText, setCopiedText] = useState<number | null>(null);
 
-  // Pitch templates crafted for premium regional vendor acquisition
-  const pitchTemplates = [
-    {
-      id: 1,
-      label: "Premium Luxury Merchant Pitch",
-      text: "Hello! I am partnering with AVIORÈ, Africa's premier digital marketplace for luxury and premium retail. We're launching an exclusive ecosystem that connects top-tier designers and high-end boutiques with discerning buyers across the region. Setting up your store takes less than 5 minutes, and once you upload your first 5 products, your catalog goes live to a highly curated customer base. Secure your verified storefront wrapper today using our priority registration code: AVR-OKOF-2026"
-    },
-    {
-      id: 2,
-      label: "Logistics & Fulfillment First Pitch",
-      text: "Scale your premium retail brand with AVIORÈ. Beyond a stunning, custom-branded digital storefront, our network provides integrated third-party logistics (3PL) and Southwest regional distribution nodes engineered specifically to handle high-value luxury goods seamlessly. Register your brand today using my direct track link: https://aviore.africa/join/vendor?ref=AVR-OKOF-2026"
-    }
-  ];
+  // Fallback/Staging Configuration Ports
+  const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  // Fetch live tracking metrics and localized pitch matrices from the cluster
+  useEffect(() => {
+    const synchronizeMarketingResources = async () => {
+      try {
+        setIsLoading(true);
+        setErrorMessage(null);
+
+        const sessionToken = localStorage.getItem('aviore_auth_token');
+        if (!sessionToken) {
+          throw new Error('Active security authorization credentials not found.');
+        }
+
+        const response = await fetch(`${backendBaseUrl}/v1/growth/tools`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.message || `Resource node responded with status: ${response.status}`);
+        }
+
+        // Hydrate UI state grids with live payload signatures
+        setTrackingCode(payload.trackingCode);
+        setReferralLink(payload.referralLink);
+        setPitchTemplates(payload.pitchTemplates || []);
+        
+        // Blend backend generated documents with local static layout presets safely
+        const incomingAssets = payload.mediaKitAssets || [];
+        const figmaTemplateExists = incomingAssets.some((a: MediaAsset) => a.type === 'TEMPLATE');
+        
+        if (!figmaTemplateExists) {
+          incomingAssets.push({
+            title: 'Social Showcase Layout Mockups',
+            description: 'Formatted templates for Instagram grids and WhatsApp stories highlighting vendor entry benefits.',
+            type: 'TEMPLATE',
+            sizeOrFormat: 'Figma File / ZIP • 12.4 MB',
+            downloadUrl: '#',
+          });
+        }
+        setMediaKitAssets(incomingAssets);
+
+      } catch (err: any) {
+        console.error('[Resource Center Failure]:', err.message);
+        setErrorMessage(err.message || 'Ecosystem degradation intercepted marketing kit assets.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    synchronizeMarketingResources();
+  }, [backendBaseUrl]);
 
   const handleCopy = (text: string, type: 'LINK' | 'CODE' | number) => {
     navigator.clipboard.writeText(text);
@@ -60,8 +124,17 @@ export default function GrowthMarketingToolsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-zinc-400 font-mono text-xs space-y-3">
+        <Loader2 className="h-6 w-6 animate-spin text-[#A4143D]" />
+        <span>Compiling trackable distribution assets, pitch matrices and visual configurations...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
       {/* HEADER ACTIONS BAR */}
       <div className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -75,9 +148,17 @@ export default function GrowthMarketingToolsPage() {
         </div>
         <div className="flex items-center space-x-2 bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1.5 rounded-xl text-xs font-semibold self-start sm:self-center">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Assets Updated for Q2</span>
+          <span>Assets Updated Live</span>
         </div>
       </div>
+
+      {/* ERROR FEEDBACK BAR */}
+      {errorMessage && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 font-mono text-xs rounded-xl flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       {/* CORE LINK GENERATION GENERATOR */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -129,7 +210,7 @@ export default function GrowthMarketingToolsPage() {
 
           <div className="bg-zinc-50 border border-zinc-100 p-3 rounded-xl flex items-center space-x-2 text-[10px] text-zinc-400 font-light">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-            <span>Reminder: Referred vendors must upload 5+ live items to pass verification rules and trigger active pipeline payouts.</span>
+            <span>Core Validation Rule: Referred vendors must upload 5+ live items to pass configuration algorithms and unlock payouts.</span>
           </div>
         </div>
 
@@ -144,10 +225,15 @@ export default function GrowthMarketingToolsPage() {
           </div>
 
           <div className="space-y-2 w-full">
-            <button className="w-full bg-linear-to-b from-zinc-50 to-zinc-100 hover:from-zinc-100 hover:to-zinc-200 text-zinc-700 font-semibold py-2 rounded-xl text-xs border border-zinc-200 shadow-xs flex items-center justify-center space-x-1.5 transition-all">
+            <a 
+              href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(referralLink)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full bg-linear-to-b from-zinc-50 to-zinc-100 hover:from-zinc-100 hover:to-zinc-200 text-zinc-700 font-semibold py-2 rounded-xl text-xs border border-zinc-200 shadow-xs flex items-center justify-center space-x-1.5 transition-all"
+            >
               <Download className="h-3.5 w-3.5" />
               <span>Download High-Res Print QR</span>
-            </button>
+            </a>
             <p className="text-[10px] text-zinc-400 font-light">
               Ideal for pitch presentations, physical flyers, and luxury merchant conference collateral.
             </p>
@@ -218,24 +304,9 @@ export default function GrowthMarketingToolsPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <AssetCard 
-            title="AVIORÈ Core Logomark Pack" 
-            description="High-definition master assets including light/dark variants and isolated primary icons."
-            type="IMAGE"
-            sizeOrFormat="SVG / PNG • 4.2 MB"
-          />
-          <AssetCard 
-            title="Luxury Merchant Onboarding Brochure" 
-            description="A premium guide breaking down commission tiers, escrow clearings, and setup guidelines."
-            type="DOCUMENT"
-            sizeOrFormat="PDF Document • 1.8 MB"
-          />
-          <AssetCard 
-            title="Social Showcase Layout Mockups" 
-            description="Formatted templates for Instagram grids and WhatsApp stories highlighting vendor entry benefits."
-            type="TEMPLATE"
-            sizeOrFormat="Figma File / ZIP • 12.4 MB"
-          />
+          {mediaKitAssets.map((asset, index) => (
+            <AssetCard key={index} asset={asset} />
+          ))}
         </div>
       </div>
 
@@ -244,7 +315,17 @@ export default function GrowthMarketingToolsPage() {
 }
 
 /* HELPER ASSET DISPLAY SUITE CARD COMPONENT */
-function AssetCard({ title, description, type, sizeOrFormat }: AssetCardProps) {
+function AssetCard({ asset }: AssetCardProps) {
+  const { title, description, type, sizeOrFormat, downloadUrl } = asset;
+
+  const triggerDownloadAction = () => {
+    if (!downloadUrl || downloadUrl === '#') {
+      alert('Visual prototype asset template mapped exclusively within private Figma design systems.');
+      return;
+    }
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="border border-zinc-200 rounded-xl p-4 bg-zinc-50/20 hover:bg-white hover:border-zinc-300 hover:shadow-xs transition-all flex flex-col justify-between group">
       <div>
@@ -263,7 +344,10 @@ function AssetCard({ title, description, type, sizeOrFormat }: AssetCardProps) {
         <p className="text-[11px] text-zinc-400 font-light mt-1 leading-normal">{description}</p>
       </div>
 
-      <button className="mt-4 w-full bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 font-medium py-1.5 rounded-lg text-xs flex items-center justify-center space-x-1 shadow-2xs group-hover:border-zinc-300 transition-all">
+      <button 
+        onClick={triggerDownloadAction}
+        className="mt-4 w-full bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 font-medium py-1.5 rounded-lg text-xs flex items-center justify-center space-x-1 shadow-2xs group-hover:border-zinc-300 transition-all"
+      >
         <Download className="h-3 w-3" />
         <span>Download Asset</span>
       </button>
