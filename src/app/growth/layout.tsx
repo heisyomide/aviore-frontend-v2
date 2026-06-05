@@ -76,7 +76,7 @@ export default function GrowthLayout({ children }: { children: React.ReactNode }
           } else {
             console.warn("DEBUG [Payload Warning]: Response was OK, but 'data' property was missing.");
             setIsAuthenticated(false);
-            router.replace('/growth/login');
+            router.replace('/Team_io/login');
           }
         } else {
           // SECURITY TRAP 3: If token is expired, corrupted, or tampered with (e.g., 401 Unauthorized or 403 Forbidden)
