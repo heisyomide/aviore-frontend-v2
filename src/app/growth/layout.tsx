@@ -45,7 +45,7 @@ export default function GrowthLayout({ children }: { children: React.ReactNode }
           console.warn("SECURITY TRIGGERED: No session token located. Redirecting operator.");
           setIsAuthenticated(false);
           setCheckingAuth(false);
-          router.replace('/growth/login');
+          router.replace('/Team_io/login');
           return;
         }
 
