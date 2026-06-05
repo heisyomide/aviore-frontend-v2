@@ -1,10 +1,9 @@
-// app/growth/layout.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Trophy, Gift, LayoutDashboard, Users, LineChart, Wallet, ShoppingBag, Settings, Wrench, HelpCircle } from 'lucide-react';
+import { Menu, X, Trophy, Gift, LayoutDashboard, Users, LineChart, Wallet, ShoppingBag, Settings, Wrench, HelpCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export type UserRole = 'HEAD' | 'SUB_MARKETER';
 
@@ -17,64 +16,87 @@ export interface ProfileContext {
 
 export default function GrowthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // 1. Core user profile layout state initialized with default workspace values
+  // --- STRICT AUTHENTICATION STATES ---
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Core user profile layout state initialized with generic fallback defaults
   const [profile, setProfile] = useState<ProfileContext>({
     teamCode: 'TEAM_IO',
-    name: 'Ayomide Kofoworola',
+    name: 'YOU ARE LOGGED OUT',
     avatarUrl: '/images/mock-avatar.jpg',
     role: 'HEAD',
   });
 
-  // 2. Synchronize authenticated session data with the NestJS backend module on mount
-useEffect(() => {
-  const synchronizeSession = async () => {
-    try {
-      const token = localStorage.getItem('aviore_auth_token');
-      const apiHost = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  // Synchronize authenticated session data with the NestJS backend module on mount
+  useEffect(() => {
+    const synchronizeSession = async () => {
+      try {
+        const token = localStorage.getItem('aviore_auth_token');
+        const apiHost = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-      console.log("DEBUG [Layout Mount]: Token found? ", !!token);
-      if (!token) return;
-
-// Inside app/growth/layout.tsx - Change your fetch URL structure to this:
-const response = await fetch(`${apiHost}/v1/growth/auth/profile`, {
-  method: 'GET',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-  },
-});
-
-      console.log("DEBUG [API Status]:", response.status);
-
-      if (response.ok) {
-        const payload = await response.json();
-        console.log("DEBUG [Full Payload Received]:", payload);
+        console.log("DEBUG [Layout Mount]: Token found? ", !!token);
         
-        // This targets your NestJS return object directly
-        if (payload && payload.data) {
-          console.log("DEBUG [Setting user profile to]:", payload.data.name);
-          
-          setProfile({
-            name: payload.data.name || `${payload.data.firstName || ''} ${payload.data.lastName || ''}`.trim(),
-            teamCode: payload.data.teamCode || 'TEAM_IO',
-            role: (payload.data.role as UserRole) || 'HEAD',
-            avatarUrl: payload.data.avatarUrl || '/images/mock-avatar.jpg',
-          });
-        } else {
-          console.warn("DEBUG [Payload Warning]: Response was OK, but 'data' property was missing.");
+        // SECURITY TRAP 1: If no token exists at all in storage, halt execution and bounce out immediately
+        if (!token) {
+          console.warn("SECURITY TRIGGERED: No session token located. Redirecting operator.");
+          setIsAuthenticated(false);
+          setCheckingAuth(false);
+          router.replace('/growth/login');
+          return;
         }
-      } else {
-        console.error("DEBUG [API Error Response]: Failed to fetch server profile status.");
-      }
-    } catch (error) {
-      console.error('DEBUG [Network Catch Failure]:', error);
-    }
-  };
 
-  synchronizeSession();
-}, []);
+        const response = await fetch(`${apiHost}/v1/growth/auth/profile`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        console.log("DEBUG [API Status]:", response.status);
+
+        if (response.ok) {
+          const payload = await response.json();
+          console.log("DEBUG [Full Payload Received]:", payload);
+          
+          if (payload && payload.data) {
+            setProfile({
+              name: payload.data.name || `${payload.data.firstName || ''} ${payload.data.lastName || ''}`.trim(),
+              teamCode: payload.data.teamCode || 'TEAM_IO',
+              role: (payload.data.role as UserRole) || 'HEAD',
+              avatarUrl: payload.data.avatarUrl || '/images/mock-avatar.jpg',
+            });
+            
+            // SECURITY TRAP 2: Token verified natively by backend node. Authorize rendering view.
+            setIsAuthenticated(true);
+          } else {
+            console.warn("DEBUG [Payload Warning]: Response was OK, but 'data' property was missing.");
+            setIsAuthenticated(false);
+            router.replace('/growth/login');
+          }
+        } else {
+          // SECURITY TRAP 3: If token is expired, corrupted, or tampered with (e.g., 401 Unauthorized or 403 Forbidden)
+          console.error("SECURITY TRIGGERED: Server rejected token profile verification query.");
+          localStorage.removeItem('aviore_auth_token'); // Purge corrupted credential token
+          setIsAuthenticated(false);
+          router.replace('/growth/login');
+        }
+      } catch (error) {
+        console.error('DEBUG [Network Catch Failure]:', error);
+        setIsAuthenticated(false);
+        router.replace('/growth/login');
+      } finally {
+        // Lift the loading blanket mask once validation completes
+        setCheckingAuth(false);
+      }
+    };
+
+    synchronizeSession();
+  }, [router]);
 
   const navLinks = [
     { name: 'Dashboard', href: '/growth/dashboard', icon: LayoutDashboard },
@@ -88,6 +110,24 @@ const response = await fetch(`${apiHost}/v1/growth/auth/profile`, {
     { name: 'Settings', href: '/growth/settings', icon: Settings },
   ];
 
+  // --- SECURITY LAYER RENDER INJECTION ---
+  // If we are actively reading localStorage or executing backend verification, return a blank black luxury loading view.
+  // This completely stops unauthorized visitors from ever seeing your layout frame components.
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#100C2A] flex flex-col items-center justify-center space-y-4">
+        <span className="text-xl font-bold tracking-tight text-white font-serif tracking-widest animate-pulse">AVIORÈ</span>
+        <Loader2 className="animate-spin text-[#A4143D]" size={20} />
+      </div>
+    );
+  }
+
+  // If validation complete but check failed, block output stream safely while next/navigation handles path change
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // --- SECURE WORKSPACE UI RENDER CHANNEL ---
   return (
     <div className="flex min-h-screen bg-[#F6F7FB] text-[#1A1A1A] font-sans antialiased">
       

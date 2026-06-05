@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { Store, Mail, Lock, User, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation'; // Added useSearchParams
+import { Store, Mail, Lock, User, ArrowRight, Loader2, CheckCircle2, Share2 } from 'lucide-react';
 import { Navbar } from '@/src/components/navbar/Navbar';
 
 interface InputGroupProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -12,6 +12,8 @@ interface InputGroupProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export default function RegisterVendor() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // Active URL parameters hook
+  
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,16 @@ export default function RegisterVendor() {
     email: '',
     password: '',
     storeName: '',
+    referralCode: '', // Appended state variable for growth tracking
   });
+
+  // Automatically parse the shared marketer reference link on mount
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setFormData((prev) => ({ ...prev, referralCode: ref.toUpperCase() }));
+    }
+  }, [searchParams]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,11 +63,9 @@ export default function RegisterVendor() {
         throw new Error(result.message || 'Registration failed');
       }
 
-      // Show success state briefly before redirecting
       setIsSuccess(true);
       
       setTimeout(() => {
-        // Redirect to login with the email as a hint
         router.push(`/login?email=${encodeURIComponent(formData.email)}&registered=true`);
       }, 1500);
       
@@ -69,7 +78,7 @@ export default function RegisterVendor() {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-         <Navbar />
+        <Navbar />
         <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 text-center border border-slate-100 animate-in fade-in zoom-in duration-300">
           <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="text-green-600" size={40} />
@@ -130,6 +139,31 @@ export default function RegisterVendor() {
             value={formData.storeName}
             onChange={handleChange} 
           />
+
+          {/* --- OPAL LINKED TRACKING INPUT --- */}
+          <div className="group">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+              Referral / Affiliate Code (Optional)
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                <Share2 size={18} />
+              </div>
+              <input
+                type="text"
+                name="referralCode"
+                placeholder="e.g. Avr123"
+                value={formData.referralCode}
+                onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value.toUpperCase() }))}
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all placeholder:text-slate-300 font-mono text-sm"
+              />
+            </div>
+            {searchParams.get('ref') && (
+              <p className="text-[11px] text-emerald-600 font-medium mt-1 ml-1">
+                ✓ Verified affiliate tracking node active
+              </p>
+            )}
+          </div>
 
           <InputGroup 
             label="Email Address" 
