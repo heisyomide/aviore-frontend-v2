@@ -7,24 +7,25 @@ import {
   ExternalLink,
   Package,
   Terminal,
+  ShieldCheck,
+  ShieldAlert,
   AlertTriangle,
   CheckCircle,
   X,
   User,
   Building,
-  Eye,
-  FileImageIcon // 🎯 Added for clear image-state context
+  FileText,
+  Eye
 } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { api } from '@/src/lib/axios';
 
-// 🎯 UPDATED: Added idCardUrl to the Vendor data contract
 interface Vendor {
   id: string;
   storeName: string;
   storeDescription: string | null;
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "NOT_SUBMITTED";
-  idCardUrl: string | null; // 👈 Paths mapping to AWS S3 / Local Storage Bucket vector
   createdAt: string;
   user: {
     firstName: string | null;
@@ -34,6 +35,7 @@ interface Vendor {
   _count: { products: number };
 }
 
+// --- MODAL COMPONENT ---
 interface KYCModalProps {
   vendor: Vendor;
   onClose: () => void;
@@ -42,11 +44,11 @@ interface KYCModalProps {
 
 function KYCDetailModal({ vendor, onClose, onUpdate }: KYCModalProps) {
   const [processing, setProcessing] = useState(false);
-  const [showFullImage, setShowFullImage] = useState(false); // 🎯 State for fullscreen image inspection lightbox
 
   const handleAction = async (status: 'APPROVED' | 'REJECTED') => {
     let reason = "";
 
+    // Requirement: Rejections must have a reason for the backend guard
     if (status === 'REJECTED') {
       reason = window.prompt("ENTER REJECTION PROTOCOL REASON:") || "";
       if (!reason) return toast.error("REJECTION ABORTED: Reason is required.");
@@ -54,6 +56,7 @@ function KYCDetailModal({ vendor, onClose, onUpdate }: KYCModalProps) {
 
     setProcessing(true);
     try {
+      // FIXED: Changed endpoint to /kyc-decision to match your refactored backend
       await api.patch(`/admin/vendors/${vendor.id}/kyc-decision`, { 
         status, 
         reason 
@@ -71,14 +74,14 @@ function KYCDetailModal({ vendor, onClose, onUpdate }: KYCModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
       <div className="relative w-full max-w-2xl bg-[#050505] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-900/30 font-sans">
           <div>
             <h2 className="text-xl font-black uppercase tracking-tighter text-white">Identity Verification</h2>
-            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Node ID: {vendor.id}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest uppercase">Node ID: {vendor.id}</p>
           </div>
           <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
             <X size={20} />
@@ -86,8 +89,7 @@ function KYCDetailModal({ vendor, onClose, onUpdate }: KYCModalProps) {
         </div>
 
         {/* Content */}
-        <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
-          {/* Metadata Display Block */}
+        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-6 p-6 rounded-xl bg-zinc-900/20 border border-zinc-800/50">
             <div className="space-y-1">
               <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest flex items-center gap-2 font-mono">
@@ -105,39 +107,21 @@ function KYCDetailModal({ vendor, onClose, onUpdate }: KYCModalProps) {
             </div>
           </div>
 
-          {/* 🎯 UPGRADED: Core Verification Document Frame */}
-          <div className="space-y-3">
-            <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest font-mono block">
-              Government_Issue_Identity_Asset
-            </span>
+          <div className="space-y-4">
+            <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest font-mono">Credential_Inspection</span>
             
-            {vendor.idCardUrl ? (
-              <div className="group relative aspect-video bg-zinc-950 rounded-xl border border-zinc-800/80 flex flex-col items-center justify-center overflow-hidden transition-all hover:border-amber-500/40 shadow-inner">
-                
-                {/* Embedded Real Rendered Image Layer */}
-                <img 
-                  src={vendor.idCardUrl} 
-                  alt="Government ID Verification Asset" 
-                  className="w-full h-full object-contain transition duration-500 group-hover:scale-[1.02]"
-                />
-
-                {/* Micro Blur Hover Sheet providing interactive viewport controls */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/70 backdrop-blur-sm">
-                  <button 
-                    onClick={() => setShowFullImage(true)}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-zinc-900 border border-zinc-700 text-[10px] font-black tracking-widest uppercase text-zinc-200 rounded-lg hover:border-amber-500 hover:text-amber-500 transition-all transform translate-y-2 group-hover:translate-y-0"
-                  >
-                     <Eye size={14} /> ENLARGE SOURCE IMAGE
-                  </button>
-                </div>
+            {/* FIXED: Added 'group' for hover visibility of button */}
+            <div className="group relative aspect-video bg-zinc-950 rounded-xl border border-zinc-900 flex flex-col items-center justify-center overflow-hidden transition-all hover:border-amber-500/30">
+              <FileText size={48} className="text-zinc-800 mb-3 group-hover:text-amber-500/50 transition-colors duration-500" />
+              <span className="text-[10px] font-mono text-zinc-700 tracking-tighter uppercase">Government_Issue_Identity.bin</span>
+              
+              {/* FIXED: Corrected opacity and backdrop for View Source */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 backdrop-blur-sm">
+                <button className="flex items-center gap-2 px-6 py-2.5 bg-zinc-900 border border-zinc-700 text-[10px] font-black tracking-widest uppercase rounded-lg hover:border-amber-500 hover:text-amber-500 transition-all transform translate-y-2 group-hover:translate-y-0">
+                   <Eye size={14} /> VIEW SOURCE
+                </button>
               </div>
-            ) : (
-              /* Fallback state framework if the card database vector is null or blank */
-              <div className="aspect-video bg-zinc-950 rounded-xl border border-dashed border-zinc-800 flex flex-col items-center justify-center p-6">
-                <FileImageIcon size={32} className="text-zinc-700 mb-2" />
-                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">No Identification Document Uploaded File Found</p>
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -159,26 +143,6 @@ function KYCDetailModal({ vendor, onClose, onUpdate }: KYCModalProps) {
           </button>
         </div>
       </div>
-
-      {/* 🎯 FULLSCREEN LIGHTBOX OVERLAY: For reading tight text strings or dates on the document */}
-      {showFullImage && vendor.idCardUrl && (
-        <div className="fixed inset-0 z-[200] bg-black/98 flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
-          <button 
-            onClick={() => setShowFullImage(false)}
-            className="absolute top-6 right-6 p-3 bg-zinc-900/80 border border-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors"
-          >
-            <X size={24} />
-          </button>
-          <img 
-            src={vendor.idCardUrl} 
-            alt="Expanded Source Credential" 
-            className="max-w-full max-h-[85vh] object-contain rounded-lg border border-zinc-900 shadow-2xl"
-          />
-          <p className="mt-4 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-            Press X or Close Button to return to verification console
-          </p>
-        </div>
-      )}
     </div>
   );
 }
