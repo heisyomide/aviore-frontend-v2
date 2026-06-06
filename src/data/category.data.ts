@@ -31,7 +31,7 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
         slug: 'women-fashion',
         children: [
           { name: 'Dresses', slug: 'dresses', image: '/cat/dresses.jpg' },
-          { name: 'Tops', slug: 'tops', image: '/cat/Tops.jpg' },
+          { name: 'Tops', slug: 'tops', image: '/cat/tops.jpg' },
           { name: 'Jeans', slug: 'jeans', image: '/cat/jeans.jpg' },
           { name: 'Skirts', slug: 'skirts', image: '/cat/skirts.jpg' },
           { name: 'Two Piece Sets', slug: 'two-piece-sets', image: '/cat/two-peice-sets.jpg' },
