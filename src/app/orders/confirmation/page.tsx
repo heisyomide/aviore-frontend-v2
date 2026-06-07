@@ -1,7 +1,7 @@
 // src/app/orders/confirmation/page.tsx
 
 import Link from 'next/link';
-import { CheckCircle2, Package, ArrowRight, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Package, ArrowRight, ShieldCheck, Truck } from 'lucide-react';
 
 interface ConfirmationPageProps {
   searchParams: Promise<{
@@ -51,8 +51,13 @@ export default async function OrderConfirmationPage({
           </p>
         </div>
 
+        {/* 🚀 MULTI-VENDOR SHIPPING DISPATCH TRANSPARENCY NOTICE */}
+        <div className="mt-8">
+          <CheckoutNotice />
+        </div>
+
         {/* TRANSACTION CARD */}
-        <div className="mt-8 rounded-3xl bg-gray-50 border border-gray-100 p-6 space-y-4">
+        <div className="mt-4 rounded-3xl bg-gray-50 border border-gray-100 p-6 space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
               Payment Status
@@ -107,6 +112,26 @@ export default async function OrderConfirmationPage({
             <ArrowRight size={16} />
           </Link>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// UI SUB-COMPONENT
+function CheckoutNotice() {
+  return (
+    <div className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl p-5 flex gap-4 items-start">
+      <div className="p-2.5 bg-gray-900 rounded-xl text-white shrink-0 shadow-sm">
+        <Truck size={16} />
+      </div>
+      <div className="space-y-1 text-left">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-900">
+          Important Delivery Notice
+        </h4>
+        <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+          Products purchased from different vendors are processed independently and shipped separately. 
+          Your items may arrive in multiple packages at different times.
+        </p>
       </div>
     </div>
   );

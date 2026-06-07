@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
 import { 
   ShieldCheck, CreditCard, ChevronRight, Loader2, 
-  MapPin, Tag, Sparkles, Zap, Package, Building2, Clock, Lock
+  MapPin, Tag, Sparkles, Zap, Package, Building2, Clock, Lock, Truck
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
@@ -125,63 +125,54 @@ export default function CheckoutPage() {
   };
 
  /* ---------------- ORDER PLACEMENT ---------------- */
-const handlePlaceOrder = async () => {
-  if (!address) {
-    return toast.error("Please add a shipping address");
-  }
-
-  setIsProcessing(true);
-
-  try {
-    const payload = {
-      items: checkoutItems.map(i => ({
-        productId: i.id,
-        quantity: i.quantity,
-        price: Number(i.price)
-      })),
-      addressId: address.id,
-      paymentMethod: selectedPayment,
-      appliedCampaigns: couponData?.appliedCampaigns || []
-    };
-
-    // 1. Create the Order (Backend now clears DB cart inside this call)
-    const res = await api.post('/orders/create', payload);
-    const paymentLink = res.data?.data?.paymentLink;
-
-    if (!paymentLink) {
-      throw new Error("Payment link not generated");
+  const handlePlaceOrder = async () => {
+    if (!address) {
+      return toast.error("Please add a shipping address");
     }
 
-    // 🛡️ 2. FORCE STORAGE WIPE
-    // We clear Zustand first
-    clearCart();
+    setIsProcessing(true);
 
-    // 🛡️ 3. FORCE DISK WIPE
-    // Explicitly kill the localStorage key to prevent "Ghosting"
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('cart-storage'); // Use your actual Zustand name here
+    try {
+      const payload = {
+        items: checkoutItems.map(i => ({
+          productId: i.id,
+          quantity: i.quantity,
+          price: Number(i.price)
+        })),
+        addressId: address.id,
+        paymentMethod: selectedPayment,
+        appliedCampaigns: couponData?.appliedCampaigns || []
+      };
+
+      const res = await api.post('/orders/create', payload);
+      const paymentLink = res.data?.data?.paymentLink;
+
+      if (!paymentLink) {
+        throw new Error("Payment link not generated");
+      }
+
+      clearCart();
+
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('cart-storage');
+      }
+
+      setTimeout(() => {
+        window.location.href = paymentLink;
+      }, 150);
+
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Payment initialization failed"
+      );
+      setIsProcessing(false);
     }
-
-    // 🛡️ 4. THE BREATHER
-    // Give the browser 150ms to ensure the disk write is 100% committed
-    // before we navigate away to a different domain.
-    setTimeout(() => {
-      window.location.href = paymentLink;
-    }, 150);
-
-  } catch (err: any) {
-    toast.error(
-      err.response?.data?.message || "Payment initialization failed"
-    );
-    setIsProcessing(false); // Reset only on error
-  }
-};
+  };
 
   return (
     <div className="bg-[#FDFCFB] min-h-screen pb-20">
        <Navbar />
-     
-
+      
       <div className="max-w-7xl mx-auto px-4 pt-6 italic font-black uppercase tracking-tighter">
         <Breadcrumb />
       </div>
@@ -222,7 +213,6 @@ const handlePlaceOrder = async () => {
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
               {checkoutItems.map(item => (
                 <div key={item.id} className="aspect-square bg-gray-50 rounded-3xl overflow-hidden border border-gray-50 group shadow-sm">
-                  {/* 🚀 FIXED: Added fallback for alt property to resolve console error */}
                   <Image 
                     src={item.image} 
                     alt={item.name || 'Product item'} 
@@ -271,7 +261,7 @@ const handlePlaceOrder = async () => {
                 <button
                   onClick={applyCoupon}
                   disabled={applyingCoupon || !couponCode}
-                  className="bg-gray-900 text-white px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#A4143D] disabled:opacity-20"
+                  className="bg-gray-900 text-white px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#A4143D] disabled:opacity-20 cursor-pointer"
                 >
                   {applyingCoupon ? <Loader2 className="animate-spin" size={16}/> : "Apply"}
                 </button>
@@ -305,10 +295,13 @@ const handlePlaceOrder = async () => {
               </div>
             </div>
 
+            {/* 🚀 MULTI-VENDOR DISPATCH TRANSPARENCY NOTICE */}
+            <CheckoutNotice />
+
             <button
               onClick={handlePlaceOrder}
               disabled={isProcessing}
-              className="w-full h-16 bg-[#A4143D] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 hover:shadow-2xl hover:shadow-[#A4143D]/30 transition-all active:scale-95 disabled:opacity-30"
+              className="w-full h-16 bg-[#A4143D] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 hover:shadow-2xl hover:shadow-[#A4143D]/30 transition-all active:scale-95 disabled:opacity-30 cursor-pointer"
             >
               {isProcessing ? <Loader2 className="animate-spin" size={20}/> : <>Complete Order <ChevronRight size={18}/></>}
             </button>
@@ -328,6 +321,25 @@ const handlePlaceOrder = async () => {
 }
 
 // UI HELPERS
+function CheckoutNotice() {
+  return (
+    <div className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl p-4 flex gap-3 items-start animate-in fade-in duration-500">
+      <div className="p-2 bg-gray-900 rounded-xl text-white shrink-0 shadow-sm">
+        <Truck size={14} />
+      </div>
+      <div className="space-y-0.5">
+        <h4 className="text-[9px] font-black uppercase tracking-widest text-gray-900">
+          Important Delivery Notice
+        </h4>
+        <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
+          Products purchased from different vendors are processed independently and shipped separately. 
+          Your items may arrive in multiple packages at different times.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function PaymentOption({ id, label, icon, selected, onSelect }: any) {
   return (
     <label onClick={() => onSelect(id)} className={`flex gap-4 items-center border p-5 rounded-2xl cursor-pointer transition-all duration-300 ${selected ? 'border-[#A4143D] bg-[#FDFCFB] shadow-lg' : 'border-gray-50 hover:border-gray-200'}`}>

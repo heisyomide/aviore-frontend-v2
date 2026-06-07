@@ -22,7 +22,6 @@ import { Breadcrumb } from '@/src/components/Breadcrumb';
 import { FeaturedBrandsSection } from '@/src/components/FeaturedBrand';
 import { Navbar } from '@/src/components/navbar/Navbar';
 
-// Fixes: "Cannot find name 'itemVariants'"
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   visible: {
@@ -90,6 +89,7 @@ export default function CartPage() {
         <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
           <section className="lg:col-span-8 space-y-5">
             <DeliveryProgress subtotal={subtotal} />
+            
             <CartItemsSection
               items={items}
               availableItems={availableItems}
@@ -99,6 +99,9 @@ export default function CartPage() {
               removeItem={removeItem}
               updateQuantity={updateQuantity}
             />
+
+            {/* 🚀 MULTI-VENDOR SHIPPING DISPATCH EXPECTATION ENGINE */}
+            <CheckoutNotice />
           </section>
 
           <aside className="lg:col-span-4">
@@ -120,6 +123,25 @@ export default function CartPage() {
 }
 
 // --- SUB-COMPONENTS ---
+
+function CheckoutNotice() {
+  return (
+    <div className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl p-5 flex gap-4 items-start animate-in fade-in duration-500">
+      <div className="p-2.5 bg-gray-900 rounded-xl text-white shrink-0 shadow-sm">
+        <Truck size={16} />
+      </div>
+      <div className="space-y-1">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-900">
+          Important Delivery Notice
+        </h4>
+        <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+          Products purchased from different vendors are processed independently and shipped separately. 
+          Your items may arrive in multiple packages at different times.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function CartItemsSection({ items, availableItems, allSelected, toggleSelect, toggleSelectAll, removeItem, updateQuantity }: any) {
   return (
@@ -187,17 +209,15 @@ function CartItemRow({ item, onToggle, onRemove, onUpdate }: any) {
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-gray-900 mb-2 truncate">{item.name}</h3>
             <p className="text-xs text-gray-400 mb-4 uppercase font-mono">
-              ID: {String(item?.id || '')
-  .slice(-8)
-  .toUpperCase()}
+              ID: {String(item?.id || '').slice(-8).toUpperCase()}
             </p>
             <div className="flex items-center gap-3">
               <div className="flex items-center border border-gray-200 rounded-lg bg-white overflow-hidden">
-                <button onClick={() => onUpdate(quantity - 1)} className="p-2 hover:bg-zinc-100"><Minus size={14} /></button>
+                <button onClick={() => onUpdate(quantity - 1)} className="p-2 hover:bg-zinc-100 cursor-pointer"><Minus size={14} /></button>
                 <span className="w-8 text-center text-sm font-bold">{quantity}</span>
-                <button onClick={() => onUpdate(quantity + 1)} className="p-2 hover:bg-zinc-100"><Plus size={14} /></button>
+                <button onClick={() => onUpdate(quantity + 1)} className="p-2 hover:bg-zinc-100 cursor-pointer"><Plus size={14} /></button>
               </div>
-              <button onClick={onRemove} className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+              <button onClick={onRemove} className="p-2 text-gray-400 hover:text-red-600 transition-colors cursor-pointer"><Trash2 size={16} /></button>
             </div>
           </div>
         </div>
@@ -209,8 +229,6 @@ function CartItemRow({ item, onToggle, onRemove, onUpdate }: any) {
     </motion.div>
   );
 }
-
-// --- HELPER COMPONENTS ---
 
 function EmptyCartState() {
   return (
@@ -265,7 +283,7 @@ function OrderSummary({ subtotal, itemCount, isDisabled, onCheckout }: any) {
           <span className="text-2xl font-black text-[#A4143D]">₦{subtotal.toLocaleString()}</span>
         </div>
       </div>
-      <button onClick={onCheckout} disabled={isDisabled} className="w-full mt-6 h-14 rounded-xl bg-[#A4143D] text-white font-black uppercase tracking-widest hover:bg-black transition disabled:opacity-30">
+      <button onClick={onCheckout} disabled={isDisabled} className="w-full mt-6 h-14 rounded-xl bg-[#A4143D] text-white font-black uppercase tracking-widest hover:bg-black transition disabled:opacity-30 cursor-pointer">
         Checkout
       </button>
     </div>
