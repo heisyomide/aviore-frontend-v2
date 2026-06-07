@@ -78,7 +78,6 @@ export function MobileSidebar({
                     src={cat.banner}
                     alt={cat.name}
                     fill
-                    unoptimized // Bypass background processes for direct raw resolution
                     sizes="40px"
                     className="object-cover"
                   />
@@ -124,18 +123,18 @@ export function MobileSidebar({
                         onClick={onClose}
                         className="flex flex-col gap-2 active:scale-95 transition group/item"
                       >
-                        {/* SUB-CATEGORY DYNAMIC IMAGE CONTEXT CONTAINER */}
+                        {/* 🎯 SUB-CATEGORY DYNAMIC IMAGE CONTEXT CONTAINER */}
                         <div className="w-full aspect-square bg-zinc-50 rounded-2xl border border-zinc-100 flex items-center justify-center relative overflow-hidden">
                           {item.image ? (
                             <Image
                               src={item.image}
                               alt={item.name}
                               fill
-                              unoptimized // Forces the server to load the raw file directly from /cat/
                               sizes="(max-width: 768px) 40vw, 150px"
                               className="object-cover transition-transform duration-300 group-hover/item:scale-105"
                             />
                           ) : (
+                            /* Modern fallback if image path string isn't updated */
                             <span className="text-xs font-mono font-black text-zinc-400 uppercase">
                               {item.name.slice(0, 2)}
                             </span>

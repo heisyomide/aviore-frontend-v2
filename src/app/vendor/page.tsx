@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { 
-  ShoppingCart, Wallet, Loader2, PackageOpen, BadgeCheck,
-  TrendingUp, ArrowUpRight, ShieldCheck, ChevronRight,
-  Package, Clock, AlertCircle, Share2, LogOut, User, Menu
+  Wallet, Loader2, PackageOpen, BadgeCheck,
+  ArrowUpRight, ShieldCheck, Package, Clock, AlertCircle, Share2, LogOut
 } from 'lucide-react';
+
+// Central Onboarding Engine Integrations
+import { VendorActivationCard } from '../../components/completion/VendorActivationCard';
+import { getCompletionStatus } from '@/src/services/completion.service';
+import { CompletionEngineResponse } from '@/src/types/completion.types';
 
 const CURRENCY_SYMBOL = '₦';
 
@@ -41,9 +45,11 @@ export default function VendorOverview() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isIdentityMenuOpen, setIsIdentityMenuOpen] = useState(false);
+  const [completionStatus, setCompletionStatus] = useState<CompletionEngineResponse | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
+    
     const fetchDashboardRegistry = async () => {
       setIsLoading(true);
       setError(null);
@@ -56,22 +62,29 @@ export default function VendorOverview() {
           return;
         }
         
-        const response = await fetch(`${baseUrl}/vendor/stats`, {
-          signal: controller.signal,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        // Execute stats delivery streams and compliance tracking in parallel streams
+        const [statsResponse, completionData] = await Promise.all([
+          fetch(`${baseUrl}/vendor/stats`, {
+            signal: controller.signal,
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }),
+          getCompletionStatus('vendor', token).catch((err) => {
+            console.error("Completion tracking stack safely decoupled:", err);
+            return null;
+          })
+        ]);
 
-        if (response.status === 401) {
+        if (statsResponse.status === 401) {
           localStorage.removeItem('token');
           window.location.href = '/login';
           return;
         }
 
-        if (!response.ok) throw new Error('SYNC_NODE_FAILURE');
-        const result = await response.json();
+        if (!statsResponse.ok) throw new Error('SYNC_NODE_FAILURE');
+        const result = await statsResponse.json();
 
         const sanitizedData: DashboardData = {
           profile: {
@@ -96,6 +109,7 @@ export default function VendorOverview() {
         };
 
         setData(sanitizedData);
+        setCompletionStatus(completionData);
       } catch (err: any) {
         if (err.name !== 'AbortError') setError(err.message);
       } finally {
@@ -107,44 +121,41 @@ export default function VendorOverview() {
     return () => controller.abort();
   }, []);
 
-  // 🚀 FIXED SHARING PROTOCOL
-const handleShareProfile = async () => {
-  const slug = data?.profile?.slug;
+  const handleShareProfile = async () => {
+    const slug = data?.profile?.slug;
 
-  if (!slug) {
-    alert("Store link unavailable. Please sync profile.");
-    return;
-  }
-
-  const shareUrl = `${window.location.origin}/vendors/${slug}`;
-
-  const shareData = {
-    title: data.profile.storeName,
-    text: `Check out ${data.profile.storeName} on Aviore.`,
-    url: shareUrl,
-  };
-
-  try {
-    if (navigator.share) {
-      await navigator.share(shareData);
+    if (!slug) {
+      alert("Store link unavailable. Please sync profile.");
       return;
     }
 
-    await navigator.clipboard.writeText(shareUrl);
-    alert("Store link copied to clipboard!");
-  } catch (error) {
-    console.error("Share failed:", error);
+    const shareUrl = `${window.location.origin}/vendors/${slug}`;
+    const shareData = {
+      title: data.profile.storeName,
+      text: `Check out ${data.profile.storeName} on AVIORÈ.`,
+      url: shareUrl,
+    };
 
     try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+
       await navigator.clipboard.writeText(shareUrl);
       alert("Store link copied to clipboard!");
-    } catch {
-      alert("Unable to share link. Please try again.");
+    } catch (error) {
+      console.error("Share failed:", error);
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert("Store link copied to clipboard!");
+      } catch {
+        alert("Unable to share link. Please try again.");
+      }
+    } finally {
+      setIsIdentityMenuOpen(false);
     }
-  } finally {
-    setIsIdentityMenuOpen(false);
-  }
-};
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -157,7 +168,7 @@ const handleShareProfile = async () => {
   return (
     <div className="min-h-screen bg-white pb-32 animate-in fade-in duration-700">
       
-      {/* 🚀 1. STICKY IDENTITY HEADER (Top-Left Identity + Initiate Toggle) */}
+      {/* 🚀 1. STICKY IDENTITY HEADER */}
       <div className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md px-6 py-8 flex justify-between items-center border-b border-slate-50">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
@@ -168,30 +179,28 @@ const handleShareProfile = async () => {
           </p>
         </div>
 
-        {/* 🛠️ IDENTITY NODE (Initiate Dropdown) */}
         <div className="relative">
           <button 
             onClick={() => setIsIdentityMenuOpen(!isIdentityMenuOpen)}
-            className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl active:scale-90 transition-all border border-slate-800"
+            className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl active:scale-90 transition-all border border-slate-800 cursor-pointer"
           >
             <span className="font-black italic text-lg">{data.profile.storeName.substring(0, 2).toUpperCase()}</span>
           </button>
 
           {isIdentityMenuOpen && (
             <>
-              {/* Invisible Backdrop to close menu */}
               <div className="fixed inset-0 z-10" onClick={() => setIsIdentityMenuOpen(false)} />
               <div className="absolute right-0 top-16 w-56 bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-3 animate-in zoom-in-95 duration-200 z-20">
                  <button 
                   onClick={handleShareProfile}
-                  className="w-full flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-colors text-slate-700"
+                  className="w-full flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-colors text-slate-700 cursor-pointer"
                  >
                    <Share2 size={18} className="text-blue-600" />
                    <span className="text-[10px] font-black uppercase tracking-widest">Share Profile</span>
                  </button>
                  <button 
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-2xl transition-colors text-red-600"
+                  className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-2xl transition-colors text-red-600 cursor-pointer"
                  >
                    <LogOut size={18} />
                    <span className="text-[10px] font-black uppercase tracking-widest">Logout </span>
@@ -202,9 +211,19 @@ const handleShareProfile = async () => {
         </div>
       </div>
 
+      {/* CORE WORKSPACE VIEW */}
       <div className="px-6 space-y-10 mt-10">
 
-        {/* 🚀 2. REVENUE HERO NODE (Available Balance) */}
+        {/* 🛡️ ONBOARDING & VERIFICATION ENGINE CARD */}
+        {completionStatus && (
+          <VendorActivationCard 
+            percentage={completionStatus.completionPercentage}
+            tasks={completionStatus.tasks}
+            isFullyActive={completionStatus.isFullyActive}
+          />
+        )}
+
+        {/* 🚀 2. REVENUE HERO NODE */}
         <div className="bg-[#0F172A] p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-start relative z-10">
                 <div>
@@ -236,7 +255,7 @@ const handleShareProfile = async () => {
           <OperationalCard label="Product SKU" val={data.stats.activeProducts} icon={<Package size={18}/>} color="bg-slate-50" textColor="text-slate-900" />
         </div>
 
-        {/* 🚀 4. RECENT REQUISITIONS (Recent Orders) */}
+        {/* 🚀 4. RECENT REQUISITIONS */}
         <div className="space-y-6">
           <div className="flex justify-between items-center px-1">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Recent Requisitions</h3>
@@ -277,7 +296,7 @@ const handleShareProfile = async () => {
   );
 }
 
-/* --- SUB-COMPONENTS (PRESERVED & STYLED) --- */
+/* --- OPTIMIZED ISOLATED LAYOUT COMPONENTS --- */
 
 function OperationalCard({ label, val, icon, color, textColor }: any) {
   return (
@@ -306,7 +325,7 @@ function ErrorState({ message }: { message: string | null }) {
       <AlertCircle size={40} className="text-red-500 mb-4" />
       <h3 className="text-xl font-black text-slate-900 uppercase italic">Transmission Error</h3>
       <p className="text-[10px] font-bold text-slate-400 uppercase mt-2 mb-8 max-w-xs">{message || "Registry sync interrupted."}</p>
-      <button onClick={() => window.location.reload()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Reconnect</button>
+      <button onClick={() => window.location.reload()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl cursor-pointer">Reconnect</button>
     </div>
   );
 }

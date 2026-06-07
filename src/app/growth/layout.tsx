@@ -83,12 +83,12 @@ export default function GrowthLayout({ children }: { children: React.ReactNode }
           console.error("SECURITY TRIGGERED: Server rejected token profile verification query.");
           localStorage.removeItem('aviore_auth_token'); // Purge corrupted credential token
           setIsAuthenticated(false);
-          router.replace('/growth/login');
+          router.replace('/Team_io/login');
         }
       } catch (error) {
         console.error('DEBUG [Network Catch Failure]:', error);
         setIsAuthenticated(false);
-        router.replace('/growth/login');
+        router.replace('/Team_io/login');
       } finally {
         // Lift the loading blanket mask once validation completes
         setCheckingAuth(false);
