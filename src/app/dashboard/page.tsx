@@ -4,29 +4,38 @@ import { useState, useEffect } from 'react';
 import { api } from '@/src/lib/axios';
 import { 
   Loader2, ShoppingBag, Clock, CheckCircle2, 
-  Star, ArrowUpRight, TrendingUp, ChevronRight 
+  Star, ArrowUpRight, TrendingUp 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// 🚀 ONLY IMPORTING THE MOBILE COMPONENTS YOU ASKED FOR
+// IMPORTING REQUISITE SUB-MODULE COMPLEX COMPONENTS
 import { MobileDashboard } from '@/src/components/dashboard/MobileDashboard';
+import { UserActivationCard } from '@/src/components/completion/UserActivationCard';
+import { CompletionEngineResponse } from '@/src/types/completion.types';
 
 export default function OverviewPage() {
   const [data, setData] = useState<any>(null);
+  const [completionData, setCompletionData] = useState<CompletionEngineResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchDashboardAndStatus = async () => {
       try {
-        const response = await api.get('/user/dashboard');
-        setData(response.data);
+        // Concurrently fetch user telemetry and dashboard records
+        const [dashboardRes, completionRes] = await Promise.all([
+          api.get('/user/dashboard'),
+          api.get('/user/completion-status')
+        ]);
+
+        setData(dashboardRes.data);
+        setCompletionData(completionRes.data);
       } catch (error) {
         console.error('Registry_Fetch_Error:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchDashboardData();
+    fetchDashboardAndStatus();
   }, []);
 
   if (loading) {
@@ -39,7 +48,7 @@ export default function OverviewPage() {
 
   return (
     <>
-      {/* 🖥️ DESKTOP LOOK (KEEPING YOUR ORIGINAL CODE EXACTLY AS IS) */}
+      {/* 🖥️ DESKTOP LOOK */}
       <div className="hidden lg:block space-y-10">
         <header className="flex justify-between items-end">
           <div className="space-y-1">
@@ -53,6 +62,15 @@ export default function OverviewPage() {
             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Live_Registry_Sync</span>
           </div>
         </header>
+
+        {/* PROFILE COMPLETION TELEMETRY PIPELINE */}
+        {completionData && (
+          <UserActivationCard 
+            percentage={completionData.completionPercentage}
+            tasks={completionData.tasks}
+            isFullyActive={completionData.isFullyActive}
+          />
+        )}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Total_Manifests" value={data?.totalOrders || 0} icon={ShoppingBag} color="text-zinc-900" />
@@ -95,15 +113,25 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* 📱 MOBILE LOOK (ONLY USING THE COMPONENT) */}
-      <div className="block lg:hidden">
+      {/* 📱 MOBILE LOOK */}
+      <div className="block lg:hidden space-y-6">
+        {/* Render activation checklist on mobile stream if requirements remain pending */}
+        {completionData && !completionData.isFullyActive && (
+          <div className="px-4 pt-4">
+            <UserActivationCard 
+              percentage={completionData.completionPercentage}
+              tasks={completionData.tasks}
+              isFullyActive={completionData.isFullyActive}
+            />
+          </div>
+        )}
         <MobileDashboard data={data} />
       </div>
     </>
   );
 }
 
-/* --- ATOMS (STAYING FOR DESKTOP USE) --- */
+/* --- ATOMS --- */
 function StatCard({ label, value, icon: Icon, color }: any) {
   return (
     <motion.div whileHover={{ y: -4 }} className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
