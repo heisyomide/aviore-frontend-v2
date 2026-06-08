@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react'; // ◄ 1. Import Suspense
 import { useForm } from 'react-hook-form';
-import { useRouter, useSearchParams } from 'next/navigation'; // ◄ 1. Added useSearchParams
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/axios';
 import { Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
 
@@ -14,9 +14,10 @@ interface RegisterInput {
   confirmPassword: string;
 }
 
-export default function RegisterPage() {
+// ◄ 2. Move form logic into an isolated component to make it safe for static optimization
+function RegisterFormFields() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // ◄ 2. Initialize search param node
+  const searchParams = useSearchParams(); // Safe here inside the Suspense Boundary
   const { register, handleSubmit } = useForm<RegisterInput>();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +26,6 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
 
-  // ◄ 3. Capture tracking code out of URL query parameters cleanly on mount
   useEffect(() => {
     const code = searchParams.get('ref');
     if (code) {
@@ -44,7 +44,6 @@ export default function RegisterPage() {
       setLoading(true);
       setError(null);
 
-      // 1. IP TELEMETRY
       let clientIp = null;
       try {
         const ipResponse = await fetch('https://api.ipify.org?format=json');
@@ -54,7 +53,6 @@ export default function RegisterPage() {
         console.warn('⚠️ Telemetry bypass: IP fetch timed out.');
       }
 
-      // 2. DEVICE TELEMETRY
       let fingerprint: string | null = null;
       try {
         const { getDeviceFingerprint } = await import('../../utils/fingerprint');
@@ -63,16 +61,15 @@ export default function RegisterPage() {
         console.warn('⚠️ Telemetry bypass: Registration fingerprint skipped.', telemetryErr);
       }
 
-      // 3. PAYLOAD: Packed correctly to clear your RegisterDto validation gates
       const payload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         password: data.password,
         signupIp: clientIp,
-        ipAddress: clientIp, // Maps to both parameters to avoid fallback crashes
+        ipAddress: clientIp, 
         deviceFingerprint: fingerprint,
-        referralCode: referralCode || undefined, // ◄ 4. INJECTED ROUTE CODE HERE
+        referralCode: referralCode || undefined,
       };
 
       await api.post('/auth/register', payload);
@@ -89,6 +86,95 @@ export default function RegisterPage() {
   };
 
   return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {referralCode && (
+        <div className="mb-2 text-center">
+          <div className="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+            <p className="text-[9px] font-black uppercase text-emerald-600 tracking-wider">
+              Code Applied: {referralCode}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        <input
+          {...register('firstName')}
+          placeholder="first name"
+          required
+          className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
+        />
+        <input
+          {...register('lastName')}
+          placeholder="last name"
+          required
+          className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
+        />
+      </div>
+
+      <input
+        {...register('email')}
+        type="email"
+        placeholder="email"
+        required
+        className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
+      />
+
+      <div className="relative">
+        <input
+          {...register('password')}
+          type={showPassword ? 'text' : 'password'}
+          placeholder="password"
+          required
+          className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-4 top-4 text-slate-400"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+
+      <div className="relative">
+        <input
+          {...register('confirmPassword')}
+          type={showConfirm ? 'text' : 'password'}
+          placeholder="confirm password"
+          required
+          className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12"
+        />
+        <button
+          type="button"
+          onClick={() => setShowConfirm(!showConfirm)}
+          className="absolute right-4 top-4 text-slate-400"
+        >
+          {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+
+      {error && <div className="text-xs text-red-500 text-center font-semibold italic">{error}</div>}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full text-white p-4 rounded-xl bg-[#092c5c] shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] font-bold transition-all duration-300 flex items-center justify-center cursor-pointer"
+      >
+        {loading ? <Loader2 className="animate-spin" size={20} /> : 'REGISTER'}
+      </button>
+
+      <div className="text-center text-xs text-slate-400 mt-4">
+        Already have an account?{' '}
+        <span onClick={() => router.push('/login')} className="font-semibold text-slate-600 cursor-pointer">Login</span>
+      </div>
+    </form>
+  );
+}
+
+// ◄ 3. Export the main container page wrapped with a Suspense fallback
+export default function RegisterPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4">
       <div className="w-full max-w-sm bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">
         
@@ -98,90 +184,18 @@ export default function RegisterPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-700">Create Account</h1>
           <p className="text-xs text-slate-400 uppercase tracking-widest mt-1">Aviore Marketplace</p>
-          
-          {/* ◄ Visual Indicator for users arriving via promotional referral tracks */}
-          {referralCode && (
-            <div className="mt-3 inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <p className="text-[9px] font-black uppercase text-emerald-600 tracking-wider">
-                Code Applied: {referralCode}
-              </p>
-            </div>
-          )}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <div className="flex gap-3">
-            <input
-              {...register('firstName')}
-              placeholder="first name"
-              required
-              className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
-            />
-            <input
-              {...register('lastName')}
-              placeholder="last name"
-              required
-              className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
-            />
+        {/* This boundary stops the Next build process from breaking */}
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center p-6 space-y-3">
+            <Loader2 className="animate-spin text-slate-500" size={32} />
+            <p className="text-xs text-slate-400 tracking-wide font-medium">Loading register payload context...</p>
           </div>
+        }>
+          <RegisterFormFields />
+        </Suspense>
 
-          <input
-            {...register('email')}
-            type="email"
-            placeholder="email"
-            required
-            className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
-          />
-
-          <div className="relative">
-            <input
-              {...register('password')}
-              type={showPassword ? 'text' : 'password'}
-              placeholder="password"
-              required
-              className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-4 text-slate-400"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-
-          <div className="relative">
-            <input
-              {...register('confirmPassword')}
-              type={showConfirm ? 'text' : 'password'}
-              placeholder="confirm password"
-              required
-              className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirm(!showConfirm)}
-              className="absolute right-4 top-4 text-slate-400"
-            >
-              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-
-          {error && <div className="text-xs text-red-500 text-center font-semibold italic">{error}</div>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full text-white p-4 rounded-xl bg-[#092c5c] shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] font-bold transition-all duration-300 flex items-center justify-center cursor-pointer"
-          >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : 'REGISTER'}
-          </button>
-
-          <div className="text-center text-xs text-slate-400 mt-4">
-            Already have an account?{' '}
-            <span onClick={() => router.push('/login')} className="font-semibold text-slate-600 cursor-pointer">Login</span>
-          </div>
-        </form>
       </div>
     </div>
   );
