@@ -1,17 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api } from '@/src/lib/axios';
 import { 
   Loader2, ShoppingBag, Clock, CheckCircle2, 
   Star, ArrowUpRight, TrendingUp 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// IMPORTING REQUISITE SUB-MODULE COMPLEX COMPONENTS
-import { MobileDashboard } from '@/src/components/dashboard/MobileDashboard';
+// API Architecture & Core Onboarding Engines
+import { api } from '@/src/lib/axios';
+import { getCompletionStatus } from '@/src/services/completion.service';
 import { UserActivationCard } from '@/src/components/completion/UserActivationCard';
 import { CompletionEngineResponse } from '@/src/types/completion.types';
+
+// Complex Layout Components
+import { MobileDashboard } from '@/src/components/dashboard/MobileDashboard';
 
 export default function OverviewPage() {
   const [data, setData] = useState<any>(null);
@@ -20,21 +23,29 @@ export default function OverviewPage() {
 
   useEffect(() => {
     const fetchDashboardAndStatus = async () => {
+      setLoading(true);
       try {
-        // Concurrently fetch user telemetry and dashboard records
-        const [dashboardRes, completionRes] = await Promise.all([
+        // Retrieve identity token payload for decoupled tracking operations
+        const token = localStorage.getItem('token') || '';
+
+        // Execute metrics retrieval and compliance status tracking in parallel streams
+        const [dashboardRes, completionResult] = await Promise.all([
           api.get('/user/dashboard'),
-          api.get('/user/completion-status')
+          getCompletionStatus('customer', token).catch((err) => {
+            console.error('Customer identity clearance stream safely decoupled:', err);
+            return null;
+          })
         ]);
 
         setData(dashboardRes.data);
-        setCompletionData(completionRes.data);
+        setCompletionData(completionResult);
       } catch (error) {
-        console.error('Registry_Fetch_Error:', error);
+        console.error('Registry_Terminal_Sync_Failure:', error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchDashboardAndStatus();
   }, []);
 
@@ -63,7 +74,7 @@ export default function OverviewPage() {
           </div>
         </header>
 
-        {/* PROFILE COMPLETION TELEMETRY PIPELINE */}
+        {/* ACCOUNT CLEARANCE TELEMETRY PIPELINE */}
         {completionData && (
           <UserActivationCard 
             percentage={completionData.completionPercentage}
@@ -95,16 +106,24 @@ export default function OverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-50">
-                {data?.recentOrders.map((order: any) => (
+                {data?.recentOrders?.map((order: any) => (
                   <tr key={order.id} className="group hover:bg-zinc-50/30 transition-colors">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
-                        <span className="text-[13px] font-black italic text-zinc-900 uppercase">#{order.orderNumber || order.id.slice(-6).toUpperCase()}</span>
+                        <span className="text-[13px] font-black italic text-zinc-900 uppercase">
+                          #{order.orderNumber || order.id.slice(-6).toUpperCase()}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-[11px] font-bold text-zinc-500 uppercase">{new Date(order.createdAt).toLocaleDateString()}</td>
-                    <td className="px-8 py-5"><StatusBadge status={order.status} /></td>
-                    <td className="px-8 py-5 text-right font-black italic">₦{Number(order.totalAmount).toLocaleString()}</td>
+                    <td className="px-8 py-5 text-[11px] font-bold text-zinc-500 uppercase">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-8 py-5">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    <td className="px-8 py-5 text-right font-black italic">
+                      ₦{Number(order.totalAmount).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -115,7 +134,7 @@ export default function OverviewPage() {
 
       {/* 📱 MOBILE LOOK */}
       <div className="block lg:hidden space-y-6">
-        {/* Render activation checklist on mobile stream if requirements remain pending */}
+        {/* Render activation checklist on mobile stream if operations remain pending */}
         {completionData && !completionData.isFullyActive && (
           <div className="px-4 pt-4">
             <UserActivationCard 
@@ -147,7 +166,15 @@ function StatCard({ label, value, icon: Icon, color }: any) {
   );
 }
 
+// Global Logistics Sync State Styling Keys
 function StatusBadge({ status }: { status: string }) {
-  const styles: any = { DELIVERED: "bg-emerald-50 text-emerald-600 border-emerald-100", PENDING: "bg-amber-50 text-amber-600 border-amber-100" };
-  return <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${styles[status] || "bg-zinc-50"}`}>{status}</span>;
+  const styles: any = { 
+    DELIVERED: "bg-emerald-50 text-emerald-600 border-emerald-100", 
+    PENDING: "bg-amber-50 text-amber-600 border-amber-100" 
+  };
+  return (
+    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${styles[status] || "bg-zinc-50"}`}>
+      {status}
+    </span>
+  );
 }
