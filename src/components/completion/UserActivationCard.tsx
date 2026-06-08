@@ -50,7 +50,7 @@ export function UserActivationCard({ percentage, tasks, isFullyActive }: UserAct
         <div className="space-y-1">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-200 flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-500" />
-            Account Verification Nodes
+            Account Verification Progress
           </h3>
           <p className="text-xs text-slate-400 font-medium">
             Complete your security clearances and profile configuration details to unlock seamless checkouts and automated calculations.
@@ -110,7 +110,7 @@ export function UserActivationCard({ percentage, tasks, isFullyActive }: UserAct
                 : 'bg-white text-slate-950 hover:bg-slate-100'
             }`}
           >
-            {isGuidancePromo ? 'Claim Active Rewards' : 'Resolve Node'}
+            {isGuidancePromo ? 'Claim Active Rewards' : 'Resolve progress'}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

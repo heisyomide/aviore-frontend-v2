@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // ◄ 1. Added useSearchParams
 import { api } from '../../lib/axios';
 import { Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
 
@@ -16,14 +16,25 @@ interface RegisterInput {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // ◄ 2. Initialize search param node
   const { register, handleSubmit } = useForm<RegisterInput>();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
 
-const onSubmit = async (data: RegisterInput) => {
+  // ◄ 3. Capture tracking code out of URL query parameters cleanly on mount
+  useEffect(() => {
+    const code = searchParams.get('ref');
+    if (code) {
+      setReferralCode(code.trim().toUpperCase());
+      console.log('🎯 Captured AVIORÈ Referral Engine Token:', code);
+    }
+  }, [searchParams]);
+
+  const onSubmit = async (data: RegisterInput) => {
     if (data.password !== data.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -43,7 +54,7 @@ const onSubmit = async (data: RegisterInput) => {
         console.warn('⚠️ Telemetry bypass: IP fetch timed out.');
       }
 
-      // 2. DEVICE TELEMETRY: Pull official canvas/entropy fingerprint hash inline
+      // 2. DEVICE TELEMETRY
       let fingerprint: string | null = null;
       try {
         const { getDeviceFingerprint } = await import('../../utils/fingerprint');
@@ -52,14 +63,16 @@ const onSubmit = async (data: RegisterInput) => {
         console.warn('⚠️ Telemetry bypass: Registration fingerprint skipped.', telemetryErr);
       }
 
-      // 3. PAYLOAD: Matches NestJS Account Creation Security Architecture
+      // 3. PAYLOAD: Packed correctly to clear your RegisterDto validation gates
       const payload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         password: data.password,
         signupIp: clientIp,
+        ipAddress: clientIp, // Maps to both parameters to avoid fallback crashes
         deviceFingerprint: fingerprint,
+        referralCode: referralCode || undefined, // ◄ 4. INJECTED ROUTE CODE HERE
       };
 
       await api.post('/auth/register', payload);
@@ -75,7 +88,6 @@ const onSubmit = async (data: RegisterInput) => {
     }
   };
 
-  
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4">
       <div className="w-full max-w-sm bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">
@@ -86,10 +98,18 @@ const onSubmit = async (data: RegisterInput) => {
           </div>
           <h1 className="text-xl font-bold text-slate-700">Create Account</h1>
           <p className="text-xs text-slate-400 uppercase tracking-widest mt-1">Aviore Marketplace</p>
+          
+          {/* ◄ Visual Indicator for users arriving via promotional referral tracks */}
+          {referralCode && (
+            <div className="mt-3 inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+              <p className="text-[9px] font-black uppercase text-emerald-600 tracking-wider">
+                Code Applied: {referralCode}
+              </p>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          
           <div className="flex gap-3">
             <input
               {...register('firstName')}
@@ -152,7 +172,7 @@ const onSubmit = async (data: RegisterInput) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full text-white p-4 rounded-xl bg-[#092c5c] shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] font-bold transition-all duration-300 flex items-center justify-center"
+            className="w-full text-white p-4 rounded-xl bg-[#092c5c] shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] font-bold transition-all duration-300 flex items-center justify-center cursor-pointer"
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : 'REGISTER'}
           </button>
