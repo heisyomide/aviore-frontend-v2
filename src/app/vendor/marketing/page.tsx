@@ -30,23 +30,39 @@ export default function VendorMarketingHub() {
         api.get('/vendor/marketing/coupons'), 
         api.get('/vendor/marketing/all') 
       ]);
-      setCoupons(couponRes.data);
-      setStats(statsRes.data);
+      
+      // Safe array resolution fallbacks
+      setCoupons(Array.isArray(couponRes.data) ? couponRes.data : []);
+      
+      // Safe object validation check preventing undefined data property overrides
+      if (statsRes.data) {
+        setStats({
+          totalRevenue: Number(statsRes.data.totalRevenue || 0),
+          totalUses: Number(statsRes.data.totalUses || 0),
+          activeCoupons: Number(statsRes.data.activeCoupons || 0)
+        });
+      }
     } catch (error) {
+      console.error(error);
       toast.error("MARKETING_SYNC_FAILURE");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchMarketingData(); }, [fetchMarketingData]);
+  useEffect(() => { 
+    fetchMarketingData(); 
+  }, [fetchMarketingData]);
 
   if (loading && coupons.length === 0) return <LoadingState />;
+
+  // Defensive fallback rendering assignment parameters
+  const safeStats = stats || { totalRevenue: 0, totalUses: 0, activeCoupons: 0 };
 
   return (
     <div className="min-h-screen bg-white lg:bg-[#FAFAFA] pb-32 animate-in fade-in duration-700">
       
-      {/* 🚀 1. STICKY MOBILE LABEL (Top-Left Identity) */}
+      {/* 🚀 1. STICKY MOBILE LABEL */}
       <div className="lg:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md px-6 py-8 flex justify-between items-center border-b border-slate-50">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
@@ -62,13 +78,13 @@ export default function VendorMarketingHub() {
 
       <div className="px-6 lg:px-10 space-y-10 mt-6 max-w-7xl mx-auto">
 
-        {/* 🚀 2. MOBILE STATS (Full-Width Overlap Grid) */}
+        {/* 🚀 2. MOBILE STATS */}
         <div className="lg:hidden grid grid-cols-2 gap-4">
-          <MobileStatCard label="Attributed" value={`₦${stats.totalRevenue.toLocaleString()}`} color="bg-blue-600" />
-          <MobileStatCard label="Live Coupons" value={stats.activeCoupons} color="bg-slate-900" />
+          <MobileStatCard label="Attributed" value={`₦${(safeStats.totalRevenue || 0).toLocaleString()}`} color="bg-blue-600" />
+          <MobileStatCard label="Live Coupons" value={safeStats.activeCoupons || 0} color="bg-slate-900" />
         </div>
 
-        {/* 💻 DESKTOP HEADER (Preserved Context) */}
+        {/* 💻 DESKTOP HEADER */}
         <div className="hidden lg:flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Marketing</h1>
@@ -82,11 +98,11 @@ export default function VendorMarketingHub() {
           </button>
         </div>
 
-        {/* 🚀 SHARED STATS (Desktop Context) */}
+        {/* 🚀 SHARED STATS (Desktop) */}
         <div className="hidden lg:grid grid-cols-3 gap-6">
-          <StatCard icon={<Banknote size={18} />} label="Protocol Revenue" value={`₦${stats.totalRevenue.toLocaleString()}`} sub="Attributed via promo codes" />
-          <StatCard icon={<MousePointerClick size={18} />} label="Engagement Count" value={stats.totalUses} sub="Total redemptions logged" />
-          <StatCard icon={<Activity size={18} />} label="Active Triggers" value={stats.activeCoupons} sub="Live marketing coupons" />
+          <StatCard icon={<Banknote size={18} />} label="Protocol Revenue" value={`₦${(safeStats.totalRevenue || 0).toLocaleString()}`} sub="Attributed via promo codes" />
+          <StatCard icon={<MousePointerClick size={18} />} label="Engagement Count" value={safeStats.totalUses || 0} sub="Total redemptions logged" />
+          <StatCard icon={<Activity size={18} />} label="Active Triggers" value={safeStats.activeCoupons || 0} sub="Live marketing coupons" />
         </div>
 
         {/* 📱 MOBILE ACTION BUTTON */}
@@ -116,7 +132,7 @@ export default function VendorMarketingHub() {
           )}
         </div>
 
-        {/* 🏁 PLATFORM EVENTS BANNER (Preserved Context) */}
+        {/* 🏁 PLATFORM EVENTS BANNER */}
         <div className="bg-[#0F172A] rounded-[2.5rem] lg:rounded-4xl p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden group border border-slate-800 shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 blur-[100px] -mr-32 -mt-32" />
           
@@ -146,7 +162,7 @@ export default function VendorMarketingHub() {
   );
 }
 
-/* 🎨 SUB-COMPONENTS (PRESERVED) */
+/* 🎨 REUSABLE LAYOUT CARDS */
 
 function MobileStatCard({ label, value, color }: any) {
   return (
@@ -173,7 +189,10 @@ function StatCard({ icon, label, value, sub }: any) {
 }
 
 function CouponCard({ coupon }: { coupon: any }) {
-  const isExpired = new Date(coupon.endDate) < new Date();
+  const isExpired = coupon.endDate ? new Date(coupon.endDate) < new Date() : false;
+  
+  // Clean fallback resolution checking for standard properties vs raw relation sub-objects
+  const activeRedemptions = coupon.usedCount ?? coupon._count?.usages ?? 0;
 
   return (
     <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-6 hover:border-blue-200 transition-all shadow-sm relative group overflow-hidden active:scale-98">
@@ -184,9 +203,11 @@ function CouponCard({ coupon }: { coupon: any }) {
       <div className="flex justify-between items-start">
         <div className="space-y-1.5">
           <span className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-tighter italic">REG_NODE</span>
-          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase italic">
-            <Clock size={10} /> {new Date(coupon.endDate).toLocaleDateString()}
-          </div>
+          {coupon.endDate && (
+            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase italic">
+              <Clock size={10} /> {new Date(coupon.endDate).toLocaleDateString()}
+            </div>
+          )}
         </div>
         <div className="p-3 bg-slate-50 rounded-2xl text-slate-300 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
           <Percent size={20} strokeWidth={3} />
@@ -194,9 +215,9 @@ function CouponCard({ coupon }: { coupon: any }) {
       </div>
 
       <div>
-        <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter group-hover:text-blue-600 transition-colors leading-none">{coupon.code}</h3>
+        <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter group-hover:text-blue-600 transition-colors leading-none">{coupon.code || "UNKNOWN"}</h3>
         <p className="text-[10px] text-slate-400 mt-3 italic font-medium leading-relaxed line-clamp-2 uppercase tracking-tight">
-          {coupon.description || "Automated marketing ."}
+          {coupon.description || "Automated marketing trigger node."}
         </p>
       </div>
 
@@ -204,14 +225,14 @@ function CouponCard({ coupon }: { coupon: any }) {
         <div>
           <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Yield</span>
           <p className="text-sm font-black italic text-slate-800">
-            {Number(coupon.discountValue)}% {coupon.discountType === 'PERCENTAGE' ? 'Discount' : 'Fixed'}
+            {Number(coupon.discountValue || 0)}% {coupon.discountType === 'PERCENTAGE' ? 'Discount' : 'Fixed'}
           </p>
         </div>
         <div>
           <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Redemptions</span>
           <div className="flex items-center gap-1.5 text-slate-800 font-black italic">
             <Target size={14} className="text-slate-200" />
-            <span className="text-sm">{coupon.usedCount}</span>
+            <span className="text-sm">{activeRedemptions}</span>
           </div>
         </div>
       </div>
