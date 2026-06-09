@@ -8,31 +8,41 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState(false);
 
-  useEffect(() => { fetchAnalytics(); }, []);
-
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
       setError(false);
       const res = await api.get('/vendor/analytics');
-      setData(res.data);
+      
+      // Enforce rigorous validation logic on incoming data structures
+      if (res.data && res.data.summary) {
+        setData(res.data);
+      } else {
+        setError(true);
+      }
     } catch (e) {
-      console.error("Intelligence_Sync_Failure");
+      console.error("Intelligence_Sync_Failure", e);
       setError(true);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => { 
+    fetchAnalytics(); 
+  }, []);
+
   if (loading) return <LoadingIntelligence />;
   if (error || !data || !data.summary) return <ErrorState onRetry={fetchAnalytics} />;
 
-  // Dynamic Date string formatting
   const liveSyncDate = new Date().toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   });
+
+  const safeSummary = data.summary || { totalRevenue: 0, totalOrders: 0 };
+  const safeTopProducts = Array.isArray(data.topProducts) ? data.topProducts : [];
 
   return (
     <div className="min-h-screen bg-[#0A0F1C] pb-32 animate-in fade-in duration-700">
@@ -59,7 +69,7 @@ export default function AnalyticsPage() {
             <div>
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Yield Registry</p>
               <h2 className="text-4xl font-black text-white italic tracking-tighter leading-none">
-                ₦{(data.summary?.totalRevenue || 0).toLocaleString()}
+                ₦{Number(safeSummary.totalRevenue || 0).toLocaleString()}
               </h2>
             </div>
             <div className="text-right">
@@ -68,17 +78,17 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* DYNAMIC BAR CHART: Driven by true product yield performance ratio */}
+          {/* DYNAMIC BAR CHART */}
           <div className="h-56 flex items-end justify-between gap-4 relative z-10 px-2">
-            {data.topProducts?.length > 0 ? (
-              data.topProducts.map((product: any, i: number) => {
-                // Ensure a visual minimum height of 15% so low sales numbers are still selectable items
-                const barHeight = product.revenuePercentage > 0 ? Math.max(product.revenuePercentage, 15) : 8;
+            {safeTopProducts.length > 0 ? (
+              safeTopProducts.map((product: any, i: number) => {
+                const percentage = Number(product.revenuePercentage || 0);
+                const barHeight = percentage > 0 ? Math.min(Math.max(percentage, 15), 100) : 8;
+                
                 return (
                   <div key={i} className="flex-1 group/bar relative flex flex-col items-center justify-end h-full">
-                    {/* Tooltip on hover */}
                     <div className="absolute -top-12 opacity-0 group-hover/bar:opacity-100 bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase shadow-2xl transition-all duration-300 pointer-events-none whitespace-nowrap z-30 tracking-wider">
-                      {product.revenuePercentage}% Yield
+                      {percentage}% Yield
                     </div>
                     
                     <div 
@@ -86,13 +96,12 @@ export default function AnalyticsPage() {
                       className="w-full bg-blue-600/20 group-hover/bar:bg-blue-500 rounded-t-xl transition-all duration-500 relative shadow-[0_0_15px_rgba(37,99,235,0)] group-hover/bar:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
                     />
                     <p className="text-[7px] font-black text-slate-500 uppercase tracking-tighter mt-2 truncate w-full text-center">
-                      {product.title}
+                      {product.title || "Unknown"}
                     </p>
                   </div>
                 );
               })
             ) : (
-              // Default dynamic wireframes when active items count equals zero
               [35, 20, 15, 25, 10].map((h, i) => (
                 <div key={i} className="flex-1 h-full flex items-end">
                   <div style={{ height: `${h}%` }} className="w-full bg-white/5 rounded-t-xl border border-dashed border-white/5" />
@@ -104,17 +113,17 @@ export default function AnalyticsPage() {
           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[80px] -mr-20 -mt-20 pointer-events-none" />
         </div>
 
-        {/* 🚀 3. OPERATIONAL PERFORMANCE (Full Width Cards) */}
+        {/* 🚀 3. OPERATIONAL PERFORMANCE */}
         <div className="grid grid-cols-2 gap-4">
            <MetricNode 
             label="Gross Liquidity" 
-            val={`₦${(data.summary?.totalRevenue || 0).toLocaleString()}`} 
+            val={`₦${Number(safeSummary.totalRevenue || 0).toLocaleString()}`} 
             icon={<DollarSign size={18}/>} 
             isPrimary
            />
            <MetricNode 
             label="Orders Logged" 
-            val={data.summary?.totalOrders || 0} 
+            val={Number(safeSummary.totalOrders || 0).toLocaleString()} 
             icon={<ShoppingCart size={18}/>} 
            />
         </div>
@@ -123,27 +132,29 @@ export default function AnalyticsPage() {
         <div className="space-y-6">
           <div className="flex justify-between items-center px-1">
              <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] italic">High-Yield Nodes</h3>
-             <button className="p-2 bg-white/5 rounded-xl text-blue-500 hover:bg-white/10 transition-colors"><ArrowUpRight size={18}/></button>
+             <button className="p-2 bg-white/5 rounded-xl text-blue-500 hover:bg-white/10 transition-colors">
+               <ArrowUpRight size={18}/>
+             </button>
           </div>
 
           <div className="space-y-4">
-            {data.topProducts?.length > 0 ? data.topProducts.map((p: any, idx: number) => (
+            {safeTopProducts.length > 0 ? safeTopProducts.map((p: any, idx: number) => (
               <div key={idx} className="bg-white/5 border border-white/10 p-6 rounded-[2.2rem] flex items-center justify-between group active:bg-white/10 transition-all">
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 font-black italic border border-blue-500/20 shadow-inner">
-                        {p.title.charAt(0)}
+                        {(p.title || "P").charAt(0)}
                     </div>
                     <div className="min-w-0">
-                        <p className="text-xs font-black text-white uppercase italic truncate max-w-[150px] leading-none">{p.title}</p>
+                        <p className="text-xs font-black text-white uppercase italic truncate max-w-[150px] leading-none">{p.title || "Unknown"}</p>
                         <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 tracking-widest">Registry Hub_{idx + 1}</p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="text-sm font-black text-white italic tracking-tighter">₦{p.revenue?.toLocaleString() || 0}</p>
+                    <p className="text-sm font-black text-white italic tracking-tighter">₦{Number(p.revenue || 0).toLocaleString()}</p>
                     <div className="w-16 h-1 bg-white/5 rounded-full mt-2.5 overflow-hidden">
                         <div 
                             className="bg-blue-600 h-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.4)]" 
-                            style={{ width: `${p.revenuePercentage}%` }} // ✅ Reading the clean backend parsed metric direct
+                            style={{ width: `${Math.min(Number(p.revenuePercentage || 0), 100)}%` }} 
                         />
                     </div>
                 </div>
@@ -164,7 +175,6 @@ export default function AnalyticsPage() {
   );
 }
 
-/* 🎨 REUSABLE SUB-COMPONENTS STAYS THE SAME */
 function MetricNode({ label, val, icon, isPrimary }: any) {
   return (
     <div className={`p-6 rounded-[2.2rem] border transition-all active:scale-95 ${
@@ -199,6 +209,7 @@ function LoadingIntelligence() {
   );
 }
 
+// Fixed missing parameter types causing explicit typescript assignment errors
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-[#0A0F1C] p-6 text-center">

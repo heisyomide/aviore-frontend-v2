@@ -62,7 +62,6 @@ export default function VendorOverview() {
           return;
         }
         
-        // Execute stats delivery streams and compliance tracking in parallel streams
         const [statsResponse, completionData] = await Promise.all([
           fetch(`${baseUrl}/vendor/stats`, {
             signal: controller.signal,
@@ -86,24 +85,23 @@ export default function VendorOverview() {
         if (!statsResponse.ok) throw new Error('SYNC_NODE_FAILURE');
         const result = await statsResponse.json();
 
+        // Safe pipeline translation mapping
         const sanitizedData: DashboardData = {
           profile: {
-            storeName: result.profile?.storeName || "Registry Node",
+            storeName: result.profile?.storeName || "AVIORÈ Merchant",
             ownerName: result.profile?.ownerName || "Merchant",
             isVerified: !!result.profile?.isVerified,
             slug: result.profile?.slug || "" 
           },
           stats: {
-            totalOrders: Number(result.stats?.totalOrders || 0),
-            totalRevenue: typeof result.stats?.totalRevenue === 'object'
-              ? Number(result.stats.totalRevenue._sum?.vendorEarning || 0)
-              : Number(result.stats?.totalRevenue || 0),
-            activeProducts: Number(result.stats?.activeProducts || 0),
+            totalOrders: Number(result.stats?.totalOrders ?? 0),
+            totalRevenue: Number(result.stats?.totalRevenue ?? 0),
+            activeProducts: Number(result.stats?.activeProducts ?? 0),
           },
           wallet: {
-            availableBalance: Number(result.wallet?.availableBalance || 0),
-            pendingBalance: Number(result.wallet?.pendingBalance || 0),
-            totalEarnings: Number(result.wallet?.totalEarnings || 0),
+            availableBalance: Number(result.wallet?.availableBalance ?? 0),
+            pendingBalance: Number(result.wallet?.pendingBalance ?? 0),
+            totalEarnings: Number(result.wallet?.totalEarnings ?? 0),
           },
           recentOrders: Array.isArray(result.recentOrders) ? result.recentOrders : []
         };
@@ -111,7 +109,9 @@ export default function VendorOverview() {
         setData(sanitizedData);
         setCompletionStatus(completionData);
       } catch (err: any) {
-        if (err.name !== 'AbortError') setError(err.message);
+        if (err.name !== 'AbortError') {
+          setError(err.message || 'TRANSMISSION_ERROR');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -131,8 +131,8 @@ export default function VendorOverview() {
 
     const shareUrl = `${window.location.origin}/vendors/${slug}`;
     const shareData = {
-      title: data.profile.storeName,
-      text: `Check out ${data.profile.storeName} on AVIORÈ.`,
+      title: data?.profile?.storeName || "AVIORÈ Store",
+      text: `Check out ${data?.profile?.storeName || 'our store'} on AVIORÈ.`,
       url: shareUrl,
     };
 
@@ -141,7 +141,6 @@ export default function VendorOverview() {
         await navigator.share(shareData);
         return;
       }
-
       await navigator.clipboard.writeText(shareUrl);
       alert("Store link copied to clipboard!");
     } catch (error) {
@@ -184,7 +183,9 @@ export default function VendorOverview() {
             onClick={() => setIsIdentityMenuOpen(!isIdentityMenuOpen)}
             className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl active:scale-90 transition-all border border-slate-800 cursor-pointer"
           >
-            <span className="font-black italic text-lg">{data.profile.storeName.substring(0, 2).toUpperCase()}</span>
+            <span className="font-black italic text-lg">
+              {(data.profile.storeName || "ME").substring(0, 2).toUpperCase()}
+            </span>
           </button>
 
           {isIdentityMenuOpen && (
@@ -214,7 +215,7 @@ export default function VendorOverview() {
       {/* CORE WORKSPACE VIEW */}
       <div className="px-6 space-y-10 mt-10">
 
-        {/* 🛡️ ONBOARDING & VERIFICATION ENGINE CARD */}
+        {/* 🛡️ ONBOARDING ENGINE CARD */}
         {completionStatus && (
           <VendorActivationCard 
             percentage={completionStatus.completionPercentage}
@@ -229,7 +230,7 @@ export default function VendorOverview() {
                 <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Available Liquidity</p>
                     <h2 className="text-5xl font-black italic tracking-tighter">
-                        {CURRENCY_SYMBOL}{data.wallet.availableBalance.toLocaleString()}
+                        {CURRENCY_SYMBOL}{(data.wallet.availableBalance || 0).toLocaleString()}
                     </h2>
                 </div>
                 <div className="p-4 bg-blue-600 rounded-2xl shadow-lg">
@@ -239,11 +240,11 @@ export default function VendorOverview() {
             <div className="grid grid-cols-2 gap-4 mt-12 pt-8 border-t border-white/5 relative z-10">
                 <div>
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Lifetime Yield</p>
-                    <p className="text-lg font-black text-emerald-500 italic">{CURRENCY_SYMBOL}{data.wallet.totalEarnings.toLocaleString()}</p>
+                    <p className="text-lg font-black text-emerald-500 italic">{CURRENCY_SYMBOL}{(data.wallet.totalEarnings || 0).toLocaleString()}</p>
                 </div>
                 <div>
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">In Escrow</p>
-                    <p className="text-lg font-black text-orange-500 italic">{CURRENCY_SYMBOL}{data.wallet.pendingBalance.toLocaleString()}</p>
+                    <p className="text-lg font-black text-orange-500 italic">{CURRENCY_SYMBOL}{(data.wallet.pendingBalance || 0).toLocaleString()}</p>
                 </div>
             </div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
@@ -263,18 +264,29 @@ export default function VendorOverview() {
           </div>
           
           <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm">
-            {data.recentOrders.length > 0 ? data.recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center gap-4 p-5 border-b border-slate-50 last:border-0 group active:bg-slate-50 transition-all rounded-3xl">
-                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
-                    <Package size={22} />
+            {data.recentOrders && data.recentOrders.length > 0 ? data.recentOrders.map((order) => {
+                const orderDate = order.date ? new Date(order.date) : null;
+                const formattedDate = orderDate && !isNaN(orderDate.getTime()) 
+                  ? orderDate.toLocaleDateString() 
+                  : 'Recent';
+
+                return (
+                  <div key={order.id} className="flex items-center gap-4 p-5 border-b border-slate-50 last:border-0 group active:bg-slate-50 transition-all rounded-3xl">
+                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
+                      <Package size={22} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-slate-900 uppercase italic truncate leading-none mb-1.5">{order.artifact}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">
+                        {order.status} • {formattedDate}
+                      </p>
+                    </div>
+                    <p className="text-sm font-black text-slate-900 italic tracking-tighter">
+                      {CURRENCY_SYMBOL}{(order.amount || 0).toLocaleString()}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-slate-900 uppercase italic truncate leading-none mb-1.5">{order.artifact}</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">{order.status} • {new Date(order.date).toLocaleDateString()}</p>
-                  </div>
-                  <p className="text-sm font-black text-slate-900 italic tracking-tighter">{CURRENCY_SYMBOL}{order.amount.toLocaleString()}</p>
-                </div>
-              )) : <EmptyState />}
+                );
+              }) : <EmptyState />}
           </div>
         </div>
 
@@ -296,7 +308,7 @@ export default function VendorOverview() {
   );
 }
 
-/* --- OPTIMIZED ISOLATED LAYOUT COMPONENTS --- */
+/* --- ISOLATED VIEW SYSTEM CARDS --- */
 
 function OperationalCard({ label, val, icon, color, textColor }: any) {
   return (
@@ -305,7 +317,7 @@ function OperationalCard({ label, val, icon, color, textColor }: any) {
          {icon}
        </div>
        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{label}</p>
-       <h2 className={`text-xl font-black italic tracking-tighter ${textColor}`}>{val}</h2>
+       <h2 className={`text-xl font-black italic tracking-tighter ${textColor}`}>{val ?? 0}</h2>
     </div>
   );
 }

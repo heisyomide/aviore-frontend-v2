@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Ticket,
   Megaphone,
@@ -9,9 +9,9 @@ import {
   Loader2,
   X,
   Building2,
-  Activity,
   Percent,
   Layers,
+  Upload,
 } from "lucide-react";
 import { api } from "@/src/lib/axios";
 import { toast } from "sonner";
@@ -56,7 +56,13 @@ interface HeroForm {
   subtitle: string;
   discount: string;
   tag: string;
-  imageUrl: string;
+  imageUrl: string; // Will store the picked local file payload / base64
+}
+
+interface CampaignForm {
+  title: string;
+  discount: number;
+  tag: string;
 }
 
 const initialHeroForm: HeroForm = {
@@ -67,16 +73,27 @@ const initialHeroForm: HeroForm = {
   imageUrl: "",
 };
 
+const initialCampaignForm: CampaignForm = {
+  title: "",
+  discount: 5,
+  tag: "",
+};
+
 export default function AdminPromotionsPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>("HERO_BANNERS");
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  
+  // Toggles for distinct orchestration elements
+  const [creatingBanner, setCreatingBanner] = useState(false);
+  const [creatingCampaign, setCreatingCampaign] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [heroBanners, setHeroBanners] = useState<HeroBanner[]>([]);
+  
   const [heroForm, setHeroForm] = useState<HeroForm>(initialHeroForm);
+  const [campaignForm, setCampaignForm] = useState<CampaignForm>(initialCampaignForm);
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,22 +119,45 @@ export default function AdminPromotionsPage() {
     fetchData();
   }, [fetchData]);
 
+  // Actions for Banners
   const updateHeroField = (key: keyof HeroForm, value: string) => {
     setHeroForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleCreateHeroBanner = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!heroForm.imageUrl) {
+      toast.error("Please pick a resource image file from your device first");
+      return;
+    }
     try {
       setSubmitting(true);
       await api.post("/admin/banners", heroForm);
       toast.success("Hero banner initialized successfully");
       setHeroForm(initialHeroForm);
-      setCreating(false);
+      setCreatingBanner(false);
       await fetchData();
     } catch (error) {
       console.error(error);
       toast.error("Failed to initialize banner component");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Actions for Campaigns
+  const handleCreateCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      await api.post("/admin/campaigns", campaignForm);
+      toast.success("Live campaign matrix deployed successfully");
+      setCampaignForm(initialCampaignForm);
+      setCreatingCampaign(false);
+      await fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to deploy live campaign matrix");
     } finally {
       setSubmitting(false);
     }
@@ -135,28 +175,43 @@ export default function AdminPromotionsPage() {
           <p className="text-[10px] text-zinc-500 tracking-[0.3em] uppercase mt-2">AVIORÈ Global Orchestrator</p>
         </div>
 
+        {/* Dynamic Context Button Layer */}
         {activeTab === "HERO_BANNERS" && (
           <button
-            onClick={() => setCreating(!creating)}
+            onClick={() => setCreatingBanner(!creatingBanner)}
             className="bg-zinc-100 hover:bg-white text-black px-6 py-3.5 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 text-xs uppercase tracking-wider"
           >
-            {creating ? <X size={14} /> : <Plus size={14} />}
-            {creating ? "Cancel" : "Create Banner"}
+            {creatingBanner ? <X size={14} /> : <Plus size={14} />}
+            {creatingBanner ? "Cancel" : "Create Banner"}
+          </button>
+        )}
+
+        {activeTab === "CAMPAIGNS" && (
+          <button
+            onClick={() => setCreatingCampaign(!creatingCampaign)}
+            className="bg-zinc-100 hover:bg-white text-black px-6 py-3.5 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 text-xs uppercase tracking-wider"
+          >
+            {creatingCampaign ? <X size={14} /> : <Plus size={14} />}
+            {creatingCampaign ? "Cancel" : "Create Campaign"}
           </button>
         )}
       </div>
 
       {/* TABS CONTROLLER */}
       <div className="flex gap-8 border-b border-zinc-800 pb-4 overflow-x-auto scrollbar-none">
-        <TabButton active={activeTab === "HERO_BANNERS"} onClick={() => { setActiveTab("HERO_BANNERS"); setCreating(false); }} label="Hero Banners" icon={<ImageIcon size={14} />} />
-        <TabButton active={activeTab === "COUPONS"} onClick={() => { setActiveTab("COUPONS"); setCreating(false); }} label="Coupons Ledger" icon={<Ticket size={14} />} />
-        <TabButton active={activeTab === "CAMPAIGNS"} onClick={() => { setActiveTab("CAMPAIGNS"); setCreating(false); }} label="Live Campaigns" icon={<Megaphone size={14} />} />
+        <TabButton active={activeTab === "HERO_BANNERS"} onClick={() => { setActiveTab("HERO_BANNERS"); }} label="Hero Banners" icon={<ImageIcon size={14} />} />
+        <TabButton active={activeTab === "COUPONS"} onClick={() => { setActiveTab("COUPONS"); }} label="Coupons Ledger" icon={<Ticket size={14} />} />
+        <TabButton active={activeTab === "CAMPAIGNS"} onClick={() => { setActiveTab("CAMPAIGNS"); }} label="Live Campaigns" icon={<Megaphone size={14} />} />
       </div>
 
       {/* DYNAMIC FORMS & TABLES GRID */}
       <div className="space-y-6">
-        {creating && activeTab === "HERO_BANNERS" && (
+        {creatingBanner && activeTab === "HERO_BANNERS" && (
           <HeroBannerForm form={heroForm} onChange={updateHeroField} onSubmit={handleCreateHeroBanner} submitting={submitting} />
+        )}
+
+        {creatingCampaign && activeTab === "CAMPAIGNS" && (
+          <CampaignFormBlock form={campaignForm} setForm={setCampaignForm} onSubmit={handleCreateCampaign} submitting={submitting} />
         )}
 
         {activeTab === "HERO_BANNERS" && <HeroBannerTable Banners={heroBanners} loading={loading} />}
@@ -272,9 +327,25 @@ function HeroBannerTable({ Banners, loading }: { Banners: HeroBanner[]; loading:
   );
 }
 
-/* 🎨 SUB-COMPONENTS */
+/* 🎨 HARDENED INTERACTIVE FORMS */
 
 function HeroBannerForm({ form, onChange, onSubmit, submitting }: any) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string>(form.imageUrl || "");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPreview(base64String);
+        onChange("imageUrl", base64String); // Injects binary asset securely into object tree
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-6 bg-zinc-900/60 border border-zinc-800/80 p-8 rounded-3xl backdrop-blur-sm animate-in slide-in-from-top-4 duration-300">
       <div className="grid gap-6 sm:grid-cols-2">
@@ -283,7 +354,43 @@ function HeroBannerForm({ form, onChange, onSubmit, submitting }: any) {
         <Input label="Subtitle Block" value={form.subtitle} onChange={(v: string) => onChange("subtitle", v)} placeholder="e.g., Curated luxury statements" />
         <Input label="Visual Badge Deal" value={form.discount} onChange={(v: string) => onChange("discount", v)} placeholder="e.g., 20% OFF" />
       </div>
-      <Input label="Resource Image URL" value={form.imageUrl} onChange={(v: string) => onChange("imageUrl", v)} placeholder="https://cdn.aviore.luxury/assets/banner.jpg" />
+      
+      {/* LOCAL DEVICE ASSET LOADER LAYER */}
+      <div className="space-y-2">
+        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Resource Image File</label>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileChange} 
+          accept="image/*" 
+          className="hidden" 
+        />
+        
+        <div 
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full border border-dashed border-zinc-800 hover:border-zinc-700 bg-zinc-950/40 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all min-h-[140px] overflow-hidden relative"
+        >
+          {preview ? (
+            <>
+              <img src={preview} alt="Resource Preview" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+              <div className="relative z-10 text-center space-y-1">
+                <p className="text-xs font-bold text-zinc-200">Asset Loaded Successfully</p>
+                <p className="text-[9px] text-zinc-500 font-mono">Click anywhere to change item source</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="p-3 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-xl">
+                <Upload size={16} />
+              </div>
+              <div className="text-center">
+                <p className="text-xs font-bold text-zinc-300">Select Image File</p>
+                <p className="text-[9px] text-zinc-600 font-mono tracking-wider mt-1 uppercase">Supports JPEG, PNG, WEBP from your device</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
       <button disabled={submitting} className="bg-white hover:bg-zinc-200 text-black px-6 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all disabled:opacity-50">
         {submitting ? <Loader2 className="animate-spin" size={14} /> : "Publish Component"}
@@ -291,6 +398,44 @@ function HeroBannerForm({ form, onChange, onSubmit, submitting }: any) {
     </form>
   );
 }
+
+function CampaignFormBlock({ form, setForm, onSubmit, submitting }: { form: CampaignForm, setForm: any, onSubmit: any, submitting: boolean }) {
+  return (
+    <form onSubmit={onSubmit} className="space-y-6 bg-zinc-900/60 border border-zinc-800/80 p-8 rounded-3xl backdrop-blur-sm animate-in slide-in-from-top-4 duration-300">
+      <div className="grid gap-6 sm:grid-cols-3">
+        <Input 
+          label="Campaign Title" 
+          value={form.title} 
+          onChange={(v: string) => setForm((p: any) => ({ ...p, title: v }))} 
+          placeholder="e.g., BLACK FRIDAY PREMIUM" 
+        />
+        <Input 
+          label="Vector Tag Trigger" 
+          value={form.tag} 
+          onChange={(v: string) => setForm((p: any) => ({ ...p, tag: v }))} 
+          placeholder="e.g., black-friday" 
+        />
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Discount Percentage</label>
+          <input
+            type="number"
+            min="1"
+            max="100"
+            value={form.discount}
+            onChange={(e) => setForm((p: any) => ({ ...p, discount: parseInt(e.target.value) || 0 }))}
+            className="w-full bg-zinc-900 border border-zinc-800/80 text-zinc-100 px-4 py-3.5 rounded-xl text-sm font-medium outline-none focus:border-zinc-600 transition-all focus:bg-zinc-950"
+          />
+        </div>
+      </div>
+
+      <button disabled={submitting} className="bg-white hover:bg-zinc-200 text-black px-6 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all disabled:opacity-50">
+        {submitting ? <Loader2 className="animate-spin" size={14} /> : "Deploy Campaign"}
+      </button>
+    </form>
+  );
+}
+
+/* 🎨 CORE SUBSIDIARY FIELDS */
 
 function Input({ label, value, onChange, placeholder }: any) {
   return (
