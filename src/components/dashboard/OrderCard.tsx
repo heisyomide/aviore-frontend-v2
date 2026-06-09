@@ -1,16 +1,15 @@
 'use client';
+
 import { useRouter } from 'next/navigation';
 import { 
   MessageCircle, 
-  RefreshCw, 
   Star, 
   Truck, 
   ExternalLink, 
   ChevronRight, 
   FileText,
   ShieldCheck,
-  Loader2,
-  MessagesSquare
+  Loader2
 } from 'lucide-react';
 
 type OrderStatus = 'paid' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'returned' | 'cancelled';
@@ -35,7 +34,7 @@ interface OrderCardProps {
 export default function OrderCard({ 
   id, fullId, date, amount, status, vendorId, trackingNumber, 
   carrier, intent, onOpenDetails, onRateProduct, 
-  onReturnRequest, onConfirmReceipt, isSettling 
+  onConfirmReceipt, isSettling 
 }: OrderCardProps) {
   const router = useRouter();
 
@@ -49,23 +48,20 @@ export default function OrderCard({
     cancelled: 'bg-slate-50 text-slate-400 border-slate-100',
   };
 
-  // 🛡️ DIRECT CHAT GATEWAY
-  // Clicking the card body will ALWAYS take the user to the chat for this order.
   const navigateToChat = () => {
     router.push(`/dashboard/chat/${fullId}?vendorId=${vendorId}`);
   };
 
   return (
     <div 
-      onClick={navigateToChat}
-      className={`bg-white p-5 md:p-7 rounded-3xl border transition-all duration-300 cursor-pointer group hover:shadow-xl hover:border-[#A4143D]/20 ${
+      className={`bg-white p-5 md:p-7 rounded-3xl border transition-all duration-300 group hover:shadow-xl hover:border-[#A4143D]/20 ${
         intent === 'chat' 
           ? 'border-[#A4143D] shadow-lg shadow-[#A4143D]/5 ring-1 ring-[#A4143D]/20' 
           : 'border-gray-100 shadow-sm'
       }`}
     >
       
-      {/* 1. HEADER */}
+      {/* HEADER */}
       <div className="flex justify-between items-start gap-4">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
@@ -74,10 +70,9 @@ export default function OrderCard({
             <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">{date}</p>
           </div>
           <div className="flex items-center gap-2">
-             <h3 className="font-black italic text-slate-900 text-lg md:text-xl uppercase tracking-tight group-hover:text-[#A4143D] transition-colors">
-                Purchase Product
+             <h3 className="font-black italic text-slate-900 text-lg md:text-xl uppercase tracking-tight">
+               Purchase Product
              </h3>
-             <MessageCircle size={16} className="text-[#A4143D] opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </div>
         <span className={`text-[8px] px-3 py-1.5 rounded-lg font-black border uppercase tracking-widest ${statusStyles[status]}`}>
@@ -85,7 +80,7 @@ export default function OrderCard({
         </span>
       </div>
 
-      {/* 2. TRACKING (IF SHIPPED) */}
+      {/* TRACKING (IF SHIPPED) */}
       {(trackingNumber || carrier) && (status === 'shipped' || status === 'delivered') && (
         <div className="mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -101,7 +96,7 @@ export default function OrderCard({
         </div>
       )}
 
-      {/* 3. FOOTER: PRICE & ACTIONS */}
+      {/* FOOTER: PRICE & ACTIONS */}
       <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-6">
         <div className="w-full sm:w-auto text-center sm:text-left">
           <p className="text-[8px] font-black uppercase text-slate-300 tracking-[0.2em] mb-0.5">Settlement_Total</p>
@@ -110,10 +105,19 @@ export default function OrderCard({
 
         <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2 w-full sm:w-auto">
           
-          {/* Action: Release Funds */}
+          {/* Direct Vendor Communication Gateway */}
+          <button 
+            onClick={navigateToChat}
+            className="p-3.5 bg-zinc-50 text-zinc-900 rounded-xl hover:bg-[#A4143D]/10 hover:text-[#A4143D] transition-all flex items-center justify-center"
+            title="Open Vendor Chat"
+          >
+            <MessageCircle size={16} />
+          </button>
+
+          {/* Action: Release Escrow Funds */}
           {(status === 'shipped' || status === 'delivered') && (
             <button 
-              onClick={(e) => { e.stopPropagation(); onConfirmReceipt(); }}
+              onClick={onConfirmReceipt}
               disabled={isSettling}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest px-6 py-3.5 bg-[#A4143D] text-white rounded-xl shadow-md hover:bg-black transition-all active:scale-95 disabled:opacity-50"
             >
@@ -122,11 +126,11 @@ export default function OrderCard({
             </button>
           )}
 
-          {/* Regular Actions */}
+          {/* Contextual Options */}
           <div className="flex items-center gap-2">
             {status === 'completed' && (
               <button 
-                onClick={(e) => { e.stopPropagation(); onRateProduct(); }}
+                onClick={onRateProduct}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-black uppercase px-6 py-3.5 border border-[#A4143D] text-[#A4143D] rounded-xl hover:bg-[#A4143D] hover:text-white transition-all"
               >
                 <Star size={14} /> Rate
@@ -134,16 +138,15 @@ export default function OrderCard({
             )}
             
             <button 
-               onClick={(e) => { e.stopPropagation(); onOpenDetails(fullId); }}
+               onClick={() => onOpenDetails(fullId)}
                className="flex-1 sm:flex-nowrap flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest px-6 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-black transition-all"
             >
               Details <ChevronRight size={14} />
             </button>
           </div>
 
-          {/* Small Clipboard Icon */}
+          {/* Invoice Clipboard Anchor */}
           <button 
-            onClick={(e) => { e.stopPropagation(); }} // Prevents chat redirect when just clicking icon
             className="p-3.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#A4143D]/10 hover:text-[#A4143D] transition-all"
           >
             <FileText size={18} />

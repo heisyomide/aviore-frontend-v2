@@ -5,16 +5,17 @@ import {
   Search, 
   Loader2, 
   PackageCheck, 
-  Package, 
   ChevronDown, 
   ChevronUp, 
   Truck,
   ExternalLink,
   ClipboardList,
-  CheckCircle2
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Re-ordered options to reflect realistic sequential supply chain flow
 const STATUS_OPTIONS = ['ALL', 'PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 
 export default function VendorOrdersPage() {
@@ -57,20 +58,22 @@ export default function VendorOrdersPage() {
   }, [activeTab, orders, searchQuery]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, tracking?: typeof trackingData) => {
+    if (newStatus === 'COMPLETED') {
+      toast.error("Action Prohibited", { 
+        description: "Escrow funds can only be released upon customer delivery confirmation handshake." 
+      });
+      return;
+    }
+
     setUpdatingId(orderId);
     
-    // 🛡️ PROFESSIONAL_SETTLEMENT_LOGIC
-    // If the status is COMPLETED, we hit the special settlement endpoint
-    const endpoint = newStatus === 'COMPLETED' 
-      ? `${process.env.NEXT_PUBLIC_API_URL}/vendor/${orderId}/complete`
-      : `${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/status`;
-
-    const method = newStatus === 'COMPLETED' ? 'PATCH' : 'PATCH';
+    // Aligned directly to our explicit vendor logistics control ports
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/status`;
 
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(endpoint, {
-        method,
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -82,15 +85,7 @@ export default function VendorOrdersPage() {
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, ...tracking } : o));
         setShowTrackingModal(null);
         setTrackingData({ trackingNumber: '', carrier: '' });
-        
-        if (newStatus === 'COMPLETED') {
-          toast.success("Liquidity Released", { 
-            description: "Funds have moved from Escrow to your Available Balance.",
-            icon: <CheckCircle2 className="text-green-500" size={16} />
-          });
-        } else {
-          toast.success(`Protocol Updated: ${newStatus}`);
-        }
+        toast.success(`Protocol Updated: ${newStatus}`);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || "Update failed");
@@ -150,8 +145,8 @@ export default function VendorOrdersPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                <th className="p-6">Product </th>
-                <th className="p-6">Customer </th>
+                <th className="p-6">Product</th>
+                <th className="p-6">Customer</th>
                 <th className="p-6 text-right">Settlement</th>
                 <th className="p-6">Fulfillment</th>
                 <th className="p-6 text-right">Manifest</th>
@@ -202,7 +197,7 @@ export default function VendorOrdersPage() {
                     <div className="flex items-center justify-end gap-2">
                        {updatingId === order.id && <Loader2 size={12} className="animate-spin text-[#A4143D]" />}
                        <select 
-                        disabled={updatingId === order.id || order.status === 'COMPLETED'}
+                        disabled={updatingId === order.id || order.status === 'COMPLETED' || order.status === 'CANCELLED'}
                         value={order.status}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -211,9 +206,20 @@ export default function VendorOrdersPage() {
                         }}
                         className="appearance-none bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-xl px-4 py-2.5 outline-none cursor-pointer hover:bg-[#A4143D] transition-all disabled:opacity-30"
                       >
-                        {STATUS_OPTIONS.filter(opt => opt !== 'ALL').map(opt => (
-                          <option key={opt} value={opt} className="bg-white text-slate-900">{opt}</option>
-                        ))}
+                        {STATUS_OPTIONS.filter(opt => opt !== 'ALL').map(opt => {
+                          // Disable unilateral vendor compilation completion options to match business logic rules
+                          const isForbiddenCompletedOption = opt === 'COMPLETED';
+                          return (
+                            <option 
+                              key={opt} 
+                              value={opt} 
+                              disabled={isForbiddenCompletedOption}
+                              className="bg-white text-slate-900 disabled:text-slate-300"
+                            >
+                              {opt} {isForbiddenCompletedOption ? '🔒' : ''}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 
@@ -261,7 +267,7 @@ export default function VendorOrdersPage() {
                 {expandedOrderId === order.id && (
                   <tr>
                     <td colSpan={6} className="bg-[#FCFCFC] p-8 animate-in slide-in-from-top-4 duration-500 border-b border-slate-100">
-                       <OrderItemsList items={order.items || []} />
+                       <OrderItemsList items={order.items || []} orderStatus={order.status} />
                     </td>
                   </tr>
                 )}
@@ -280,7 +286,7 @@ export default function VendorOrdersPage() {
 /* LOGISTICS SUB-COMPONENTS */
 /* ------------------ */
 
-function OrderItemsList({ items }: { items: any[] }) {
+function OrderItemsList({ items, orderStatus }: { items: any[], orderStatus: string }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -297,7 +303,6 @@ function OrderItemsList({ items }: { items: any[] }) {
           <div key={item.id} className="flex items-center gap-6 bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm group hover:shadow-md transition-all">
             <div className="w-16 h-16 bg-slate-50 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-50 relative">
               <img 
-                // 🛡️ Logic: Registry Image Fallback
                 src={item.product?.images?.[0]?.imageUrl || 'https://via.placeholder.com/100'} 
                 alt="Artifact" 
                 className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" 
@@ -312,9 +317,15 @@ function OrderItemsList({ items }: { items: any[] }) {
             </div>
             <div className="text-right">
               <p className="text-xs font-black text-slate-900 italic">₦{Number(item.priceAtPurchase).toLocaleString()}</p>
-              <p className={`text-[8px] font-black uppercase mt-1 ${item.payoutStatus === 'PAID' ? 'text-green-500' : 'text-orange-500'}`}>
-                {item.payoutStatus || 'LOCKED'}
-              </p>
+              
+              {/* Informative block highlighting escrow status dynamics clearly */}
+              <div className="mt-1 flex items-center justify-end gap-1 font-black text-[8px] uppercase">
+                {orderStatus === 'COMPLETED' ? (
+                  <span className="text-green-500 flex items-center gap-0.5"><CheckCircle2 size={10} /> RELEASED</span>
+                ) : (
+                  <span className="text-orange-500 flex items-center gap-0.5"><Lock size={8} strokeWidth={3} /> ESCROWED</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -358,7 +369,7 @@ function EmptyState() {
   return (
     <div className="p-32 text-center text-slate-200 flex flex-col items-center gap-4">
       <PackageCheck size={80} strokeWidth={0.5} className="opacity-10" />
-      <p className="font-black uppercase text-[10px] tracking-[0.3em] text-slate-300">No active requisitions found </p>
+      <p className="font-black uppercase text-[10px] tracking-[0.3em] text-slate-300">No active requisitions found</p>
     </div>
   );
 }

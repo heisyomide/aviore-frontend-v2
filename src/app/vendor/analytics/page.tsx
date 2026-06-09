@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingCart, DollarSign, Loader2, BarChart3, Target, Globe, AlertCircle, Inbox, Bell, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, ShoppingCart, DollarSign, Loader2, AlertCircle, ArrowUpRight, Bell } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 
 export default function AnalyticsPage() {
@@ -27,10 +27,17 @@ export default function AnalyticsPage() {
   if (loading) return <LoadingIntelligence />;
   if (error || !data || !data.summary) return <ErrorState onRetry={fetchAnalytics} />;
 
+  // Dynamic Date string formatting
+  const liveSyncDate = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
   return (
     <div className="min-h-screen bg-[#0A0F1C] pb-32 animate-in fade-in duration-700">
       
-      {/* 🚀 1. STICKY HEADER NODE (Top-Left Label) */}
+      {/* 🚀 1. STICKY HEADER NODE */}
       <div className="sticky top-0 z-50 bg-[#0A0F1C]/90 backdrop-blur-xl px-6 py-8 flex justify-between items-center border-b border-white/5">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
@@ -46,40 +53,55 @@ export default function AnalyticsPage() {
 
       <div className="px-6 space-y-10 mt-8">
         
-        {/* 🚀 2. THE HERO VISUALIZER (Large Bar Chart Node) */}
+        {/* 🚀 2. THE DYNAMIC HERO VISUALIZER */}
         <div className="w-full bg-white/5 rounded-[2.5rem] p-8 border border-white/10 relative overflow-hidden group">
-            <div className="flex justify-between items-start mb-12 relative z-10">
-                <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Yield Registry</p>
-                    <h2 className="text-4xl font-black text-white italic tracking-tighter leading-none">
-                        ₦{(data.summary?.totalRevenue || 0).toLocaleString()}
-                    </h2>
-                </div>
-                <div className="text-right">
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Live Sync</p>
-                    <p className="text-[8px] font-bold text-slate-600 uppercase mt-1">22 March 2026</p>
-                </div>
+          <div className="flex justify-between items-start mb-12 relative z-10">
+            <div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Yield Registry</p>
+              <h2 className="text-4xl font-black text-white italic tracking-tighter leading-none">
+                ₦{(data.summary?.totalRevenue || 0).toLocaleString()}
+              </h2>
             </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Live Sync</p>
+              <p className="text-[8px] font-bold text-slate-600 uppercase mt-1">{liveSyncDate}</p>
+            </div>
+          </div>
 
-            {/* BAR CHART: Interactive Productivity Style */}
-            <div className="h-56 flex items-end justify-between gap-2 relative z-10 px-2">
-                {[55, 80, 45, 95, 60, 85, 70].map((h, i) => (
-                    <div key={i} className="flex-1 group/bar relative">
-                        <div 
-                            style={{ height: `${h}%` }}
-                            className="w-full bg-blue-600/20 group-hover/bar:bg-blue-500 rounded-t-xl transition-all duration-500 relative shadow-[0_0_15px_rgba(37,99,235,0)] group-hover/bar:shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-                        />
-                        {h > 90 && (
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black px-2 py-1 rounded text-[8px] font-black uppercase shadow-xl animate-pulse">
-                                Peak
-                            </div>
-                        )}
+          {/* DYNAMIC BAR CHART: Driven by true product yield performance ratio */}
+          <div className="h-56 flex items-end justify-between gap-4 relative z-10 px-2">
+            {data.topProducts?.length > 0 ? (
+              data.topProducts.map((product: any, i: number) => {
+                // Ensure a visual minimum height of 15% so low sales numbers are still selectable items
+                const barHeight = product.revenuePercentage > 0 ? Math.max(product.revenuePercentage, 15) : 8;
+                return (
+                  <div key={i} className="flex-1 group/bar relative flex flex-col items-center justify-end h-full">
+                    {/* Tooltip on hover */}
+                    <div className="absolute -top-12 opacity-0 group-hover/bar:opacity-100 bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase shadow-2xl transition-all duration-300 pointer-events-none whitespace-nowrap z-30 tracking-wider">
+                      {product.revenuePercentage}% Yield
                     </div>
-                ))}
-            </div>
+                    
+                    <div 
+                      style={{ height: `${barHeight}%` }}
+                      className="w-full bg-blue-600/20 group-hover/bar:bg-blue-500 rounded-t-xl transition-all duration-500 relative shadow-[0_0_15px_rgba(37,99,235,0)] group-hover/bar:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                    />
+                    <p className="text-[7px] font-black text-slate-500 uppercase tracking-tighter mt-2 truncate w-full text-center">
+                      {product.title}
+                    </p>
+                  </div>
+                );
+              })
+            ) : (
+              // Default dynamic wireframes when active items count equals zero
+              [35, 20, 15, 25, 10].map((h, i) => (
+                <div key={i} className="flex-1 h-full flex items-end">
+                  <div style={{ height: `${h}%` }} className="w-full bg-white/5 rounded-t-xl border border-dashed border-white/5" />
+                </div>
+              ))
+            )}
+          </div>
 
-            {/* Background Aesthetic Blur */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[80px] -mr-20 -mt-20 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[80px] -mr-20 -mt-20 pointer-events-none" />
         </div>
 
         {/* 🚀 3. OPERATIONAL PERFORMANCE (Full Width Cards) */}
@@ -97,7 +119,7 @@ export default function AnalyticsPage() {
            />
         </div>
 
-        {/* 🚀 4. REQUISITION REGISTRY (High-Yield Nodes) */}
+        {/* 🚀 4. REQUISITION REGISTRY */}
         <div className="space-y-6">
           <div className="flex justify-between items-center px-1">
              <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] italic">High-Yield Nodes</h3>
@@ -121,7 +143,7 @@ export default function AnalyticsPage() {
                     <div className="w-16 h-1 bg-white/5 rounded-full mt-2.5 overflow-hidden">
                         <div 
                             className="bg-blue-600 h-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.4)]" 
-                            style={{ width: `${(p.revenue / (data.summary.totalRevenue || 1)) * 100}%` }}
+                            style={{ width: `${p.revenuePercentage}%` }} // ✅ Reading the clean backend parsed metric direct
                         />
                     </div>
                 </div>
@@ -142,8 +164,7 @@ export default function AnalyticsPage() {
   );
 }
 
-/* 🎨 SUB-COMPONENTS */
-
+/* 🎨 REUSABLE SUB-COMPONENTS STAYS THE SAME */
 function MetricNode({ label, val, icon, isPrimary }: any) {
   return (
     <div className={`p-6 rounded-[2.2rem] border transition-all active:scale-95 ${

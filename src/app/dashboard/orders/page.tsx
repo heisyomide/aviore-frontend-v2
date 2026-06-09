@@ -12,10 +12,6 @@ import { toast } from 'sonner';
 
 type OrderStatus = 'all' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
 
-/**
- * 🚀 MAIN EXPORT
- * Rule 15: Wraps search-dependent content in Suspense for Next.js 15+ build stability.
- */
 export default function OrdersPage() {
   return (
     <Suspense fallback={<LoadingRegistry />}>
@@ -24,9 +20,6 @@ export default function OrdersPage() {
   );
 }
 
-/**
- * 🏛️ CLIENT CONTENT ENGINE
- */
 function OrdersContent() {
   const searchParams = useSearchParams();
   const intent = searchParams.get('intent') as 'chat' | 'return' | null;
@@ -97,7 +90,7 @@ function OrdersContent() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-700">
       
-      {/* 1. HEADER HUD */}
+      {/* HEADER HUD */}
       <div className="flex flex-col gap-8">
         <div className="flex items-end justify-between border-b border-zinc-50 pb-8">
           <div className="space-y-1">
@@ -129,7 +122,7 @@ function OrdersContent() {
         </div>
       </div>
 
-      {/* 2. STATUS TABS */}
+      {/* STATUS TABS */}
       <div className="flex gap-10 border-b border-zinc-100 overflow-x-auto no-scrollbar scroll-smooth">
         {['all', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'].map((tab) => (
           <button
@@ -147,7 +140,7 @@ function OrdersContent() {
         ))}
       </div>
 
-      {/* 3. ORDER LIST */}
+      {/* ORDER LIST */}
       <div className="space-y-6">
         {filteredOrders.length > 0 ? (
           filteredOrders.map((order: any) => {
