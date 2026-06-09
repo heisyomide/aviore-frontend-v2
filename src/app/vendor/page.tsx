@@ -6,7 +6,8 @@ import {
   ArrowUpRight, ShieldCheck, Package, Clock, AlertCircle, Share2, LogOut
 } from 'lucide-react';
 
-// Central Onboarding Engine Integrations
+// Shared Global Api Engine & Onboarding Integrations
+import { api } from '@/src/lib/axios'; // Adjust this import path to match your exact directory structure
 import { VendorActivationCard } from '../../components/completion/VendorActivationCard';
 import { getCompletionStatus } from '@/src/services/completion.service';
 import { CompletionEngineResponse } from '@/src/types/completion.types';
@@ -55,35 +56,22 @@ export default function VendorOverview() {
       setError(null);
       try {
         const token = localStorage.getItem('token');
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
         if (!token) {
           window.location.href = '/login';
           return;
         }
         
+        // 🚀 Hit the exact uniform endpoint through your Axios interceptor pipeline
         const [statsResponse, completionData] = await Promise.all([
-          fetch(`${baseUrl}/vendor/stats`, {
-            signal: controller.signal,
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }),
+          api.get('/vendor/stats', { signal: controller.signal }),
           getCompletionStatus('vendor', token).catch((err) => {
             console.error("Completion tracking stack safely decoupled:", err);
             return null;
           })
         ]);
 
-        if (statsResponse.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          return;
-        }
-
-        if (!statsResponse.ok) throw new Error('SYNC_NODE_FAILURE');
-        const result = await statsResponse.json();
+        const result = statsResponse.data;
 
         // Safe pipeline translation mapping
         const sanitizedData: DashboardData = {
@@ -109,8 +97,9 @@ export default function VendorOverview() {
         setData(sanitizedData);
         setCompletionStatus(completionData);
       } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          setError(err.message || 'TRANSMISSION_ERROR');
+        if (!axios.isCancel(err)) {
+          console.error("Dashboard Sync Error Context:", err.response?.data || err.message);
+          setError(err.response?.data?.message || 'TRANSMISSION_ERROR');
         }
       } finally {
         setIsLoading(false);
@@ -307,6 +296,8 @@ export default function VendorOverview() {
     </div>
   );
 }
+
+// Keep your system card functions intact below (OperationalCard, LoadingState, etc.)
 
 /* --- ISOLATED VIEW SYSTEM CARDS --- */
 
