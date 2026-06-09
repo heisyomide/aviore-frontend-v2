@@ -29,7 +29,7 @@ export default function VendorCampaignDiscovery() {
     try {
       setLoading(true);
       const [availableRes, activeRes] = await Promise.all([
-        api.get('/vendor/marketing/campaigns/available'),
+        api.get('/coupons/active-campaigns'),
         api.get('/vendor/marketing/participations/summary')
       ]);
       setAvailableCampaigns(availableRes.data);

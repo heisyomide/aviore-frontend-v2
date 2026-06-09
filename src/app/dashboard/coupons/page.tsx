@@ -28,7 +28,7 @@ export default function CouponsPage() {
     const fetchCoupons = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/vendor/marketing/active'); 
+        const res = await api.get('/coupons/active'); 
         setCoupons(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
         toast.error("PROTOCOL_ERROR", { description: "Failed to synchronize artifact rewards." });

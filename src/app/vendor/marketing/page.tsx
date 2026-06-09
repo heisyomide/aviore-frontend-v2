@@ -28,7 +28,7 @@ export default function VendorMarketingHub() {
       setLoading(true);
       const [couponRes, statsRes] = await Promise.all([
         api.get('/vendor/marketing/coupons'), 
-        api.get('/vendor/marketing/stats') 
+        api.get('/vendor/marketing/all') 
       ]);
       setCoupons(couponRes.data);
       setStats(statsRes.data);

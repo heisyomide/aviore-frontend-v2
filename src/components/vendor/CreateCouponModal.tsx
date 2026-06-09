@@ -22,7 +22,7 @@ export default function CreateCouponModal({ isOpen, onClose, onRefresh }: any) {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/vendor/marketing/vendor/create', {
+      await api.post('/vendor/marketing/create', {
         ...formData,
         discountValue: Number(formData.discountValue),
         minOrderValue: formData.minOrderValue ? Number(formData.minOrderValue) : null
