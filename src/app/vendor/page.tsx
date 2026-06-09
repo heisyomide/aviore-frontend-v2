@@ -6,6 +6,8 @@ import {
   ArrowUpRight, ShieldCheck, Package, Clock, AlertCircle, Share2, LogOut
 } from 'lucide-react';
 
+import axios from 'axios';
+
 // Shared Global Api Engine & Onboarding Integrations
 import { api } from '@/src/lib/axios'; // Adjust this import path to match your exact directory structure
 import { VendorActivationCard } from '../../components/completion/VendorActivationCard';
