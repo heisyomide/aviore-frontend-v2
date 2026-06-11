@@ -135,7 +135,7 @@ const handleGenerateMatrix = () => {
   const sizeArr = optionInputs.sizes.split(',').map(s => s.trim()).filter(Boolean);
 
   if (colorArr.length === 0 || sizeArr.length === 0) {
-    return alert("Registry Error: Enter at least one color and one size to generate nodes.");
+    return alert("Registry Error: Enter at least one color and one size to generate matrix .");
   }
 
   // Generate individual Color/Size rows
@@ -218,7 +218,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           <div>
             <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Listing Protocol</h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
-              <Zap size={12} className="text-blue-600" /> Initializing Hardware Node
+              <Zap size={12} className="text-blue-600" /> Initializing Hardware Product
             </p>
           </div>
           <button onClick={onClose} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full transition-all text-slate-900"><X size={20} /></button>
@@ -407,9 +407,9 @@ onChange={(e) =>
 {variants.length > 0 && (
   <div className="mt-8 space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-hide">
     <div className="flex justify-between items-center px-1">
-      <label className={labelClasses}>Active Configuration Nodes</label>
+      <label className={labelClasses}>Active Configuration Matrix</label>
       <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-md uppercase tracking-tighter">
-        {variants.length} Nodes Online
+        {variants.length} matrix Online
       </span>
     </div>
 

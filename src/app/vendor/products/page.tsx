@@ -224,7 +224,7 @@ export default function ProductsPage() {
                     onClick={() => handleEditClick(p)}
                     className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
                   >
-                    <Edit2 size={14} /> Edit Node
+                    <Edit2 size={14} /> Edit Product
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}

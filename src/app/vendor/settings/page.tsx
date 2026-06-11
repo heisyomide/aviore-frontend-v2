@@ -222,7 +222,7 @@ export default function SettingsPage() {
                         <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">ENDS IN: {formData.accountNumber?.slice(-4) || 'XXXX'}</p>
                       </div>
                     </div>
-                    <button onClick={() => setIsEditingBank(true)} className="w-full sm:w-auto px-10 py-4 bg-white text-slate-900 border border-slate-200 rounded-xl font-black uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all">Modify Node</button>
+                    <button onClick={() => setIsEditingBank(true)} className="w-full sm:w-auto px-10 py-4 bg-white text-slate-900 border border-slate-200 rounded-xl font-black uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all">Modify Bank</button>
                   </div>
                 ) : (
                   <div className="p-8 border-2 border-blue-100 rounded-4xl bg-blue-50/10 space-y-6 animate-in zoom-in-95">
