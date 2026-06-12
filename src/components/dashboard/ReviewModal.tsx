@@ -1,32 +1,58 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { X, Star, Loader2, Send, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
 
 interface ReviewModalProps {
-  product: { id: string; title: string };
+  product: { id: string; title: string; reviews?: any[] };
   onClose: () => void;
   onSuccess?: () => void;
+  currentUserId?: string; // Optional: Pass current user ID to do a rapid client-side check on mount
 }
 
-export default function ReviewModal({ product, onClose, onSuccess }: ReviewModalProps) {
+export default function ReviewModal({ product, onClose, onSuccess, currentUserId }: ReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isPending, startTransition] = useTransition();
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // 1. RUN DEFENSIVE CLIENT-SIDE DUPLICATE REVIEW CHECK ON MOUNT
+  useEffect(() => {
+    if (product.reviews && currentUserId) {
+      const hasReviewedBefore = product.reviews.some((r: any) => r.userId === currentUserId);
+      if (hasReviewedBefore) {
+        toast.warning("You have already submitted an evaluation for this product.");
+        onClose();
+      }
+    }
+  }, [product, currentUserId, onClose]);
+
   const handleSubmit = async () => {
     if (rating === 0) return toast.error("Please provide a Quality_Score valuation.");
+    
     startTransition(async () => {
       try {
         await api.post(`/products/${product.id}/reviews`, { rating, comment: comment.trim() });
         setIsSuccess(true);
-        setTimeout(() => { onSuccess?.(); onClose(); }, 2200);
+        setTimeout(() => { 
+          onSuccess?.(); 
+          onClose(); 
+        }, 2200);
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "Sync Protocol Failed");
+        const statusCode = error.response?.status;
+        const errorMessage = error.response?.data?.message?.toLowerCase() || '';
+
+        // 2. BACKEND RESPONSE VALIDATION CHANNELS FOR ALREADY REVIEWED DATA
+        if (statusCode === 409 || statusCode === 400 || errorMessage.includes('already reviewed') || errorMessage.includes('duplicate')) {
+          toast.error("Review Denied: You have already completed a product evaluation for this item.");
+          setTimeout(() => onClose(), 1500);
+        } else {
+          // Standard structural network fault fallback
+          toast.error(error.response?.data?.message || "Sync Protocol Failed");
+        }
       }
     });
   };
@@ -58,7 +84,7 @@ export default function ReviewModal({ product, onClose, onSuccess }: ReviewModal
     >
       <div className="bg-white w-full max-w-md flex flex-col rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
         
-        {/* HEADER: Tightened padding for better vertical fit */}
+        {/* HEADER */}
         <div className="px-8 pt-8 pb-4 flex justify-between items-start">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -75,10 +101,10 @@ export default function ReviewModal({ product, onClose, onSuccess }: ReviewModal
           </button>
         </div>
 
-        {/* BODY: Added better spacing and scrolling containment */}
+        {/* BODY */}
         <div className="px-8 py-4 space-y-8">
           
-          {/* TARGET INFO: Compacted for visual hierarchy */}
+          {/* TARGET INFO */}
           <div className="p-4 bg-gray-50/60 rounded-2xl border border-gray-100 flex items-center justify-between group">
             <div className="space-y-0.5 overflow-hidden">
               <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest">Target_Identity</p>
@@ -87,7 +113,7 @@ export default function ReviewModal({ product, onClose, onSuccess }: ReviewModal
             <Sparkles size={14} className="text-[#A4143D] shrink-0 group-hover:rotate-12 transition-transform" />
           </div>
 
-          {/* RATING SECTION: Visual balance */}
+          {/* RATING SECTION */}
           <div className="flex flex-col items-center gap-5 py-2">
             <div className="flex gap-2.5">
               {[1, 2, 3, 4, 5].map((num) => (
@@ -117,7 +143,7 @@ export default function ReviewModal({ product, onClose, onSuccess }: ReviewModal
             </div>
           </div>
 
-          {/* TEXTAREA: High-end input feel */}
+          {/* TEXTAREA */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 ml-1">
               <div className="h-px w-4 bg-gray-100" />
@@ -132,7 +158,7 @@ export default function ReviewModal({ product, onClose, onSuccess }: ReviewModal
           </div>
         </div>
 
-        {/* FOOTER: Fixed at bottom with strong action button */}
+        {/* FOOTER */}
         <div className="p-8">
           <button 
             onClick={handleSubmit}
