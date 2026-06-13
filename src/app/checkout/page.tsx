@@ -13,6 +13,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Breadcrumb } from '../../components/Breadcrumb';
 import { Navbar } from '../../components/navbar/Navbar';
+import { initializePayment } from '@/src/lib/payments';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -22,6 +23,9 @@ export default function CheckoutPage() {
   const [fetchingAddress, setFetchingAddress] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // State tracking variables to store user email/profile info safely
+  const [userProfile, setUserProfile] = useState<{ email: string; name?: string } | null>(null);
 
   const [couponCode, setCouponCode] = useState('');
   const [couponData, setCouponData] = useState<any>(null);
@@ -78,21 +82,37 @@ export default function CheckoutPage() {
     return () => controller.abort();
   }, [checkoutItems]);
 
-  /* ---------------- ADDRESS HANDLING ---------------- */
-  const fetchPrimaryAddress = useCallback(async () => {
+  /* ---------------- ADDRESS & USER PROFILE HANDLING ---------------- */
+  const fetchCheckoutData = useCallback(async () => {
     try {
       setFetchingAddress(true);
-      const res = await api.get('/user/addresses');
-      const primary = res.data.find((a: any) => a.isDefault) || res.data[0];
+      
+      // 1. Fetch user profile context for transactional tracking
+      const profileRes = await api.get('/user/profile', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (profileRes.data) {
+        setUserProfile({
+          email: profileRes.data.email,
+          name: profileRes.data.name
+        });
+      }
+
+      // 2. Fetch associated addresses
+      const addressRes = await api.get('/user/addresses', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const primary = addressRes.data.find((a: any) => a.isDefault) || addressRes.data[0];
       setAddress(primary);
-    } catch {
-      toast.error("Error", { description: "Shipping address record unreachable." });
+    } catch (err) {
+      console.error("CHECKOUT_DATA_FETCH_ERROR:", err);
+      toast.error("Error", { description: "Required session profile metrics unreachable." });
     } finally {
       setFetchingAddress(false);
     }
   }, []);
 
-  useEffect(() => { fetchPrimaryAddress(); }, [fetchPrimaryAddress]);
+  useEffect(() => { fetchCheckoutData(); }, [fetchCheckoutData]);
 
   /* ---------------- PROMO CODE ENGINE ---------------- */
   const applyCoupon = async () => {
@@ -124,16 +144,16 @@ export default function CheckoutPage() {
     }
   };
 
- /* ---------------- ORDER PLACEMENT ---------------- */
+  /* ---------------- ORDER PLACEMENT ---------------- */
   const handlePlaceOrder = async () => {
-    if (!address) {
-      return toast.error("Please add a shipping address");
-    }
-
+    if (!address) return toast.error("Please add a shipping address");
+    if (!userProfile?.email) return toast.error("User context session missing. Please log in again.");
+    
     setIsProcessing(true);
 
     try {
-      const payload = {
+      // Step 1: Create the Order in your database
+      const orderPayload = {
         items: checkoutItems.map(i => ({
           productId: i.id,
           quantity: i.quantity,
@@ -144,34 +164,42 @@ export default function CheckoutPage() {
         appliedCampaigns: couponData?.appliedCampaigns || []
       };
 
-      const res = await api.post('/orders/create', payload);
-      const paymentLink = res.data?.data?.paymentLink;
+      const orderResponse = await api.post('/orders/create', orderPayload, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const orderId = orderResponse.data?.data?.id;
 
-      if (!paymentLink) {
-        throw new Error("Payment link not generated");
+      if (!orderId) {
+        throw new Error("Order tracking index generation failure.");
       }
+      
+      // Step 2: Safe execution utility invocation 
+      const { link } = await initializePayment({
+        orderId,
+        email: userProfile.email,
+        name: address.fullName || userProfile.name
+      });
 
+      // Step 3: Clear state and clear out to Flutterwave
       clearCart();
-
       if (typeof window !== 'undefined') {
         localStorage.removeItem('cart-storage');
       }
 
+      toast.success("Redirecting to payment gateway...");
       setTimeout(() => {
-        window.location.href = paymentLink;
-      }, 150);
+        window.location.href = link;
+      }, 300);
 
     } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Payment initialization failed"
-      );
+      toast.error(err.response?.data?.message || "Checkout pipeline failed.");
       setIsProcessing(false);
     }
   };
 
   return (
     <div className="bg-[#FDFCFB] min-h-screen pb-20">
-       <Navbar />
+      <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 pt-6 italic font-black uppercase tracking-tighter">
         <Breadcrumb />
@@ -295,7 +323,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 🚀 MULTI-VENDOR DISPATCH TRANSPARENCY NOTICE */}
+            {/* MULTI-VENDOR TRANSPARENCY NOTICE */}
             <CheckoutNotice />
 
             <button
@@ -342,10 +370,10 @@ function CheckoutNotice() {
 
 function PaymentOption({ id, label, icon, selected, onSelect }: any) {
   return (
-    <label onClick={() => onSelect(id)} className={`flex gap-4 items-center border p-5 rounded-2xl cursor-pointer transition-all duration-300 ${selected ? 'border-[#A4143D] bg-[#FDFCFB] shadow-lg' : 'border-gray-50 hover:border-gray-200'}`}>
+    <div onClick={() => onSelect(id)} className={`flex gap-4 items-center border p-5 rounded-2xl cursor-pointer transition-all duration-300 ${selected ? 'border-[#A4143D] bg-[#FDFCFB] shadow-lg' : 'border-gray-50 hover:border-gray-200'}`}>
       <div className={`p-3 rounded-xl ${selected ? 'bg-[#A4143D] text-white' : 'bg-gray-100 text-gray-400'}`}>{icon}</div>
       <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-    </label>
+    </div>
   );
 }
 

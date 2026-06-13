@@ -79,7 +79,7 @@ export default function GrowthNodeLoginPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.message || 'Access Denied: Node mismatch.');
+        throw new Error(payload.message || 'Access Denied: Password mismatch.');
       }
 
       // Persist access token in local storage for upcoming dashboard sync operations
