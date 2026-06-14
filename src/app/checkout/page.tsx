@@ -13,7 +13,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Breadcrumb } from '../../components/Breadcrumb';
 import { Navbar } from '../../components/navbar/Navbar';
-import { initializePayment } from '@/src/lib/payments';
+
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -23,9 +23,6 @@ export default function CheckoutPage() {
   const [fetchingAddress, setFetchingAddress] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // State tracking variables to store user email/profile info safely
-  const [userProfile, setUserProfile] = useState<{ email: string; name?: string } | null>(null);
 
   const [couponCode, setCouponCode] = useState('');
   const [couponData, setCouponData] = useState<any>(null);
@@ -56,7 +53,7 @@ export default function CheckoutPage() {
         const res = await api.post('/orders/calculate-valuation', 
           {
             items: checkoutItems.map(i => ({
-              productId: i.id, 
+              productId: i.productId, 
               price: Number(i.price),
               quantity: Number(i.quantity)
             }))
@@ -82,37 +79,21 @@ export default function CheckoutPage() {
     return () => controller.abort();
   }, [checkoutItems]);
 
-  /* ---------------- ADDRESS & USER PROFILE HANDLING ---------------- */
-  const fetchCheckoutData = useCallback(async () => {
+  /* ---------------- ADDRESS HANDLING ---------------- */
+  const fetchPrimaryAddress = useCallback(async () => {
     try {
       setFetchingAddress(true);
-      
-      // 1. Fetch user profile context for transactional tracking
-      const profileRes = await api.get('/user/profile', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (profileRes.data) {
-        setUserProfile({
-          email: profileRes.data.email,
-          name: profileRes.data.name
-        });
-      }
-
-      // 2. Fetch associated addresses
-      const addressRes = await api.get('/user/addresses', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const primary = addressRes.data.find((a: any) => a.isDefault) || addressRes.data[0];
+      const res = await api.get('/user/addresses');
+      const primary = res.data.find((a: any) => a.isDefault) || res.data[0];
       setAddress(primary);
-    } catch (err) {
-      console.error("CHECKOUT_DATA_FETCH_ERROR:", err);
-      toast.error("Error", { description: "Required session profile metrics unreachable." });
+    } catch {
+      toast.error("Error", { description: "Shipping address record unreachable." });
     } finally {
       setFetchingAddress(false);
     }
   }, []);
 
-  useEffect(() => { fetchCheckoutData(); }, [fetchCheckoutData]);
+  useEffect(() => { fetchPrimaryAddress(); }, [fetchPrimaryAddress]);
 
   /* ---------------- PROMO CODE ENGINE ---------------- */
   const applyCoupon = async () => {
@@ -146,16 +127,17 @@ export default function CheckoutPage() {
 
   /* ---------------- ORDER PLACEMENT ---------------- */
   const handlePlaceOrder = async () => {
-    if (!address) return toast.error("Please add a shipping address");
-    if (!userProfile?.email) return toast.error("User context session missing. Please log in again.");
-    
+    if (!address) {
+      return toast.error("Please add a shipping address");
+    }
+
     setIsProcessing(true);
 
     try {
-      // Step 1: Create the Order in your database
-      const orderPayload = {
+      // 1. Build Payload structural format for your backend order service
+      const payload = {
         items: checkoutItems.map(i => ({
-          productId: i.id,
+          productId: i.productId,
           quantity: i.quantity,
           price: Number(i.price)
         })),
@@ -164,35 +146,35 @@ export default function CheckoutPage() {
         appliedCampaigns: couponData?.appliedCampaigns || []
       };
 
-      const orderResponse = await api.post('/orders/create', orderPayload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const orderId = orderResponse.data?.data?.id;
-
-      if (!orderId) {
-        throw new Error("Order tracking index generation failure.");
-      }
+      // 2. Fire order registration intent
+      const res = await api.post('/orders/create', payload);
       
-      // Step 2: Safe execution utility invocation 
-      const { link } = await initializePayment({
-        orderId,
-        email: userProfile.email,
-        name: address.fullName || userProfile.name
-      });
+      // Make sure your order handler method responds back with data nested matching this structural hook
+      // e.g., res.data = { success: true, data: { paymentLink: '...', orderId: '...' } }
+      const paymentLink = res.data?.data?.paymentLink;
 
-      // Step 3: Clear state and clear out to Flutterwave
+      if (!paymentLink) {
+        throw new Error("Payment link not generated by checkout service engine.");
+      }
+
+      // 3. Purge state cache stores cleanly to protect against double initialization handles
       clearCart();
+
       if (typeof window !== 'undefined') {
         localStorage.removeItem('cart-storage');
       }
 
-      toast.success("Redirecting to payment gateway...");
+      // 4. Smoothly route them away to the hosted verification page
+      toast.success("Order registered!", { description: "Redirecting to payment gateway..." });
+      
       setTimeout(() => {
-        window.location.href = link;
+        window.location.href = paymentLink;
       }, 300);
 
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Checkout pipeline failed.");
+      toast.error(
+        err.response?.data?.message || "Payment initialization failed. Please try again."
+      );
       setIsProcessing(false);
     }
   };
