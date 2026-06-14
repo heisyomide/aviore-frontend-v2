@@ -58,7 +58,7 @@ function OrdersContent() {
   const handleConfirmReceipt = async (orderItemId: string) => {
     try {
       setIsSettling(orderItemId);
-      const response = await api.post(`/orders/${orderItemId}/confirm-receipt`);
+      const response = await api.post(`/orders/fulfillment/${orderItemId}/confirm-receipt`);
       if (response.data.success) {
         toast.success("Receipt Confirmed", { description: "Funds released to vendor." });
         await fetchOrders();
