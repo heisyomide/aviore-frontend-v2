@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { 
   Wallet, Loader2, PackageOpen, BadgeCheck,
-  ArrowUpRight, ShieldCheck, Package, Clock, AlertCircle, Share2, LogOut
+  ArrowUpRight, ShieldCheck, Package, Clock, AlertCircle, Share2, LogOut, TrendingUp
 } from 'lucide-react';
 
 import axios from 'axios';
 
 // Shared Global Api Engine & Onboarding Integrations
-import { api } from '@/src/lib/axios'; // Adjust this import path to match your exact directory structure
+import { api } from '@/src/lib/axios'; 
 import { VendorActivationCard } from '../../components/completion/VendorActivationCard';
 import { getCompletionStatus } from '@/src/services/completion.service';
 import { CompletionEngineResponse } from '@/src/types/completion.types';
@@ -64,7 +64,6 @@ export default function VendorOverview() {
           return;
         }
         
-        // 🚀 Hit the exact uniform endpoint through your Axios interceptor pipeline
         const [statsResponse, completionData] = await Promise.all([
           api.get('/vendor/stats', { signal: controller.signal }),
           getCompletionStatus('vendor', token).catch((err) => {
@@ -75,7 +74,6 @@ export default function VendorOverview() {
 
         const result = statsResponse.data;
 
-        // Safe pipeline translation mapping
         const sanitizedData: DashboardData = {
           profile: {
             storeName: result.profile?.storeName || "AVIORÈ Merchant",
@@ -156,15 +154,15 @@ export default function VendorOverview() {
   if (error || !data) return <ErrorState message={error} />;
 
   return (
-    <div className="min-h-screen bg-white pb-32 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-[#0d0d0d] pb-32 animate-in fade-in duration-700 text-zinc-100">
       
-      {/* 🚀 1. STICKY IDENTITY HEADER */}
-      <div className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md px-6 py-8 flex justify-between items-center border-b border-slate-50">
+      {/* 🚀 1. STICKY IDENTITY HEADER (Sleek Dark Glass) */}
+      <div className="sticky top-0 z-[100] bg-[#0d0d0d]/80 backdrop-blur-md py-6 flex justify-between items-center border-b border-zinc-900/60">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+          <h1 className="text-3xl font-bold tracking-widest text-white uppercase font-sans">
             Dashboard
           </h1>
-          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-2 italic leading-none">
+          <p className="text-[#991b1b] text-xs font-semibold uppercase tracking-widest mt-1">
             Welcome Back, {data.profile.storeName}
           </p>
         </div>
@@ -172,9 +170,9 @@ export default function VendorOverview() {
         <div className="relative">
           <button 
             onClick={() => setIsIdentityMenuOpen(!isIdentityMenuOpen)}
-            className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl active:scale-90 transition-all border border-slate-800 cursor-pointer"
+            className="w-12 h-12 bg-[#121212] rounded-xl flex items-center justify-center text-zinc-300 shadow-xl active:scale-95 transition-all border border-zinc-800 cursor-pointer hover:border-zinc-700"
           >
-            <span className="font-black italic text-lg">
+            <span className="font-semibold text-xs tracking-wider">
               {(data.profile.storeName || "ME").substring(0, 2).toUpperCase()}
             </span>
           </button>
@@ -182,20 +180,21 @@ export default function VendorOverview() {
           {isIdentityMenuOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setIsIdentityMenuOpen(false)} />
-              <div className="absolute right-0 top-16 w-56 bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-3 animate-in zoom-in-95 duration-200 z-20">
+              <div className="absolute right-0 top-14 w-56 bg-[#121212] rounded-2xl shadow-2xl border border-zinc-800/80 p-1.5 animate-in zoom-in-95 duration-200 z-20">
                  <button 
                   onClick={handleShareProfile}
-                  className="w-full flex items-center gap-3 p-4 hover:bg-blue-50 rounded-2xl transition-colors text-slate-700 cursor-pointer"
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-900 rounded-xl transition-colors text-zinc-300 cursor-pointer"
                  >
-                   <Share2 size={18} className="text-blue-600" />
-                   <span className="text-[10px] font-black uppercase tracking-widest">Share Profile</span>
+                   <Share2 size={15} className="text-zinc-400" />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Share Profile</span>
                  </button>
+                 <div className="h-px bg-zinc-900 my-1 mx-2" />
                  <button 
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-2xl transition-colors text-red-600 cursor-pointer"
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-950/30 rounded-xl transition-colors text-red-400 cursor-pointer"
                  >
-                   <LogOut size={18} />
-                   <span className="text-[10px] font-black uppercase tracking-widest">Logout </span>
+                   <LogOut size={15} />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Logout</span>
                  </button>
               </div>
             </>
@@ -204,7 +203,7 @@ export default function VendorOverview() {
       </div>
 
       {/* CORE WORKSPACE VIEW */}
-      <div className="px-6 space-y-10 mt-10">
+      <div className="space-y-10 mt-10">
 
         {/* 🛡️ ONBOARDING ENGINE CARD */}
         {completionStatus && (
@@ -215,64 +214,65 @@ export default function VendorOverview() {
           />
         )}
 
-        {/* 🚀 2. REVENUE HERO NODE */}
-        <div className="bg-[#0F172A] p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
+        {/* 🚀 2. REVENUE HERO NODE (Onyx Canvas & Industrial Metallic Frame) */}
+        <div className="bg-[#111113] border border-zinc-900 p-8 rounded-2xl shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-start relative z-10">
-                <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Available Liquidity</p>
-                    <h2 className="text-5xl font-black italic tracking-tighter">
+                <div className="space-y-2">
+                    <p className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Available Liquidity</p>
+                    <h2 className="text-4xl font-light tracking-tight text-white font-mono">
                         {CURRENCY_SYMBOL}{(data.wallet.availableBalance || 0).toLocaleString()}
                     </h2>
                 </div>
-                <div className="p-4 bg-blue-600 rounded-2xl shadow-lg">
-                    <Wallet size={24} />
+                <div className="p-3.5 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400">
+                    <Wallet size={18} strokeWidth={1.5} />
                 </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 mt-12 pt-8 border-t border-white/5 relative z-10">
+            
+            <div className="grid grid-cols-2 gap-4 mt-10 pt-6 border-t border-zinc-900 relative z-10">
                 <div>
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Lifetime Yield</p>
-                    <p className="text-lg font-black text-emerald-500 italic">{CURRENCY_SYMBOL}{(data.wallet.totalEarnings || 0).toLocaleString()}</p>
+                    <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Lifetime Yield</p>
+                    <p className="text-base font-medium font-mono text-emerald-500">{CURRENCY_SYMBOL}{(data.wallet.totalEarnings || 0).toLocaleString()}</p>
                 </div>
                 <div>
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">In Escrow</p>
-                    <p className="text-lg font-black text-orange-500 italic">{CURRENCY_SYMBOL}{(data.wallet.pendingBalance || 0).toLocaleString()}</p>
+                    <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest mb-1">In Escrow</p>
+                    <p className="text-base font-medium font-mono text-amber-500">{CURRENCY_SYMBOL}{(data.wallet.pendingBalance || 0).toLocaleString()}</p>
                 </div>
             </div>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-800/10 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
         </div>
 
         {/* 🚀 3. OPERATIONAL STATS GRID */}
-        <div className="grid grid-cols-2 gap-4">
-          <OperationalCard label="Active Orders" val={data.stats.totalOrders} icon={<Clock size={18}/>} color="bg-blue-50" textColor="text-blue-600" />
-          <OperationalCard label="Product SKU" val={data.stats.activeProducts} icon={<Package size={18}/>} color="bg-slate-50" textColor="text-slate-900" />
+        <div className="grid grid-cols-2 gap-6">
+          <OperationalCard label="Active Orders" val={data.stats.totalOrders} icon={<Clock size={16}/>} />
+          <OperationalCard label="Product SKU" val={data.stats.activeProducts} icon={<Package size={16}/>} />
         </div>
 
         {/* 🚀 4. RECENT REQUISITIONS */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex justify-between items-center px-1">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Recent Requisitions</h3>
-            <ArrowUpRight size={18} className="text-blue-600" />
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Recent Requisitions</h3>
+            <ArrowUpRight size={15} className="text-zinc-500" />
           </div>
           
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm">
+          <div className="bg-[#111113] rounded-2xl border border-zinc-900/80 overflow-hidden divide-y divide-zinc-900/60 shadow-xl">
             {data.recentOrders && data.recentOrders.length > 0 ? data.recentOrders.map((order) => {
                 const orderDate = order.date ? new Date(order.date) : null;
                 const formattedDate = orderDate && !isNaN(orderDate.getTime()) 
-                  ? orderDate.toLocaleDateString() 
+                  ? orderDate.toLocaleDateString('en-NG', { day: '2-digit', month: 'short' }) 
                   : 'Recent';
 
                 return (
-                  <div key={order.id} className="flex items-center gap-4 p-5 border-b border-slate-50 last:border-0 group active:bg-slate-50 transition-all rounded-3xl">
-                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
-                      <Package size={22} />
+                  <div key={order.id} className="flex items-center gap-4 p-5 hover:bg-zinc-950/40 transition-all">
+                    <div className="w-11 h-11 bg-zinc-900/60 rounded-xl flex items-center justify-center text-zinc-500 border border-zinc-800/50 shrink-0">
+                      <Package size={16} strokeWidth={1.5} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-slate-900 uppercase italic truncate leading-none mb-1.5">{order.artifact}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">
-                        {order.status} • {formattedDate}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="text-xs font-medium text-white tracking-wide truncate">{order.artifact}</p>
+                      <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
+                        <span className="text-zinc-400">{order.status}</span> • {formattedDate}
                       </p>
                     </div>
-                    <p className="text-sm font-black text-slate-900 italic tracking-tighter">
+                    <p className="text-xs font-medium text-zinc-300 font-mono">
                       {CURRENCY_SYMBOL}{(order.amount || 0).toLocaleString()}
                     </p>
                   </div>
@@ -282,64 +282,69 @@ export default function VendorOverview() {
         </div>
 
         {/* 🚀 5. SECURITY STATUS HUB */}
-        <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 flex items-center justify-between shadow-sm">
+        <div className="bg-[#061411] border border-[#10322b] p-5 rounded-2xl flex items-center justify-between shadow-xl">
             <div className="flex items-center gap-4">
-                <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600 border border-slate-100">
-                    <ShieldCheck size={24} />
+                <div className="p-2.5 bg-emerald-950/50 rounded-xl text-emerald-400 border border-emerald-900/40">
+                    <ShieldCheck size={18} />
                 </div>
                 <div>
-                    <h4 className="text-[10px] font-black uppercase text-slate-900">Security Node</h4>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter italic">48-Hour Escrow Enabled</p>
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Security Node Active</h4>
+                    <p className="text-[10px] font-light text-zinc-400 mt-0.5 leading-relaxed">48-Hour Escrow protection active across inbound transactions.</p>
                 </div>
             </div>
-            <BadgeCheck size={20} className="text-blue-500" />
+            <BadgeCheck size={18} className="text-emerald-500 shrink-0" />
         </div>
       </div>
     </div>
   );
 }
 
-// Keep your system card functions intact below (OperationalCard, LoadingState, etc.)
-
 /* --- ISOLATED VIEW SYSTEM CARDS --- */
 
-function OperationalCard({ label, val, icon, color, textColor }: any) {
+function OperationalCard({ label, val, icon }: any) {
   return (
-    <div className={`${color} p-6 rounded-[2.2rem] border border-transparent transition-all active:scale-95`}>
-       <div className={`w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm ${textColor}`}>
+    <div className="bg-[#111113] border border-zinc-900 p-6 rounded-2xl flex justify-between items-center relative overflow-hidden group hover:border-zinc-800 transition-all duration-300">
+       <div className="space-y-2">
+         <p className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">{label}</p>
+         <h2 className="text-3xl font-light font-mono text-white tracking-tight">{val ?? 0}</h2>
+       </div>
+       <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 group-hover:text-white transition-all shadow-inner">
          {icon}
        </div>
-       <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{label}</p>
-       <h2 className={`text-xl font-black italic tracking-tighter ${textColor}`}>{val ?? 0}</h2>
     </div>
   );
 }
 
 function LoadingState() {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-white gap-6">
-      <Loader2 className="animate-spin text-blue-600" size={48} />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Synchronizing Node...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0d0d0d] gap-4">
+      <Loader2 className="animate-spin text-[#991b1b]" size={28} />
+      <p className="text-[10px] font-medium tracking-[0.3em] text-zinc-500 uppercase">Synchronizing Ledger Node...</p>
     </div>
   );
 }
 
 function ErrorState({ message }: { message: string | null }) {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
-      <AlertCircle size={40} className="text-red-500 mb-4" />
-      <h3 className="text-xl font-black text-slate-900 uppercase italic">Transmission Error</h3>
-      <p className="text-[10px] font-bold text-slate-400 uppercase mt-2 mb-8 max-w-xs">{message || "Registry sync interrupted."}</p>
-      <button onClick={() => window.location.reload()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl cursor-pointer">Reconnect</button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0d0d0d] p-6 text-center">
+      <AlertCircle size={32} className="text-[#991b1b] mb-4" />
+      <h3 className="text-sm font-bold text-white uppercase tracking-widest">Transmission Error</h3>
+      <p className="text-[11px] font-light text-zinc-500 mt-2 mb-6 max-w-xs leading-relaxed">{message || "Registry synchronization interrupted."}</p>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="px-6 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all cursor-pointer"
+      >
+        Reconnect
+      </button>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="py-20 text-center opacity-30">
-      <PackageOpen size={48} className="mx-auto text-slate-300 mb-3" />
-      <p className="text-[10px] font-black uppercase tracking-widest italic">No Data Nodes</p>
+    <div className="py-16 text-center">
+      <PackageOpen size={32} className="mx-auto text-zinc-700 stroke-1 mb-3" />
+      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">No Data Nodes Found</p>
     </div>
   );
 }

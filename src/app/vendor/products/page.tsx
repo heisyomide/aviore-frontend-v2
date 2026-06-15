@@ -34,7 +34,6 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  // Helper to get best price and stock from variants
   const getProductDisplayInfo = (p: any) => {
     if (!p.variants || p.variants.length === 0) {
       return {
@@ -43,7 +42,6 @@ export default function ProductsPage() {
       };
     }
 
-    // Get the lowest price among variants (or first one)
     const prices = p.variants.map((v: any) => Number(v.price) || 0).filter(Boolean);
     const stocks = p.variants.map((v: any) => Number(v.stock) || 0);
 
@@ -69,14 +67,14 @@ export default function ProductsPage() {
   }, [searchQuery, products]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm('Are you sure you want to purge this product asset from registry?')) return;
 
     setIsDeleting(id);
     try {
       await api.delete(`/products/${id}`);
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (error) {
-      alert('Failed to delete product');
+      alert('Failed to delete product asset.');
     } finally {
       setIsDeleting(null);
     }
@@ -90,95 +88,97 @@ export default function ProductsPage() {
   if (loading) return <LoadingRegistry />;
 
   return (
-    <div className="min-h-screen bg-[#F4F7FE] lg:bg-[#FAFAFA] pb-32 lg:pb-10">
+    <div className="min-h-screen bg-[#0D0D0D] text-zinc-100 pb-32 animate-in fade-in duration-700">
       
-      <div className="p-6 lg:p-10 space-y-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+      <div className="p-6 lg:p-10 space-y-8 max-w-7xl mx-auto">
+        
+        {/* 1. BRANDED HEADER CONFIGURATION */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 pb-6 border-b border-zinc-900">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">
+            <h1 className="text-2xl font-light text-white uppercase tracking-widest font-sans">
               Catalogue Hub
             </h1>
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
-              Product Manifest & Visibility Control
+            <p className="text-[9px] text-zinc-500 font-mono font-bold uppercase tracking-[0.2em] mt-1.5">
+              Product Manifest & Visibility Matrix
             </p>
           </div>
 
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="w-full lg:w-auto bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-blue-700 flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20 transition-all active:scale-95"
+            className="w-full sm:w-auto bg-[#991B1B] text-white px-6 py-3.5 rounded-xl font-mono font-bold uppercase tracking-wider text-[10px] hover:bg-[#7f1616] flex items-center justify-center gap-2 transition-colors cursor-pointer border border-[#991B1B] shadow-xl shadow-[#991B1B]/5 active:scale-98"
           >
-            <Plus size={18} /> Initialize New Product
+            <Plus size={14} /> Initialize New Product
           </button>
         </div>
 
-        {/* Search */}
+        {/* 2. REGISTRY FILTER BAR */}
         <div className="relative group">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
           <input 
             type="text" 
-            placeholder="SEARCH REGISTRY BY TITLE OR ID..." 
+            placeholder="Search manifest by title or configuration id..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-14 pr-12 py-5 bg-white border border-slate-100 rounded-4xl text-[11px] font-black uppercase tracking-widest shadow-sm outline-none focus:ring-4 focus:ring-blue-500/5" 
+            className="w-full pl-11 pr-4 py-4 bg-[#111113] border border-zinc-900 rounded-xl text-xs font-mono tracking-wide text-zinc-300 placeholder-zinc-600 outline-none focus:border-zinc-700 transition-colors" 
           />
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden lg:block bg-white rounded-4xl shadow-xl border border-slate-50 overflow-hidden">
-          <table className="w-full text-left">
+        {/* 3. DESKTOP REGISTRY LEDGER */}
+        <div className="hidden lg:block bg-[#111113] rounded-xl shadow-2xl border border-zinc-900 overflow-hidden">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                <th className="p-6">Registry Manifest</th>
-                <th className="p-6">Category</th>
-                <th className="p-6 text-center">Settlement Price</th>
-                <th className="p-6 text-center">Inventory</th>
-                <th className="p-6 text-center">Status</th>
-                <th className="p-6 text-right">Actions</th>
+              <tr className="bg-zinc-950/60 text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900/60">
+                <th className="p-5 pl-6">Registry Manifest</th>
+                <th className="p-5">Classification</th>
+                <th className="p-5 text-center">Settlement Price</th>
+                <th className="p-5 text-center">Inventory Matrix</th>
+                <th className="p-5 text-center">Protocol Status</th>
+                <th className="p-5 pr-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-zinc-900/40">
               {filteredProducts.map((p) => {
                 const { displayPrice, displayStock } = getProductDisplayInfo(p);
 
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50/30 transition-all group">
-                    <td className="p-6">
+                  <tr key={p.id} className="hover:bg-zinc-950/20 transition-colors">
+                    <td className="p-5 pl-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shrink-0">
-                          <img src={resolveImage(p)} className="w-full h-full object-cover" alt="" />
+                        <div className="w-12 h-12 bg-zinc-950 rounded-lg overflow-hidden border border-zinc-900 shrink-0">
+                          <img src={resolveImage(p)} className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all" alt="" />
                         </div>
                         <div>
-                          <p className="font-black text-slate-800 text-sm uppercase italic leading-none">{p.title}</p>
-                          <p className="text-[9px] text-slate-400 font-mono mt-1">ID: {p.id?.slice(-8).toUpperCase()}</p>
+                          <p className="font-mono font-bold text-zinc-200 text-xs uppercase tracking-wide">{p.title}</p>
+                          <p className="text-[9px] text-zinc-600 font-mono mt-1">NODE_ID: {p.id?.slice(-8).toUpperCase()}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-tighter">
+                    <td className="p-5 text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                       {p.category?.name || 'General'}
                     </td>
-                    <td className="p-6 text-center font-black text-slate-900 italic">
+                    <td className="p-5 text-center font-mono font-bold text-zinc-100">
                       ₦{displayPrice.toLocaleString()}
                     </td>
-                    <td className="p-6 text-center font-black text-slate-900 italic">
-                      {displayStock} <span className="text-[9px] text-slate-300">UNITS</span>
+                    <td className="p-5 text-center font-mono font-bold text-zinc-300">
+                      {displayStock} <span className="text-[9px] text-zinc-600 font-bold ml-0.5">UNITS</span>
                     </td>
-                    <td className="p-6 text-center">
+                    <td className="p-5 text-center">
                       <StatusBadge status={p.status} />
                     </td>
-                    <td className="p-6 text-right">
+                    <td className="p-5 pr-6 text-right">
                       <div className="flex justify-end gap-2">
                         <button 
                           onClick={() => handleEditClick(p)}
-                          className="p-2.5 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors border border-slate-100"
+                          className="p-2 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white rounded-lg transition-colors border border-zinc-900 cursor-pointer"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={13} />
                         </button>
                         <button 
                           onClick={() => handleDelete(p.id)}
                           disabled={isDeleting === p.id}
-                          className="p-2.5 bg-slate-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors border border-slate-100"
+                          className="p-2 bg-zinc-950 hover:bg-zinc-900 text-zinc-500 hover:text-rose-500 rounded-lg transition-colors border border-zinc-900 cursor-pointer"
                         >
-                          {isDeleting === p.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                          {isDeleting === p.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                         </button>
                       </div>
                     </td>
@@ -189,32 +189,36 @@ export default function ProductsPage() {
           </table>
         </div>
 
-        {/* Mobile View */}
+        {/* 4. MOBILE LAYOUT FRAMEWORK */}
         <div className="lg:hidden space-y-4">
           {filteredProducts.map((p) => {
             const { displayPrice, displayStock } = getProductDisplayInfo(p);
             return (
-              <div key={p.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100">
-                {/* ... your existing mobile card ... */}
-                <div className="flex gap-4 mb-6">
-                  <div className="w-20 h-20 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 shrink-0">
-                    <img src={resolveImage(p)} className="w-full h-full object-cover" />
+              <div key={p.id} className="bg-[#111113] rounded-xl p-5 border border-zinc-900 shadow-xl">
+                <div className="flex gap-4 mb-4">
+                  <div className="w-16 h-16 bg-zinc-950 rounded-lg overflow-hidden border border-zinc-900 shrink-0">
+                    <img src={resolveImage(p)} className="w-full h-full object-cover" alt="" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <StatusBadge status={p.status} />
-                    <h3 className="font-black text-slate-900 uppercase italic truncate mt-2">{p.title}</h3>
-                    <p className="text-sm font-bold text-slate-900 mt-1">₦{displayPrice.toLocaleString()}</p>
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                    <div>
+                      <h3 className="font-mono font-bold text-zinc-200 uppercase text-xs tracking-wide truncate">{p.title}</h3>
+                      <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mt-0.5">ID: {p.id?.slice(-8).toUpperCase()}</p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <p className="text-xs font-mono font-bold text-white">₦{displayPrice.toLocaleString()}</p>
+                      <StatusBadge status={p.status} />
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl mb-6">
-                  <div className="flex items-center gap-2">
-                    <Package size={14} className="text-slate-400" />
-                    <span className="text-[10px] font-black text-slate-900 uppercase italic">
-                      {displayStock} Units
+                <div className="flex items-center justify-between bg-zinc-950/50 px-4 py-2.5 rounded-lg border border-zinc-900/60 mb-4">
+                  <div className="flex items-center gap-1.5 text-zinc-400">
+                    <Package size={12} className="text-zinc-600" />
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider">
+                      {displayStock} Units Stocked
                     </span>
                   </div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                  <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">
                     {p.category?.name || 'General'}
                   </span>
                 </div>
@@ -222,15 +226,15 @@ export default function ProductsPage() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleEditClick(p)}
-                    className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-zinc-300 rounded-lg text-[9px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <Edit2 size={14} /> Edit Product
+                    <Edit2 size={11} /> Edit Manifest
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}
-                    className="p-2.5 bg-slate-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-100"
+                    className="p-2.5 bg-zinc-950 text-zinc-500 hover:text-rose-500 rounded-lg border border-zinc-900 cursor-pointer"
                   >
-                    {isDeleting === p.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                    {isDeleting === p.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   </button>
                 </div>
               </div>
@@ -238,11 +242,14 @@ export default function ProductsPage() {
           })}
         </div>
 
+        {/* 5. NULL EXCEPTION HOOKS */}
         {products.length === 0 && <EmptyState />}
         {products.length > 0 && filteredProducts.length === 0 && (
-          <p className="text-center text-sm text-slate-400 font-bold uppercase py-10">
-            No matching products found
-          </p>
+          <div className="text-center bg-[#111113] border border-zinc-900 rounded-xl py-14">
+            <p className="text-xs text-zinc-500 font-mono font-bold uppercase tracking-widest">
+              No matching records found in system ledger
+            </p>
+          </div>
         )}
       </div>
 
@@ -265,16 +272,17 @@ export default function ProductsPage() {
   );
 }
 
-/* Status Badge Component */
+/* --- UTILITY SUB-COMPONENTS --- */
+
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    APPROVED: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    PENDING: 'bg-orange-50 text-orange-600 border-orange-100',
-    REJECTED: 'bg-red-50 text-red-600 border-red-100',
+    APPROVED: 'bg-zinc-950 text-emerald-500 border-zinc-900/80',
+    PENDING: 'bg-zinc-950 text-amber-500 border-zinc-900/80',
+    REJECTED: 'bg-zinc-950 text-rose-500 border-zinc-900/80',
   };
 
   return (
-    <span className={`px-3 py-1 rounded-lg text-[8px] font-black border uppercase tracking-widest inline-block ${styles[status] || 'bg-slate-50 text-slate-400'}`}>
+    <span className={`px-2.5 py-0.5 rounded text-[8px] font-mono font-bold border uppercase tracking-wider inline-block ${styles[status] || 'bg-zinc-950 text-zinc-500 border-zinc-900'}`}>
       {status}
     </span>
   );
@@ -282,10 +290,10 @@ function StatusBadge({ status }: { status: string }) {
 
 function LoadingRegistry() {
   return (
-    <div className="h-[70vh] flex flex-col items-center justify-center gap-6">
-      <Loader2 className="animate-spin text-blue-600" size={48} />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">
-        Syncing Catalogue Registry...
+    <div className="h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5">
+      <Loader2 className="animate-spin text-[#991B1B]" size={36} />
+      <p className="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-zinc-500 animate-pulse">
+        Synchronizing Catalogue Registry Node...
       </p>
     </div>
   );
@@ -293,14 +301,16 @@ function LoadingRegistry() {
 
 function EmptyState() {
   return (
-    <div className="py-32 text-center flex flex-col items-center gap-4">
-      <div className="bg-slate-50 p-6 rounded-[2.5rem]">
-        <AlertCircle size={48} className="text-slate-200" />
+    <div className="py-24 text-center border border-zinc-900 border-dashed rounded-xl flex flex-col items-center gap-4 bg-[#111113]/40">
+      <div className="bg-zinc-950 p-4 border border-zinc-900 rounded-xl text-zinc-700">
+        <AlertCircle size={24} />
       </div>
-      <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Registry Node Empty</p>
-      <p className="text-slate-300 text-[10px] uppercase font-bold tracking-tighter">
-        Initialize a new product to begin discovery cycle
-      </p>
+      <div className="space-y-1.5">
+        <p className="text-zinc-400 font-mono font-bold uppercase text-[10px] tracking-widest">Registry Node Empty</p>
+        <p className="text-zinc-600 text-[9px] uppercase font-mono tracking-tight">
+          Initialize a production asset to begin catalog placement cycles.
+        </p>
+      </div>
     </div>
   );
 }

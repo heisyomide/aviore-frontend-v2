@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   Zap, ArrowLeft, ChevronRight, Sparkles, Loader2,
   Package, TrendingUp, Trash2, AlertCircle, Share2, 
-  Target, Globe, Calendar, Gift, Bell
+  Target, Globe, Calendar
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
@@ -60,78 +60,77 @@ export default function VendorCampaignDiscovery() {
   if (loading && availableCampaigns.length === 0) return <LoadingState />;
 
   return (
-    <div className="min-h-screen bg-white lg:bg-[#FAFAFA] pb-32 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-[#0d0d0d] pb-32 animate-in fade-in duration-700 text-zinc-100">
       
       {/* 🚀 1. STICKY MOBILE LABEL (Top-Left Identity) */}
-      <div className="lg:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md px-6 py-8 flex justify-between items-center border-b border-slate-50">
+      <div className="lg:hidden sticky top-0 z-50 bg-[#0d0d0d]/80 backdrop-blur-md py-6 flex justify-between items-center border-b border-zinc-900/60">
         <div className="flex flex-col gap-1">
-          <Link href="/vendor/marketing" className="flex items-center gap-1 text-[8px] font-black uppercase text-blue-600 tracking-widest italic mb-1">
-             <ArrowLeft size={10}/> Marketing Hub
+          <Link href="/vendor/marketing" className="flex items-center gap-1 text-[8px] font-bold uppercase text-zinc-400 tracking-widest font-mono mb-1">
+             <ArrowLeft size={10}/> Marketing Core
           </Link>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+          <h1 className="text-3xl font-bold tracking-widest text-white uppercase font-sans">
             Campaigns
           </h1>
-          <div className="h-1 w-12 bg-blue-600 mt-2 rounded-full" />
         </div>
-        <button className="relative p-2 text-slate-400">
-          <Globe size={24} className="text-blue-500 animate-spin-slow" />
+        <button className="relative p-3 bg-zinc-900/50 rounded-xl border border-zinc-800 text-zinc-400">
+          <Globe size={16} className="text-zinc-300" />
         </button>
       </div>
 
-      <div className="px-6 lg:px-10 space-y-10 mt-6 max-w-7xl mx-auto">
+      <div className="space-y-10 mt-10 max-w-7xl mx-auto">
 
-        {/* 🚀 2. MOBILE STATS OVERLAP (Preserved Context) */}
+        {/* 🚀 2. MOBILE QUICK STATS GRID */}
         <div className="lg:hidden grid grid-cols-2 gap-4">
-           <div className="bg-blue-600 p-6 rounded-[2.2rem] text-white shadow-xl active:scale-95 transition-all">
-              <span className="text-[8px] font-bold opacity-60 uppercase tracking-widest">Active Links</span>
-              <p className="text-xl font-black italic tracking-tighter mt-1">{participations.length} Active</p>
+           <div className="bg-[#111113] border border-zinc-900 p-5 rounded-2xl flex flex-col">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Active Links</span>
+              <p className="text-lg font-light font-mono text-zinc-200 mt-2 tracking-tight">{participations.length} Nodes Operational</p>
            </div>
-           <div className="bg-slate-900 p-6 rounded-[2.2rem] text-white shadow-xl active:scale-95 transition-all">
-              <span className="text-[8px] font-bold opacity-60 uppercase tracking-widest">Open Events</span>
-              <p className="text-xl font-black italic tracking-tighter mt-1">{availableCampaigns.length} Open</p>
+           <div className="bg-[#111113] border border-zinc-900 p-5 rounded-2xl flex flex-col">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Open Events</span>
+              <p className="text-lg font-light font-mono text-zinc-200 mt-2 tracking-tight">{availableCampaigns.length} Open Pipelines</p>
            </div>
         </div>
 
-        {/* 💻 DESKTOP HEADER (Preserved Context) */}
-        <div className="hidden lg:block space-y-4">
-          <Link href="/vendor/marketing" className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-all group">
-            <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" /> Back to Marketing Protocol
+        {/* 💻 DESKTOP HEADER COG */}
+        <div className="hidden lg:block space-y-4 border-b border-zinc-900/40 pb-6">
+          <Link href="/vendor/marketing" className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-all group font-mono">
+            <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" /> Back to Marketing Protocol Registry
           </Link>
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-blue-600">
-              <Zap size={14} fill="currentColor" className="animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-[0.4em]">Growth_Acceleration_Matrix</span>
+            <div className="flex items-center gap-2 text-zinc-500">
+              <Zap size={12} className="text-zinc-400" />
+              <span className="text-[9px] font-bold uppercase tracking-widest font-mono">Growth_Acceleration_Matrix</span>
             </div>
-            <h1 className="text-3xl lg:text-4xl font-black text-slate-900 uppercase italic tracking-tighter">Campaign Discovery</h1>
+            <h1 className="text-3xl font-bold tracking-widest text-white uppercase font-sans">Campaign Discovery</h1>
           </div>
         </div>
 
         {/* 📦 ACTIVE PARTICIPATION REGISTRY */}
         {participations.length > 0 && (
           <div className="space-y-6">
-            <div className="flex items-center gap-4 px-2">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Active_Protocol_Participation</span>
-              <div className="h-px flex-1 bg-slate-200" />
+            <div className="flex items-center gap-4 px-1">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Active_Protocol_Participation</span>
+              <div className="h-[1px] flex-1 bg-zinc-900/60" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {participations.map((p) => (
-                <div key={p.id} className="bg-white rounded-[2.5rem] p-6 lg:p-8 shadow-sm border border-slate-100 animate-in fade-in duration-500 hover:border-blue-200 transition-all">
+                <div key={p.id} className="bg-[#111113] rounded-2xl p-6 lg:p-8 border border-zinc-900 animate-in fade-in duration-500 hover:border-zinc-800 transition-all shadow-xl">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                       <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter leading-tight">{p.title}</h3>
-                       <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">{p.discount}% Yield Node</span>
+                       <h3 className="text-xl font-medium text-white uppercase tracking-wider leading-none">{p.title}</h3>
+                       <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono block mt-2">{p.discount}% Yield Node Allocation</span>
                     </div>
                     <PerformanceBadge rate={p.stats.usageRate} />
                   </div>
                   
-                  <div className="bg-slate-50 rounded-3xl p-5 mb-8">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">Injected Artifacts ({p.products.length})</p>
+                  <div className="bg-zinc-950 border border-zinc-900/60 rounded-xl p-5 mb-6">
+                    <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest font-mono mb-3">Injected Artifacts Lineup ({p.products.length})</p>
                     <div className="flex flex-wrap gap-2">
                        {p.products.map(item => (
-                         <span key={item.id} className="group relative px-3 py-2 bg-white rounded-xl text-[9px] font-bold text-slate-600 border border-slate-100 hover:border-red-100 transition-all">
-                            <Package size={10} className="inline mr-1 text-blue-500" /> {item.title}
-                            <button onClick={() => handleWithdrawArtifact(p.id, item.id)} className="ml-2 text-slate-300 hover:text-red-500">
+                         <span key={item.id} className="group relative px-3 py-1.5 bg-zinc-900 border border-zinc-800/80 rounded-md text-[9px] font-bold text-zinc-400 uppercase tracking-wide flex items-center gap-2 font-mono">
+                            <Package size={10} className="text-zinc-500" /> {item.title}
+                            <button onClick={() => handleWithdrawArtifact(p.id, item.id)} className="text-zinc-600 hover:text-[#991b1b] transition-colors cursor-pointer">
                                <Trash2 size={10} />
                             </button>
                          </span>
@@ -139,12 +138,12 @@ export default function VendorCampaignDiscovery() {
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
-                    <button onClick={() => handleCopyLink(p.shareLink)} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                      <Share2 size={14} /> Copy Node
+                  <div className="flex gap-4">
+                    <button onClick={() => handleCopyLink(p.shareLink)} className="flex-1 h-12 bg-zinc-100 text-zinc-950 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer">
+                      <Share2 size={12} /> Copy Node Network Access Link
                     </button>
-                    <Link href={`/vendor/marketing/participations/${p.id}`} className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 active:scale-90 transition-all">
-                       <TrendingUp size={20} />
+                    <Link href={`/vendor/marketing/participations/${p.id}`} className="w-12 h-12 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white rounded-xl flex items-center justify-center active:scale-90 transition-all">
+                       <TrendingUp size={14} />
                     </Link>
                   </div>
                 </div>
@@ -155,9 +154,9 @@ export default function VendorCampaignDiscovery() {
 
         {/* 🌍 GLOBAL DISCOVERY REGISTRY */}
         <div className="space-y-6">
-          <div className="flex items-center gap-4 px-2">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Campaigns_Available</span>
-            <div className="h-px flex-1 bg-slate-200" />
+          <div className="flex items-center gap-4 px-1">
+            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Campaigns_Available_Pipelines</span>
+            <div className="h-[1px] flex-1 bg-zinc-900/60" />
           </div>
 
           <div className="grid gap-4">
@@ -166,9 +165,9 @@ export default function VendorCampaignDiscovery() {
                 <CampaignRow key={camp.id} campaign={camp} onSelect={() => setSelectedCampaign(camp)} />
               ))
             ) : (
-              <div className="py-24 text-center bg-white rounded-4xl border border-slate-100 shadow-sm">
-                 <AlertCircle size={48} className="mx-auto text-slate-100 mb-4" />
-                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">No active platform cycles found.</p>
+              <div className="py-20 text-center bg-[#111113] rounded-2xl border border-zinc-900 shadow-xl">
+                 <AlertCircle size={32} strokeWidth={1} className="mx-auto text-zinc-700 mb-4" />
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 font-mono">No active platform cycles found inside registration ledger.</p>
               </div>
             )}
           </div>
@@ -190,29 +189,29 @@ export default function VendorCampaignDiscovery() {
 
 function CampaignRow({ campaign, onSelect }: { campaign: CampaignNode, onSelect: () => void }) {
   return (
-    <div className="bg-white border border-slate-100 rounded-[2.5rem] p-7 flex flex-col md:grid md:grid-cols-12 items-center gap-6 hover:border-blue-200 transition-all duration-300 group shadow-sm active:scale-[0.99]">
-      <div className="md:col-span-7 flex items-center gap-6 w-full">
-        <div className="shrink-0 w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all border border-slate-50">
-          <Sparkles size={28} />
+    <div className="bg-[#111113] border border-zinc-900 rounded-2xl p-6 flex flex-col md:grid md:grid-cols-12 items-center gap-6 hover:border-zinc-800 transition-all duration-300 group shadow-xl active:scale-[0.99]">
+      <div className="md:col-span-7 flex items-center gap-5 w-full">
+        <div className="shrink-0 w-12 h-12 bg-zinc-900 border border-zinc-800/80 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-white transition-all shadow-inner">
+          <Sparkles size={16} />
         </div>
         <div>
-          <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter group-hover:text-blue-600 transition-colors leading-none">{campaign.title}</h3>
-          <p className="text-[10px] font-bold text-slate-400 italic line-clamp-1 uppercase mt-2">{campaign.description || "Node optimization protocol active."}</p>
+          <h3 className="text-xl font-medium text-white uppercase tracking-wider leading-none group-hover:text-zinc-300 transition-colors">{campaign.title}</h3>
+          <p className="text-[10px] text-zinc-500 uppercase font-medium mt-2 tracking-wide leading-relaxed line-clamp-1">{campaign.description || "Node optimization network distribution protocol initialized."}</p>
         </div>
       </div>
-      <div className="md:col-span-3 flex justify-between w-full md:px-4">
+      <div className="md:col-span-3 flex justify-between w-full md:px-4 font-mono">
          <div className="flex flex-col">
-            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-1">Proposed Yield</span>
-            <span className="text-xl font-black italic text-blue-600">{campaign.discount}%</span>
+            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Proposed Yield</span>
+            <span className="text-sm font-medium text-zinc-300 mt-0.5">{campaign.discount}% OFF</span>
          </div>
          <div className="flex flex-col text-right">
-            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-1">Expiry</span>
-            <span className="text-[10px] font-black italic uppercase text-slate-900">{new Date(campaign.endDate).toLocaleDateString()}</span>
+            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Pipeline Expiry</span>
+            <span className="text-[10px] font-medium text-zinc-400 mt-0.5 uppercase">{new Date(campaign.endDate).toLocaleDateString()}</span>
          </div>
       </div>
       <div className="md:col-span-2 w-full flex justify-end">
-        <button onClick={onSelect} className="w-full md:w-auto h-14 px-8 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3">
-          Inject_Node <ChevronRight size={14} />
+        <button onClick={onSelect} className="w-full md:w-auto h-11 px-5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 hover:text-white rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer font-sans">
+          Inject_Node <ChevronRight size={12} />
         </button>
       </div>
     </div>
@@ -222,18 +221,19 @@ function CampaignRow({ campaign, onSelect }: { campaign: CampaignNode, onSelect:
 function PerformanceBadge({ rate }: { rate: string }) {
   const numericRate = parseFloat(rate);
   if (numericRate >= 5) return (
-    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase border border-emerald-100 flex items-center gap-1 italic">
-      <Target size={10} /> HIGH_YIELD
+    <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-[#991b1b] rounded-md text-[8px] font-bold uppercase font-mono flex items-center gap-1.5 tracking-wider">
+      <Target size={10} /> HIGH_YIELD_NODE
     </span>
   );
-  return <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-lg text-[8px] font-black uppercase border border-slate-100 italic">ACTIVE_PROTOCOL</span>;
+  return <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-900 text-zinc-500 rounded-md text-[8px] font-bold uppercase font-mono tracking-wider">ACTIVE_PIPELINE</span>;
 }
 
+// Full 70vh state preserved inside component hierarchy
 function LoadingState() {
   return (
-    <div className="h-[70vh] flex flex-col items-center justify-center bg-white gap-6">
-      <Loader2 className="animate-spin text-blue-600" size={48} />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400 animate-pulse">Synchronizing_Campaign_Registry...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0d0d0d] gap-4">
+      <Loader2 className="animate-spin text-[#991b1b]" size={28} />
+      <p className="text-[10px] font-medium tracking-[0.3em] text-zinc-500 uppercase">Synchronizing Campaign Protocol Ledgers...</p>
     </div>
   );
 }

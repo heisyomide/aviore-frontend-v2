@@ -4,14 +4,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   MessageCircle, FileText, RefreshCw, Loader2, X, Send, 
-  AlertCircle, HeadphonesIcon, Wallet, ShieldCheck, 
+  HeadphonesIcon, Wallet, ShieldCheck, 
   MessageSquare, User, History, AlertTriangle, 
-  RefreshCcw, Undo2, ArrowRight, Inbox, Bell
+  RefreshCcw, Undo2, ArrowRight, Inbox
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import ReturnMediationModal from '@/src/components/vendor/ReturnMediationModal';
 
-// --- Registry Interfaces (PRESERVED) ---
 interface Conversation {
   id: string;
   order: { id: string; status: string };
@@ -57,7 +56,7 @@ export default function VendorSupportPage() {
         const formattedData = res.data.map((item: any) => ({
             ...item,
             type: item.type || 'RETURN',
-            subject: item.subject || `Return Request: #${item.id.slice(-5)}`
+            subject: item.subject || `RETURN_REQUEST: #${item.id.slice(-5).toUpperCase()}`
         }));
         setTickets(formattedData);
       } else {
@@ -66,8 +65,12 @@ export default function VendorSupportPage() {
       }
     } catch (err) {
       console.error("Registry Sync Failure", err);
-      const fallback = await api.get('/vendor/tickets');
-      setTickets(fallback.data);
+      try {
+        const fallback = await api.get('/vendor/tickets');
+        setTickets(fallback.data);
+      } catch (fallbackErr) {
+        console.error("Fallback retrieval failed", fallbackErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -87,64 +90,66 @@ export default function VendorSupportPage() {
   if (loading && conversations.length === 0 && tickets.length === 0) return <LoadingView />;
 
   return (
-    <div className="min-h-screen bg-white lg:bg-[#FAFAFA] pb-32 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-[#0D0D0D] text-zinc-100 pb-32 animate-in fade-in duration-700">
       
-      {/* 🚀 1. STICKY MOBILE IDENTITY NODE (Matching Marketing Structure) */}
-      <div className="lg:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md px-6 py-8 flex justify-between items-center border-b border-slate-50">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
-            Support
-          </h1>
-          <div className="h-1 w-12 bg-blue-600 mt-2 rounded-full" />
+      {/* 🚀 1. DESKTOP/MOBILE BALANCED IDENTITY HEADER */}
+      <div className="bg-[#111113] border-b border-zinc-900 px-6 py-6 lg:py-8 sticky top-0 z-40 backdrop-blur-md bg-opacity-90">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-light text-white uppercase tracking-widest font-sans">
+              SUPPORT_CENTER
+            </h1>
+            <div className="h-[1px] w-12 bg-[#991B1B] mt-2" />
+          </div>
+          <button onClick={fetchRegistryData} className="p-2 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer">
+            <RefreshCw size={16} className={loading ? 'animate-spin text-[#ef4444]' : ''} />
+          </button>
         </div>
-        <button onClick={fetchRegistryData} className="p-2 text-slate-400 active:rotate-180 transition-all duration-500">
-          <RefreshCw size={22} className={loading ? 'animate-spin text-blue-600' : ''} />
-        </button>
       </div>
 
-      <div className="px-6 lg:px-10 space-y-10 mt-6 max-w-7xl mx-auto">
+      <div className="px-6 lg:px-10 space-y-8 mt-8 max-w-7xl mx-auto">
 
-        {/* 🚀 2. NAVIGATION TABS (Mobile Unified Control) */}
-        <div className="flex gap-4 p-2 bg-slate-50 rounded-[2rem] shadow-inner">
+        {/* 🚀 2. UNIFIED SEGMENT CONTROLS */}
+        <div className="flex gap-2 p-1.5 bg-[#111113] rounded-lg border border-zinc-900 max-w-md">
           <button 
             onClick={() => setActiveTab('CHATS')}
-            className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'CHATS' ? 'bg-white shadow-xl text-blue-600' : 'text-slate-400'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3 rounded-md text-[9px] font-mono font-bold uppercase tracking-widest transition-all cursor-pointer ${activeTab === 'CHATS' ? 'bg-[#991B1B] text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
           >
-            <MessageSquare size={16} /> Inquiries
+            <MessageSquare size={13} /> Inquiries
           </button>
           <button 
             onClick={() => setActiveTab('TICKETS')}
-            className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'TICKETS' ? 'bg-white shadow-xl text-blue-600' : 'text-slate-400'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3 rounded-md text-[9px] font-mono font-bold uppercase tracking-widest transition-all cursor-pointer ${activeTab === 'TICKETS' ? 'bg-[#991B1B] text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
           >
-            <FileText size={16} /> Mediation
+            <FileText size={13} /> Mediation
           </button>
         </div>
 
-        {/* 🚀 3. COMMAND ACTION GRID (Visible only in Mediation/Tickets) */}
+        {/* 🚀 3. OPERATIONAL ACTION TILES */}
         {activeTab === 'TICKETS' && (
-          <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-4">
+          <div className="grid grid-cols-2 gap-4 max-w-md animate-in slide-in-from-top-2 duration-300">
             <ActionCard 
-               icon={Undo2} title="Returns" highlight 
-               subLabel={`${pendingReturns.length} Pending`}
+               icon={Undo2} title="Returns Management" highlight 
+               subLabel={`${pendingReturns.length} Pending Audit`}
                onClick={() => { setIsReturnsPortalOpen(true); fetchRegistryData(); }} 
             />
             <ActionCard 
-               icon={Wallet} title="Payouts" 
+               icon={Wallet} title="Payout Discrepancy" 
                onClick={() => { setIsTicketModalOpen(true); setTicketForm({...ticketForm, category: 'PAYOUT'}); }} 
             />
           </div>
         )}
 
-        {/* 🚀 4. PRIMARY DATA REGISTRY */}
-        <div className="space-y-6">
+        {/* 🚀 4. CORE LEDGER REGISTRY */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="font-black text-slate-400 flex items-center gap-3 uppercase text-[10px] tracking-[0.4em]">
-              {activeTab === 'TICKETS' ? <History size={16} /> : <MessageCircle size={16} />}
-              {activeTab === 'TICKETS' ? 'Protocol_Logs' : 'Active_Channels'}
+            <h3 className="font-mono font-bold text-zinc-500 flex items-center gap-2.5 uppercase text-[9px] tracking-[0.2em]">
+              {activeTab === 'TICKETS' ? <History size={13} /> : <MessageCircle size={13} />}
+              {activeTab === 'TICKETS' ? 'Active_Mediation_Logs' : 'Open_Communication_Lines'}
             </h3>
           </div>
 
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[400px]">
+          <div className="bg-[#111113] rounded-xl border border-zinc-900 shadow-2xl overflow-hidden min-h-[400px]">
             {activeTab === 'CHATS' ? (
               <ConversationList conversations={conversations} router={router} />
             ) : (
@@ -153,46 +158,49 @@ export default function VendorSupportPage() {
           </div>
         </div>
 
-        {/* 🚀 5. REGISTRY HELP ASIDE (Full Width Mobile) */}
-        <div className="bg-[#0F172A] rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-2xl">
-          <div className="relative z-10 space-y-5">
-             <HeadphonesIcon size={32} className="text-blue-500" />
-             <h4 className="font-black text-2xl tracking-tighter uppercase italic leading-none">Registry_Help</h4>
-             <p className="text-[10px] text-slate-400 uppercase tracking-wider leading-relaxed italic">
-               Administrative success nodes are available for mediation regarding order disputes.
+        {/* 🚀 5. SYSTEM CONTEXT ASSISTANCE */}
+        <div className="bg-zinc-950 border border-zinc-900 rounded-xl p-6 lg:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative overflow-hidden">
+          <div className="relative z-10 space-y-2 max-w-xl">
+             <HeadphonesIcon size={20} className="text-[#ef4444]" />
+             <h4 className="font-mono font-bold text-sm tracking-wide uppercase text-zinc-200">System_Resolution_Protocols</h4>
+             <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide leading-relaxed">
+               Core administration protocols are on standby to resolve transactional parameters, logistics disruptions, and luxury merchant asset challenges.
              </p>
-             <button className="w-full bg-white text-slate-900 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl">
-               Initiate_Sync
-             </button>
           </div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16" />
+          <button className="z-10 bg-[#111113] hover:bg-zinc-900 text-zinc-300 border border-zinc-900 px-6 py-3 rounded-lg font-mono font-bold text-[9px] uppercase tracking-widest transition-colors cursor-pointer whitespace-nowrap">
+            Initialize Security Sync
+          </button>
         </div>
       </div>
 
-      {/* --- OVERLAYS (Preserved Logic) --- */}
+      {/* --- MODAL SYSTEM BLUEPRINTS --- */}
 
-      {/* MODAL: RETURN SELECTION PORTAL */}
+      {/* MODAL: RETURN SELECTION MATRIX */}
       {isReturnsPortalOpen && (
-        <div className="fixed inset-0 z-[110] bg-slate-900/20 backdrop-blur-xl flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] flex flex-col max-h-[80vh] shadow-2xl animate-in zoom-in-95">
-            <header className="p-8 border-b border-slate-50 flex justify-between items-center">
-              <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">Return_Requests</h2>
-              <button onClick={() => setIsReturnsPortalOpen(false)} className="p-2 bg-slate-50 rounded-xl"><X size={20}/></button>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-200">
+          <div className="bg-[#111113] border border-zinc-900 w-full max-w-md rounded-xl flex flex-col max-h-[75vh] shadow-2xl animate-in zoom-in-95">
+            <header className="p-5 border-b border-zinc-900 flex justify-between items-center">
+              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-200">Pending_Return_Blueprints</h2>
+              <button onClick={() => setIsReturnsPortalOpen(false)} className="p-1.5 bg-zinc-950 border border-zinc-900 hover:text-[#ef4444] rounded-md transition-colors cursor-pointer"><X size={14}/></button>
             </header>
-            <div className="flex-1 overflow-y-auto p-6 space-y-3">
-              {pendingReturns.map(req => (
-                <button 
-                  key={req.id} 
-                  onClick={() => { setSelectedMediationCase(req); setIsReturnsPortalOpen(false); }}
-                  className="w-full p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group active:bg-white transition-all"
-                >
-                  <div className="min-w-0 flex-1 mr-4">
-                    <p className="text-[10px] font-black text-slate-900 italic truncate">Ref_#{req.id.slice(-6).toUpperCase()}</p>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 truncate">{req.reason || req.subject}</p>
-                  </div>
-                  <ArrowRight size={16} className="text-blue-600 group-active:translate-x-1 transition-transform" />
-                </button>
-              ))}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {pendingReturns.length === 0 ? (
+                <p className="text-[9px] font-mono text-zinc-600 uppercase text-center py-8">No returns pending allocation.</p>
+              ) : (
+                pendingReturns.map(req => (
+                  <button 
+                    key={req.id} 
+                    onClick={() => { setSelectedMediationCase(req); setIsReturnsPortalOpen(false); }}
+                    className="w-full p-4 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 rounded-lg flex items-center justify-between group transition-colors text-left cursor-pointer"
+                  >
+                    <div className="min-w-0 flex-1 mr-4">
+                      <p className="text-[10px] font-mono font-bold text-zinc-200 uppercase tracking-wide truncate">ID_#{req.id.slice(-6).toUpperCase()}</p>
+                      <p className="text-[8px] font-mono text-zinc-500 uppercase mt-1 truncate tracking-wider">{req.reason || req.subject}</p>
+                    </div>
+                    <ArrowRight size={14} className="text-[#ef4444] group-hover:translate-x-1 transition-transform" />
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -211,43 +219,43 @@ export default function VendorSupportPage() {
   );
 }
 
-/* 🎨 SUB-COMPONENTS (PRESERVED) */
+/* --- ATOMIC DISPLAY ENGINES --- */
 
 function ActionCard({ icon: Icon, title, onClick, highlight, subLabel }: any) {
   return (
     <button 
       onClick={onClick} 
-      className={`p-6 rounded-[2.2rem] border flex flex-col items-center gap-3 transition-all active:scale-95 shadow-sm w-full ${
-        highlight ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100' : 'bg-white text-slate-900 border-slate-100'
+      className={`p-4 rounded-lg border flex flex-col items-start gap-4 transition-colors w-full text-left shadow-lg cursor-pointer ${
+        highlight ? 'bg-[#991B1B] border-[#991B1B] text-white' : 'bg-zinc-950 text-zinc-300 border-zinc-900 hover:bg-zinc-900'
       }`}
     >
-      <div className={`p-4 rounded-xl ${highlight ? 'bg-white/10' : 'bg-slate-50 text-slate-400'}`}>
-        <Icon size={20} />
+      <div className={`p-2 rounded-md ${highlight ? 'bg-black/10 text-white' : 'bg-[#111113] border border-zinc-900 text-zinc-500'}`}>
+        <Icon size={16} />
       </div>
-      <div className="text-center">
-        <p className="text-[9px] font-black uppercase tracking-widest">{title}</p>
-        {subLabel && <p className="text-[7px] font-bold uppercase mt-1 opacity-60">{subLabel}</p>}
+      <div>
+        <p className="text-[9px] font-mono font-bold uppercase tracking-widest">{title}</p>
+        {subLabel && <p className="text-[8px] font-mono uppercase mt-1 opacity-60 tracking-wider">{subLabel}</p>}
       </div>
     </button>
   );
 }
 
 function ConversationList({ conversations, router }: { conversations: Conversation[], router: any }) {
-  if (conversations.length === 0) return <EmptyRegistry label="No inquiries found." />;
+  if (conversations.length === 0) return <EmptyRegistry label="No active customer inquiries indexed." />;
   return (
-    <div className="divide-y divide-slate-50">
+    <div className="divide-y divide-zinc-900">
       {conversations.map((c) => (
-        <div key={c.id} onClick={() => router.push(`/vendor/support/chat/${c.id}`)} className="p-6 flex items-center justify-between active:bg-slate-50 transition-all cursor-pointer">
+        <div key={c.id} onClick={() => router.push(`/vendor/support/chat/${c.id}`)} className="p-5 flex items-center justify-between hover:bg-zinc-950 transition-colors cursor-pointer">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 shrink-0">
-              <User size={24} />
+            <div className="w-10 h-10 bg-zinc-950 border border-zinc-900 rounded-lg flex items-center justify-center text-zinc-600 shrink-0">
+              <User size={16} />
             </div>
             <div className="min-w-0">
-              <p className="font-black text-slate-900 text-sm uppercase italic truncate leading-none mb-2">{c.user.firstName} {c.user.lastName}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase italic truncate">{c.messages?.[0]?.content || "Sync pending..."}</p>
+              <p className="font-mono font-bold text-zinc-200 text-xs uppercase tracking-wide truncate mb-1">{c.user.firstName} {c.user.lastName}</p>
+              <p className="text-[9px] font-mono text-zinc-500 uppercase truncate tracking-wide">{c.messages?.[0]?.content || "Channel clear / Waiting..."}</p>
             </div>
           </div>
-          <Send size={16} className="text-blue-600 -rotate-12 ml-4" />
+          <Send size={12} className="text-[#ef4444] -rotate-12 ml-4 shrink-0" />
         </div>
       ))}
     </div>
@@ -255,25 +263,25 @@ function ConversationList({ conversations, router }: { conversations: Conversati
 }
 
 function MediationList({ tickets, onMediate }: { tickets: Ticket[], onMediate: (t: Ticket) => void }) {
-  if (tickets.length === 0) return <EmptyRegistry label="No mediation records." />;
+  if (tickets.length === 0) return <EmptyRegistry label="No active administrative mediation records." />;
   return (
-    <div className="divide-y divide-slate-50">
+    <div className="divide-y divide-zinc-900">
       {tickets.map((t) => (
-        <div key={t.id} className="p-6 space-y-4 hover:bg-slate-50/50 transition-colors">
-          <div className="flex justify-between items-start">
-             <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${t.type === 'RETURN' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                   {t.type === 'RETURN' ? <RefreshCcw size={14} /> : <AlertTriangle size={14} />}
+        <div key={t.id} className="p-5 space-y-4 hover:bg-zinc-950/50 transition-colors">
+          <div className="flex justify-between items-start gap-4">
+             <div className="flex items-center gap-3 min-w-0">
+                <div className={`p-2 rounded-md shrink-0 border ${t.type === 'RETURN' ? 'bg-zinc-950 border-zinc-900 text-[#ef4444]' : 'bg-zinc-950 border-zinc-900 text-zinc-600'}`}>
+                   {t.type === 'RETURN' ? <RefreshCcw size={13} /> : <AlertTriangle size={13} />}
                 </div>
-                <p className="text-[10px] font-black text-slate-900 uppercase italic truncate max-w-[150px]">{t.subject}</p>
+                <p className="text-xs font-mono font-bold text-zinc-300 uppercase tracking-wide truncate">{t.subject}</p>
              </div>
-             <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md ${t.status === 'PENDING' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+             <span className={`text-[8px] font-mono font-bold uppercase px-2 py-0.5 rounded border shrink-0 ${t.status === 'PENDING' ? 'bg-amber-950/30 border-amber-900 text-amber-400' : 'bg-emerald-950/30 border-emerald-900 text-emerald-400'}`}>
                 {t.status}
              </span>
           </div>
           {t.status === 'PENDING' && (
-            <button onClick={() => onMediate(t)} className="w-full py-3 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95">
-              Mediate_Case
+            <button onClick={() => onMediate(t)} className="w-full py-2.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-zinc-200 rounded-md text-[9px] font-mono font-bold uppercase tracking-widest transition-colors cursor-pointer">
+              Open Mediation Protocol
             </button>
           )}
         </div>
@@ -284,24 +292,34 @@ function MediationList({ tickets, onMediate }: { tickets: Ticket[], onMediate: (
 
 function EmptyRegistry({ label }: { label: string }) {
   return (
-    <div className="py-24 text-center text-slate-200 flex flex-col items-center gap-4 w-full">
-      <Inbox size={48} strokeWidth={1} />
-      <p className="font-black uppercase text-[10px] tracking-[0.3em] text-slate-300">{label}</p>
+    <div className="py-24 text-center text-zinc-700 flex flex-col items-center gap-3 w-full">
+      <Inbox size={32} strokeWidth={1} className="text-zinc-800" />
+      <p className="font-mono font-bold uppercase text-[9px] tracking-widest text-zinc-500">{label}</p>
     </div>
   );
 }
 
 function AdminTicketModal({ form, setForm, onClose, onSubmit }: any) {
   return (
-    <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-xl flex items-center justify-center z-[150] p-6">
-      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative shadow-2xl space-y-6">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-6 animate-in fade-in duration-200">
+      <div className="bg-[#111113] border border-zinc-900 rounded-xl p-6 w-full max-w-md relative shadow-2xl space-y-5 animate-in zoom-in-95">
         <div className="flex justify-between items-center">
-           <h2 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">Admin_Sync</h2>
-           <button onClick={onClose} className="p-2 bg-slate-50 rounded-xl transition-all active:scale-90"><X size={20} /></button>
+           <h2 className="text-xs font-mono font-bold text-zinc-200 tracking-wider uppercase">Administrative_Sync_Channel</h2>
+           <button onClick={onClose} className="p-1.5 bg-zinc-950 border border-zinc-900 hover:text-[#ef4444] rounded-md transition-all cursor-pointer"><X size={14} /></button>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
-          <input className="w-full p-4 bg-slate-50 border-none rounded-xl font-bold text-xs outline-none focus:ring-4 focus:ring-blue-500/5 transition-all uppercase" placeholder="Subject" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
-          <button className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl">Transmit_Case</button>
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Dispute Subject</label>
+            <input 
+              className="w-full p-3.5 bg-zinc-950 border border-zinc-900 rounded-lg font-mono text-xs text-zinc-300 placeholder-zinc-700 outline-none focus:border-zinc-700 uppercase" 
+              placeholder="E.G., CLEAR_PAYOUT_OVERHEAD" 
+              value={form.subject} 
+              onChange={e => setForm({ ...form, subject: e.target.value })} 
+            />
+          </div>
+          <button className="w-full bg-[#991B1B] hover:bg-[#7f1d1d] text-white py-4 rounded-lg font-mono font-bold text-[9px] uppercase tracking-widest transition-colors shadow-xl cursor-pointer">
+            Transmit Log Packet
+          </button>
         </form>
       </div>
     </div>
@@ -310,9 +328,9 @@ function AdminTicketModal({ form, setForm, onClose, onSubmit }: any) {
 
 function LoadingView() {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-white gap-6">
-      <Loader2 className="animate-spin text-blue-600" size={48} />
-      <p className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase">Synchronizing_Support_Registry</p>
+    <div className="h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5">
+      <Loader2 className="animate-spin text-[#991B1B]" size={36} />
+      <p className="text-[9px] font-mono font-bold text-zinc-500 tracking-[0.3em] uppercase animate-pulse">Synchronizing_Support_Data_Matrix...</p>
     </div>
   );
 }

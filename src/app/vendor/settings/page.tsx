@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Save, Store, Truck, Landmark, ShieldCheck, Loader2, 
-  User, Mail, BadgeCheck, CheckCircle, AlertCircle, RefreshCcw, Globe, Zap
+  User, Mail, BadgeCheck, CheckCircle, RefreshCcw, Globe
 } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { toast } from 'sonner';
@@ -15,33 +15,31 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState<any>(null);
   const [isEditingBank, setIsEditingBank] = useState(false);
 
-
   const NIGERIAN_BANKS = [
-  { name: 'Access Bank', code: '044' },
-  { name: 'Citibank', code: '023' },
-  { name: 'Ecobank', code: '050' },
-  { name: 'Fidelity Bank', code: '070' },
-  { name: 'First Bank', code: '011' },
-  { name: 'FCMB', code: '214' },
-  { name: 'GTBank', code: '058' },
-  { name: 'Heritage Bank', code: '030' },
-  { name: 'Keystone Bank', code: '082' },
-  { name: 'Kuda Bank', code: '090267' },
-  { name: 'Moniepoint', code: '50515' },
-  { name: 'Opay', code: '100004' },
-  { name: 'Palmpay', code: '999991' },
-  { name: 'Polaris Bank', code: '076' },
-  { name: 'Providus Bank', code: '101' },
-  { name: 'Stanbic IBTC', code: '221' },
-  { name: 'Sterling Bank', code: '232' },
-  { name: 'UBA', code: '033' },
-  { name: 'Union Bank', code: '032' },
-  { name: 'Unity Bank', code: '215' },
-  { name: 'Wema Bank', code: '035' },
-  { name: 'Zenith Bank', code: '057' },
-];
+    { name: 'Access Bank', code: '044' },
+    { name: 'Citibank', code: '023' },
+    { name: 'Ecobank', code: '050' },
+    { name: 'Fidelity Bank', code: '070' },
+    { name: 'First Bank', code: '011' },
+    { name: 'FCMB', code: '214' },
+    { name: 'GTBank', code: '058' },
+    { name: 'Heritage Bank', code: '030' },
+    { name: 'Keystone Bank', code: '082' },
+    { name: 'Kuda Bank', code: '090267' },
+    { name: 'Moniepoint', code: '50515' },
+    { name: 'Opay', code: '100004' },
+    { name: 'Palmpay', code: '999991' },
+    { name: 'Polaris Bank', code: '076' },
+    { name: 'Providus Bank', code: '101' },
+    { name: 'Stanbic IBTC', code: '221' },
+    { name: 'Sterling Bank', code: '232' },
+    { name: 'UBA', code: '033' },
+    { name: 'Union Bank', code: '032' },
+    { name: 'Unity Bank', code: '215' },
+    { name: 'Wema Bank', code: '035' },
+    { name: 'Zenith Bank', code: '057' },
+  ];
 
-  // 🚀 UNIFIED DATA FETCH ENGINE
   const fetchRegistryData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
@@ -101,25 +99,25 @@ export default function SettingsPage() {
   if (loading || !formData) return <LoadingState />;
 
   return (
-    <div className="min-h-screen bg-[#F4F7FE] lg:bg-[#FAFAFA] pb-32 lg:pb-10 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#0D0D0D] text-zinc-100 pb-32 animate-in fade-in duration-700">
       
-      {/* 🚀 EXECUTIVE HUB HEADER */}
+      {/* 🚀 EXECUTIVE CONTROLS HEADER */}
       <div className="p-6 lg:p-10 space-y-8 max-w-6xl mx-auto">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-6 lg:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-[#111113] p-6 lg:p-8 rounded-xl border border-zinc-900 shadow-2xl">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 bg-[#1E293B] rounded-2xl flex items-center justify-center text-white shadow-2xl relative shrink-0">
-              <Store size={28} className="text-blue-500" />
+            <div className="w-14 h-14 bg-zinc-950 rounded-lg flex items-center justify-center border border-zinc-900 relative shrink-0">
+              <Store size={22} className="text-[#ef4444]" />
               {formData.isVerified && (
-                <div className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full p-1 border-4 border-white">
-                  <BadgeCheck size={12} fill="currentColor" />
+                <div className="absolute -top-1.5 -right-1.5 bg-emerald-950 text-emerald-400 rounded-full p-0.5 border border-emerald-500">
+                  <BadgeCheck size={10} fill="currentColor" />
                 </div>
               )}
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">
-                {formData.storeName || 'Registry Node'}
+              <h1 className="text-xl font-light text-white uppercase tracking-widest font-sans">
+                {formData.storeName || 'REGISTRY_NODE'}
               </h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-2 italic">
+              <p className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-[0.15em] mt-1.5 flex items-center gap-2">
                 <Globe size={10} /> aviore.com/store/{formData.slug}
               </p>
             </div>
@@ -128,171 +126,158 @@ export default function SettingsPage() {
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full lg:w-auto bg-[#1E293B] text-white px-10 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95 disabled:bg-slate-300 flex items-center justify-center gap-3"
+            className="w-full sm:w-auto bg-zinc-950 hover:bg-zinc-900 text-zinc-200 border border-zinc-900 px-8 py-3.5 rounded-lg font-mono font-bold uppercase text-[9px] tracking-widest transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 cursor-pointer"
           >
-            {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-            {isSaving ? 'Updating Registry...' : 'Commit Changes'}
+            {isSaving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+            {isSaving ? 'Synchronizing Node...' : 'Commit Protocol Changes'}
           </button>
         </div>
 
         <div className="grid lg:grid-cols-12 gap-8">
-          {/* 📱 ADAPTIVE TABS (Horizontal Scroll on Mobile) */}
-          <div className="lg:col-span-3 flex lg:flex-col gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
+          
+          {/* 📱 ADAPTIVE INTERFACE TABS */}
+          <div className="lg:col-span-3 flex lg:flex-col gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
             {[
               { id: 'Store', label: 'Identity', icon: User },
               { id: 'Logistics', label: 'Parameters', icon: Truck },
               { id: 'Bank', label: 'Treasury', icon: Landmark },
               { id: 'KYC', label: 'Security', icon: ShieldCheck },
-            ].map((tab) => (
-              <button 
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 lg:flex-none flex items-center gap-3 px-6 py-4 rounded-2xl transition-all border-2 shrink-0 ${
-                  activeTab === tab.id 
-                    ? 'bg-white border-blue-600 text-slate-900 shadow-lg' 
-                    : 'text-slate-400 border-transparent hover:bg-white/50'
-                }`}
-              >
-                <tab.icon size={18} strokeWidth={activeTab === tab.id ? 3 : 2} className={activeTab === tab.id ? 'text-blue-600' : ''} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
-              </button>
-            ))}
+            ].map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button 
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 lg:flex-none flex items-center gap-3 px-5 py-3.5 rounded-lg transition-colors border shrink-0 cursor-pointer ${
+                    isActive 
+                      ? 'bg-[#991B1B] border-[#991B1B] text-white shadow-xl' 
+                      : 'bg-[#111113] border-zinc-900 text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  <TabIcon size={14} className={isActive ? 'text-white' : 'text-zinc-600'} />
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-widest">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* 📄 CONTENT MODULE */}
-          <div className="lg:col-span-9 bg-white p-6 lg:p-12 rounded-[2.5rem] lg:rounded-4xl shadow-sm border border-slate-100 min-h-[550px]">
+          {/* 📄 CONTENT MODULE DESCRIPTOR */}
+          <div className="lg:col-span-9 bg-[#111113] p-6 lg:p-10 rounded-xl shadow-2xl border border-zinc-900 min-h-[520px]">
             
-            {/* Identity Node */}
+            {/* Identity Configuration */}
             {activeTab === 'Store' && (
-              <div className="space-y-8 animate-in slide-in-from-right-4">
-                <SectionHeader title="Store Architecture" subtitle="Manage your public network identity." />
-                <div className="grid md:grid-cols-2 gap-6">
-                  <SettingsInput label="Authorized Owner" value={formData.ownerName} disabled icon={User} />
-                  <SettingsInput label="Network Endpoint" value={formData.email} disabled icon={Mail} />
+              <div className="space-y-6 animate-in slide-in-from-right-2 duration-300">
+                <SectionHeader title="Store Architecture" subtitle="System global identity configuration nodes." />
+                <div className="grid md:grid-cols-2 gap-5">
+                  <SettingsInput label="Authorized System Owner" value={formData.ownerName} disabled icon={User} />
+                  <SettingsInput label="Network Access Endpoint" value={formData.email} disabled icon={Mail} />
                   <SettingsInput label="Alias Registry Name" value={formData.storeName} onChange={(v: string) => setFormData({...formData, storeName: v})} />
-                  <SettingsInput label="URL Slug ID" value={formData.slug} prefix="aviore.com/" onChange={(v: string) => setFormData({...formData, slug: v})} />
+                  <SettingsInput label="URL Route Identity Slug" value={formData.slug} prefix="aviore.com/" onChange={(v: string) => setFormData({...formData, slug: v})} />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Store Manifest (Description)</label>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest ml-0.5">Store Manifest Payload</label>
                   <textarea 
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full p-6 bg-slate-50 border border-slate-100 focus:border-blue-600 focus:bg-white rounded-3xl text-[13px] font-bold text-slate-900 outline-none transition-all h-44 resize-none shadow-inner"
-                    placeholder="Briefly describe your merchant mission..."
+                    className="w-full p-4 bg-zinc-950 border border-zinc-900 rounded-lg text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none focus:border-zinc-700 transition-colors h-40 resize-none"
+                    placeholder="Document your brand architecture mission statement..."
                   />
                 </div>
               </div>
             )}
 
-            {/* Logistics Node */}
+            {/* Logistics Configuration */}
             {activeTab === 'Logistics' && (
-              <div className="space-y-8 animate-in slide-in-from-right-4">
-                <SectionHeader title="Fulfillment Matrix" subtitle="Global shipping fee protocols." />
-                <div className="max-w-sm p-8 bg-[#1E293B] rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-600/20 transition-all duration-1000" />
-                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">Flat Logistics Rate</p>
-                  <div className="relative group-focus-within:scale-105 transition-transform">
-                    <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-500 text-lg">₦</span>
+              <div className="space-y-6 animate-in slide-in-from-right-2 duration-300">
+                <SectionHeader title="Fulfillment Parameters" subtitle="Global transport & shipping ledger overhead." />
+                <div className="max-w-sm p-6 bg-zinc-950 rounded-xl border border-zinc-900 shadow-2xl relative overflow-hidden">
+                  <p className="text-[9px] font-mono font-bold text-[#ef4444] uppercase tracking-widest mb-3.5">Flat Logistics Rate</p>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-zinc-600 text-sm font-bold">₦</span>
                     <input 
                       type="number"
                       value={formData.shippingFee}
                       onChange={(e) => setFormData({...formData, shippingFee: e.target.value})}
-                      className="w-full pl-12 pr-6 py-5 bg-slate-800 border border-slate-700 rounded-2xl font-black text-xl text-white outline-none focus:border-blue-500 transition-all"
+                      className="w-full pl-9 pr-4 py-3.5 bg-[#111113] border border-zinc-900 rounded-lg font-mono font-bold text-base text-white outline-none focus:border-zinc-700 transition-colors"
                     />
                   </div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mt-6 italic">
-                    {Number(formData.shippingFee) > 0 ? "PROTOCOL ACTIVE: USER PAYS" : "GLOBAL FREE DELIVERY ACTIVE"}
+                  <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase mt-4">
+                    {Number(formData.shippingFee) > 0 ? "MATRIX ACTIVE: TRANSACTION OVERHEAD LOADED" : "SYSTEM FREE FULFILLMENT MODE ACTIVE"}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Treasury Node */}
+            {/* Treasury Settlement Configuration */}
             {activeTab === 'Bank' && (
-              <div className="space-y-8 animate-in slide-in-from-right-4">
-                <SectionHeader title="Settlement Hub" subtitle="Authorized inbound liquidity nodes." />
+              <div className="space-y-6 animate-in slide-in-from-right-2 duration-300">
+                <SectionHeader title="Settlement Channel" subtitle="Authorized incoming liquidity routes." />
                 {!isEditingBank ? (
-                  <div className="p-8 border-2 border-slate-50 rounded-[2.5rem] flex flex-col sm:flex-row justify-between items-center bg-slate-50/30 hover:border-blue-100 transition-all gap-6 group">
-                    <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 bg-[#1E293B] text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                        <Landmark size={24} className="text-blue-500" />
+                  <div className="p-5 border border-zinc-900 rounded-xl flex flex-col sm:flex-row justify-between items-center bg-zinc-950 shadow-2xl gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="w-12 h-12 bg-[#111113] border border-zinc-900 text-zinc-400 rounded-lg flex items-center justify-center shrink-0">
+                        <Landmark size={16} className="text-[#ef4444]" />
                       </div>
                       <div>
-                        <p className="font-black text-slate-900 uppercase text-sm italic tracking-tighter">{formData.bankName || 'Node Unlinked'}</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">ENDS IN: {formData.accountNumber?.slice(-4) || 'XXXX'}</p>
+                        <p className="font-mono font-bold text-zinc-200 uppercase text-xs tracking-wide">{formData.bankName || 'Treasury Node Disconnected'}</p>
+                        <p className="text-[8px] font-mono font-bold text-zinc-600 mt-1 uppercase tracking-widest">END RETRIEVAL ID: {formData.accountNumber?.slice(-4) || 'XXXX'}</p>
                       </div>
                     </div>
-                    <button onClick={() => setIsEditingBank(true)} className="w-full sm:w-auto px-10 py-4 bg-white text-slate-900 border border-slate-200 rounded-xl font-black uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all">Modify Bank</button>
+                    <button onClick={() => setIsEditingBank(true)} className="w-full sm:w-auto px-6 py-3 bg-[#111113] hover:bg-[#18181b] text-zinc-300 border border-zinc-900 rounded-lg font-mono font-bold uppercase text-[9px] tracking-widest transition-colors cursor-pointer">Modify Node</button>
                   </div>
                 ) : (
-                  <div className="p-8 border-2 border-blue-100 rounded-4xl bg-blue-50/10 space-y-6 animate-in zoom-in-95">
-                    <div className="grid md:grid-cols-2 gap-6">
+                  <div className="p-6 border border-zinc-900 bg-zinc-950 rounded-xl space-y-5 shadow-2xl">
+                    <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Institution</label>
-<select
-  value={formData.bankCode || ''}
-  onChange={(e) => {
-    const selectedBank = NIGERIAN_BANKS.find(
-      (bank) => bank.code === e.target.value
-    );
-
-    setFormData({
-      ...formData,
-      bankCode: selectedBank?.code,
-      bankName: selectedBank?.name,
-    });
-  }}
-  className="w-full p-5 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase text-slate-900 outline-none focus:border-blue-600 transition-all"
->
-  <option value="">Choose Bank</option>
-
-  {NIGERIAN_BANKS.map((bank) => (
-    <option
-      key={bank.code}
-      value={bank.code}
-    >
-      {bank.name}
-    </option>
-  ))}
-</select>
+                        <label className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest ml-0.5">Banking Institution</label>
+                        <select
+                          value={formData.bankCode || ''}
+                          onChange={(e) => {
+                            const selectedBank = NIGERIAN_BANKS.find((bank) => bank.code === e.target.value);
+                            setFormData({
+                              ...formData,
+                              bankCode: selectedBank?.code,
+                              bankName: selectedBank?.name,
+                            });
+                          }}
+                          className="w-full p-3.5 bg-[#111113] border border-zinc-900 rounded-lg text-xs font-mono uppercase text-zinc-300 placeholder-zinc-700 outline-none focus:border-zinc-700 transition-colors"
+                        >
+                          <option value="">Select Target Node</option>
+                          {NIGERIAN_BANKS.map((bank) => (
+                            <option key={bank.code} value={bank.code}>{bank.name}</option>
+                          ))}
+                        </select>
                       </div>
-                      <SettingsInput label="Account Number" value={formData.accountNumber} onChange={(v: string) => setFormData({...formData, accountNumber: v})} />
-                        <SettingsInput
-  label="Account Name"
-  value={formData.accountName}
-  onChange={(v: string) =>
-    setFormData({
-      ...formData,
-      accountName: v,
-    })
-  }
-/>
+                      <SettingsInput label="Account Security Number" value={formData.accountNumber} onChange={(v: string) => setFormData({...formData, accountNumber: v})} />
+                      <SettingsInput label="Account Signature Identity Name" value={formData.accountName} onChange={(v: string) => setFormData({...formData, accountName: v})} />
                     </div>
-                    <button onClick={() => setIsEditingBank(false)} className="bg-[#1E293B] text-white px-12 py-4 rounded-xl font-black uppercase text-[10px] hover:bg-blue-600 transition-all shadow-xl">Confirm Registry Update</button>
+                    <button onClick={() => setIsEditingBank(false)} className="bg-[#991B1B] text-white px-8 py-3 rounded-lg font-mono font-bold uppercase text-[9px] tracking-widest hover:bg-[#7f1d1d] transition-colors cursor-pointer">Lock Routing Node</button>
                   </div>
                 )}
-                <div className="p-6 bg-blue-600/5 border border-blue-100 rounded-3xl flex gap-5">
-                   <ShieldCheck className="text-blue-600 shrink-0 mt-1" size={20} />
-                   <p className="text-[10px] font-bold text-blue-900 uppercase leading-relaxed italic opacity-70">
-                     Security Lock: Modifying treasury nodes triggers a 24-hour verification hold. Registry payouts are suspended during the audit cycle.
-                   </p>
+                <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-lg flex gap-4">
+                  <ShieldCheck className="text-[#ef4444] shrink-0 mt-0.5" size={16} />
+                  <p className="text-[8px] font-mono font-bold text-zinc-500 uppercase leading-relaxed tracking-wider">
+                    SECURITY LOCK LOCKOUT: Modifying incoming ledger routes places a mandatory 24-hour verification hold matrix on this account profile. Settlement processes are halted pending system audit confirmations.
+                  </p>
                 </div>
               </div>
             )}
 
+            {/* KYC and Verification Security Node */}
             {activeTab === 'KYC' && (
-              <div className="space-y-8 animate-in slide-in-from-right-4">
-                <SectionHeader title="Verification Status" subtitle="Fulfillment network security audit." />
-                <div className={`p-16 rounded-[3.5rem] border-2 flex flex-col items-center text-center gap-6 ${formData.isVerified ? 'border-emerald-100 bg-emerald-50/20' : 'border-blue-100 bg-blue-50/20'}`}>
+              <div className="space-y-6 animate-in slide-in-from-right-2 duration-300">
+                <SectionHeader title="System Audit Status" subtitle="Platform network validation status metrics." />
+                <div className={`p-12 rounded-xl border flex flex-col items-center text-center gap-5 ${formData.isVerified ? 'border-zinc-900 bg-zinc-950' : 'border-zinc-900 bg-zinc-950'}`}>
                   {formData.isVerified ? (
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl border-4 border-emerald-500 animate-in zoom-in-50"><CheckCircle className="text-emerald-500" size={48} strokeWidth={3} /></div>
+                    <div className="w-16 h-16 bg-[#111113] border border-emerald-950 text-emerald-500 rounded-full flex items-center justify-center shadow-xl"><CheckCircle size={28} /></div>
                   ) : (
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl border-4 border-blue-500"><RefreshCcw className="text-blue-500 animate-spin-slow" size={48} strokeWidth={3} /></div>
+                    <div className="w-16 h-16 bg-[#111113] border border-[#991B1B]/40 text-[#ef4444] rounded-full flex items-center justify-center shadow-xl"><RefreshCcw className="animate-spin text-[#ef4444]" size={24} /></div>
                   )}
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{formData.isVerified ? 'Certified Vendor' : 'Audit Pending'}</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 max-w-xs mx-auto leading-relaxed">
-                      {formData.isVerified ? 'Your business credentials have been indexed. Access to all treasury protocols is granted.' : 'The registry is currently auditing your documentation. Platform discovery is active, but settlements are on standby.'}
+                    <h3 className="text-base font-mono font-bold text-zinc-200 uppercase tracking-wider">{formData.isVerified ? 'CERTIFIED_MERCHANT_NODE' : 'REGISTRY_AUDIT_PENDING'}</h3>
+                    <p className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest mt-2 max-w-sm mx-auto leading-relaxed">
+                      {formData.isVerified ? 'Your infrastructure validation records match structural policy. System treasury channels are completely operational.' : 'The registry is inspecting your enterprise verification blueprints. Sales pipelines remain open, but distribution routes wait for compliance tokens.'}
                     </p>
                   </div>
                 </div>
@@ -305,28 +290,28 @@ export default function SettingsPage() {
   );
 }
 
-/* 🎨 SUB-COMPONENTS */
+/* --- UTILITY SUB-COMPONENTS --- */
 
 function SectionHeader({ title, subtitle }: any) {
   return (
-    <div className="border-l-4 border-blue-600 pl-6 mb-8">
-      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{title}</h3>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1.5">{subtitle}</p>
+    <div className="border-l-2 border-[#991B1B] pl-4 mb-6">
+      <h3 className="text-sm font-mono font-bold text-zinc-200 tracking-wider uppercase leading-none">{title}</h3>
+      <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest mt-1.5">{subtitle}</p>
     </div>
   );
 }
 
 function SettingsInput({ label, value, onChange, disabled, icon: Icon, prefix }: any) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-      <div className="relative group">
-        {Icon && <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={16} />}
-        {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-r pr-3 border-slate-100">{prefix}</span>}
+    <div className="space-y-1.5">
+      <label className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest ml-0.5">{label}</label>
+      <div className="relative">
+        {Icon && <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" size={14} />}
+        {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[9px] font-mono font-bold text-zinc-600 uppercase tracking-widest border-r pr-2 border-zinc-900">{prefix}</span>}
         <input 
           type="text" value={value || ''} disabled={disabled}
           onChange={(e) => onChange?.(e.target.value)}
-          className={`w-full py-4 ${Icon ? 'pl-11' : (prefix ? 'pl-24' : 'pl-5')} pr-5 bg-slate-50 border border-slate-100 focus:border-blue-600 focus:bg-white rounded-2xl text-[13px] font-bold text-slate-900 outline-none transition-all disabled:opacity-40 shadow-inner`}
+          className={`w-full py-3.5 ${Icon ? 'pl-10' : (prefix ? 'pl-24' : 'pl-4')} pr-4 bg-[#111113] border border-zinc-900 rounded-lg text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none focus:border-zinc-700 transition-colors disabled:opacity-30`}
         />
       </div>
     </div>
@@ -335,9 +320,9 @@ function SettingsInput({ label, value, onChange, disabled, icon: Icon, prefix }:
 
 function LoadingState() {
   return (
-    <div className="h-[80vh] flex flex-col items-center justify-center gap-6">
-      <Loader2 className="animate-spin text-blue-600" size={48} />
-      <p className="font-black uppercase tracking-[0.4em] text-[10px] text-slate-400 italic">Synchronizing_Identity_Registry...</p>
+    <div className="h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5">
+      <Loader2 className="animate-spin text-[#991B1B]" size={36} />
+      <p className="font-mono font-bold uppercase tracking-[0.3em] text-[9px] text-zinc-500 animate-pulse">Synchronizing_Profile_System_Matrix...</p>
     </div>
   );
 }
