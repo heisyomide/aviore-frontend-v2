@@ -14,12 +14,12 @@ interface NotificationPrefs {
   pushEnabled: boolean;
 }
 
-// ✅ Added Interface matching your backend Prisma Notification structure
+// ✅ FIXED: Interface matches backend database schema mapping property fields
 interface NotificationItem {
   id: string;
   title: string;
   message: string;
-  category: string;
+  type: string; // ◄ Swapped from 'category' to 'type'
   isRead: boolean;
   createdAt: string;
 }
@@ -49,7 +49,6 @@ export default function NotificationsPage() {
     }
   };
 
-  // ✅ CONNECTED: Fetching active user feed context logs
   const fetchFeed = async () => {
     try {
       const res = await api.get('/notifications/feed');
@@ -59,7 +58,6 @@ export default function NotificationsPage() {
     }
   };
 
-  // ✅ CONNECTED: Fetching explicit real-time pending totals count
   const fetchUnreadCount = async () => {
     try {
       const res = await api.get('/notifications/unread-count');
@@ -84,7 +82,6 @@ export default function NotificationsPage() {
     }
   };
 
-  // ✅ CONNECTED: Handles marking a unique record index as read
   const handleMarkAsRead = async (id: string) => {
     setActionId(id);
     try {
@@ -102,7 +99,6 @@ export default function NotificationsPage() {
     }
   };
 
-  // ✅ CONNECTED: Overriding all records inside the pipeline architecture array
   const handleMarkAllRead = async () => {
     try {
       setFeed(prev => prev.map(item => ({ ...item, isRead: true })));
@@ -120,7 +116,7 @@ export default function NotificationsPage() {
     return (
       <div className="py-20 flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-orange-500" size={32} />
-        <p className="text-gray-500 font-medium">Loading user infrastructure configurations...</p>
+        <p className="text-gray-500 font-medium">Loading configurations...</p>
       </div>
     );
   }
@@ -140,7 +136,7 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      {/* RENDER CHANNELS CONFIGURATION TOGGLES (Previous Code block here) */}
+      {/* RENDER CHANNELS CONFIGURATION TOGGLES */}
       {prefs && (
         <div className="space-y-6">
           <div className="bg-white rounded-4xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
@@ -195,7 +191,8 @@ export default function NotificationsPage() {
               >
                 <div className="flex gap-4">
                   <div className="mt-1 shrink-0">
-                    <CategoryIcon category={item.category} isRead={item.isRead} />
+                    {/* ✅ CONNECTED: Pointing directly to item.type field parameter */}
+                    <CategoryIcon category={item.type} isRead={item.isRead} />
                   </div>
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
@@ -234,25 +231,26 @@ export default function NotificationsPage() {
   );
 }
 
-// --- Dynamic Category Context Helper Component ---
+// --- Dynamic Category/Type UI Context Helper Component ---
 function CategoryIcon({ category, isRead }: { category: string; isRead: boolean }) {
   const baseStyle = `p-2 rounded-2xl shrink-0 border transition-all`;
   const unreadState = !isRead;
 
+  // ✅ FIXED: Cases aligned exactly with your database Schema strings ('BROADCAST', etc.)
   switch (category) {
-    case 'security':
+    case 'SECURITY':
       return (
         <div className={`${baseStyle} ${unreadState ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
           <Shield size={16} />
         </div>
       );
-    case 'chatMessages':
+    case 'CHAT':
       return (
         <div className={`${baseStyle} ${unreadState ? 'bg-blue-50 border-blue-100 text-blue-500' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
           <MessageCircle size={16} />
         </div>
       );
-    case 'promotions':
+    case 'BROADCAST':
       return (
         <div className={`${baseStyle} ${unreadState ? 'bg-purple-50 border-purple-100 text-purple-500' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
           <Gift size={16} />
@@ -267,7 +265,6 @@ function CategoryIcon({ category, isRead }: { category: string; isRead: boolean 
   }
 }
 
-// Keep the previous NotificationRow / DeliveryCard internal elements down here...
 function NotificationRow({ label, sub, checked, onChange }: { label: string; sub: string; checked: boolean; onChange: (val: boolean) => void }) {
   return (
     <div className="p-6 flex justify-between items-center hover:bg-gray-50/30 transition-colors">
