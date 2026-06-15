@@ -13,6 +13,7 @@ import {
   BarChart3,
   Wallet,
   Megaphone,
+  Bell, // ◄ Imported for the new notification link
   Settings,
   LifeBuoy,
   ChevronLeft,
@@ -32,37 +33,37 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
     return (
       <Link
         href={href}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium tracking-wide transition-all duration-200 ${
           active
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            ? 'bg-zinc-800 text-white border border-zinc-700 shadow-md shadow-black/40' // ◄ Luxury Onyx/Silver active item styling
+            : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
         }`}
       >
-        <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+        <Icon size={18} strokeWidth={active ? 2 : 1.5} />
         {!collapsed && <span>{label}</span>}
       </Link>
     );
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F7FE] lg:bg-gray-100">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0a] lg:bg-[#0d0d0d]"> {/* ◄ Switched background to high-end dark slate */}
       
       <div className="flex flex-1">
         
         {/* 💻 DESKTOP SIDEBAR */}
         <aside
-          className={`bg-gray-900 text-white transition-all duration-300 hidden lg:flex flex-col border-r border-gray-800 sticky top-0 h-screen ${
+          className={`bg-zinc-950 text-white transition-all duration-300 hidden lg:flex flex-col border-r border-zinc-900 sticky top-0 h-screen ${
             collapsed ? 'w-20' : 'w-64'
           } p-6 overflow-y-auto no-scrollbar shrink-0`}
         >
           <div className="flex items-center gap-3 mb-10 px-2 shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white shadow-lg italic">
+            <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-white shadow-lg italic">
               A
             </div>
             {!collapsed && (
               <div className="animate-in fade-in duration-500">
-                <h2 className="text-sm font-black uppercase tracking-tight leading-none italic">Aviorè Hub</h2>
-                <p className="text-[10px] text-blue-500 font-bold uppercase mt-1 tracking-wider">Protocol Active</p>
+                <h2 className="text-sm font-black uppercase tracking-widest leading-none italic">AVIORÈ HUB</h2>
+                <p className="text-[9px] text-zinc-500 font-medium uppercase mt-1 tracking-widest">Protocol Active</p>
               </div>
             )}
           </div>
@@ -73,12 +74,16 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
             {navItem('/vendor/products', 'Products', Package)}
             {navItem('/vendor/inventory', 'Inventory', Boxes)}
             {navItem('/vendor/customers', 'Customers', Users)}
+            
+            {/* 🔔 NEW NOTIFICATION ROUTE INSERTION */}
+            {navItem('/vendor/notifications', 'Notifications', Bell)}
+            
             {navItem('/vendor/reviews', 'Reviews', Star)}
             {navItem('/vendor/analytics', 'Analytics', BarChart3)}
             {navItem('/vendor/payouts', 'Payouts', Wallet)}
             {navItem('/vendor/marketing', 'Marketing', Megaphone)}
             
-            <div className="h-px bg-gray-800 my-4 mx-2 opacity-30" />
+            <div className="h-px bg-zinc-900 my-4 mx-2" />
             
             {navItem('/vendor/settings', 'Settings', Settings)}
             {navItem('/vendor/support', 'Support', LifeBuoy)}
@@ -86,7 +91,7 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="mt-6 flex items-center justify-center p-2 rounded-xl bg-gray-800 text-gray-400 hover:text-white transition-all"
+            className="mt-6 flex items-center justify-center p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white transition-all"
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -100,10 +105,6 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
               <Breadcrumb />
             </div>
             
-            {/* - pt-36: Added more padding to ensure the 144px height header 
-                 doesn't overlap the content.
-               - pb-32: Padding for the bottom nav.
-            */}
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pt-32 pb-32 lg:pt-0 lg:pb-0">
               {children}
             </div>
