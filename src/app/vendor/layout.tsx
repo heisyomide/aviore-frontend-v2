@@ -13,7 +13,7 @@ import {
   BarChart3,
   Wallet,
   Megaphone,
-  Bell, // ◄ Imported for the new notification link
+  Bell,
   Settings,
   LifeBuoy,
   ChevronLeft,
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Breadcrumb } from '@/src/components/Breadcrumb';
 import { MobileBottomNav } from '@/src/components/navbar/MobileBottomNav';
-import VendorHeader from '@/src/components/navbar/VendorHeader';
+import VendorHeader from '@/src/components/navbar/VendorHeader'; // ◄ Imported cleanly
 
 export default function VendorLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -35,7 +35,7 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
         href={href}
         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium tracking-wide transition-all duration-200 ${
           active
-            ? 'bg-zinc-800 text-white border border-zinc-700 shadow-md shadow-black/40' // ◄ Luxury Onyx/Silver active item styling
+            ? 'bg-zinc-800 text-white border border-zinc-700 shadow-md shadow-black/40'
             : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
         }`}
       >
@@ -46,8 +46,13 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0a] lg:bg-[#0d0d0d]"> {/* ◄ Switched background to high-end dark slate */}
+    <div className="min-h-screen flex flex-col bg-[#0a0a0a] lg:bg-[#0d0d0d]">
       
+      {/* 📱 MOBILE HEADER: Shows up strictly on mobile screens, hidden on desktop */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50">
+        <VendorHeader />
+      </div>
+
       <div className="flex flex-1">
         
         {/* 💻 DESKTOP SIDEBAR */}
@@ -74,10 +79,7 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
             {navItem('/vendor/products', 'Products', Package)}
             {navItem('/vendor/inventory', 'Inventory', Boxes)}
             {navItem('/vendor/customers', 'Customers', Users)}
-            
-            {/* 🔔 NEW NOTIFICATION ROUTE INSERTION */}
             {navItem('/vendor/notifications', 'Notifications', Bell)}
-            
             {navItem('/vendor/reviews', 'Reviews', Star)}
             {navItem('/vendor/analytics', 'Analytics', BarChart3)}
             {navItem('/vendor/payouts', 'Payouts', Wallet)}
@@ -105,6 +107,9 @@ export default function VendorLayout({ children }: { children: ReactNode }) {
               <Breadcrumb />
             </div>
             
+            {/* pt-32: Keeps space clear on mobile so the sticky VendorHeader doesn't overlap text.
+               lg:pt-0: Completely drops the top margin on desktop since the sidebar handles spacing.
+            */}
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pt-32 pb-32 lg:pt-0 lg:pb-0">
               {children}
             </div>
