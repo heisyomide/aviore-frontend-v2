@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Re-ordered options to reflect explicit sequential supply chain flow
 const STATUS_OPTIONS = ['ALL', 'PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 
 export default function VendorOrdersPage() {
@@ -42,15 +41,31 @@ export default function VendorOrdersPage() {
       console.error('REGISTRY_SYNC_ERROR:', error);
       toast.error("Registry Sync Failed", { description: "Could not reach downstream logistics nodes." });
     } finally {
-      setLoading(false);
+      loading && setLoading(false);
     }
   };
 
   useEffect(() => { fetchOrders(); }, []);
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
-      const matchesStatus = activeTab === 'ALL' || order.status === activeTab;
+  // Formats and filters individual data manifests scoped exactly to the current Vendor 
+  const processedOrders = useMemo(() => {
+    return orders.map(order => {
+      // Calculate isolated scope total for this vendor inside this cart order group
+      const vendorSubTotal = (order.items || []).reduce((acc: number, item: any) => {
+        return acc + (Number(item.priceAtPurchase) * Number(item.quantity));
+      }, 0);
+
+      // Determine overall consensus fulfillment phase based on vendor's own items
+      // If items have explicit per-item status, fallback to order state
+      const sampleItemStatus = order.items?.[0]?.payoutStatus === 'RELEASED' ? 'COMPLETED' : order.status;
+
+      return {
+        ...order,
+        displayStatus: sampleItemStatus,
+        vendorSubTotal
+      };
+    }).filter((order) => {
+      const matchesStatus = activeTab === 'ALL' || order.displayStatus === activeTab;
       const ref = (order.orderNumber || order.id).toLowerCase();
       const matchesSearch = ref.includes(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
@@ -153,7 +168,7 @@ export default function VendorOrdersPage() {
                 <th className="p-5 text-right">State Operations</th>
               </tr>
             </thead>
-            {filteredOrders.map((order) => (
+            {processedOrders.map((order) => (
               <tbody key={order.id} className="border-b border-zinc-900/50 last:border-none">
                 <tr className="hover:bg-zinc-950/40 transition-colors group">
                   <td className="p-5">
@@ -171,12 +186,13 @@ export default function VendorOrdersPage() {
                     <div className="text-[10px] text-zinc-500 font-light lowercase font-mono tracking-tight mt-0.5">{order.user?.email}</div>
                   </td>
                   <td className="p-5 text-right">
-                    <div className="text-xs font-bold text-zinc-100 font-mono">₦{Number(order.totalAmount).toLocaleString()}</div>
+                    {/* 🛑 OPTIMIZATION: Displaying isolated vendor calculations rather than parent cart volume */}
+                    <div className="text-xs font-bold text-zinc-100 font-mono">₦{Number(order.vendorSubTotal).toLocaleString()}</div>
                     <p className="text-[8px] text-zinc-600 font-mono font-bold uppercase tracking-wider mt-0.5">AUTH_ESCROW</p>
                   </td>
                   <td className="p-5">
                     <div className="flex flex-col gap-1.5 items-start">
-                        <StatusBadge status={order.status} />
+                        <StatusBadge status={order.displayStatus} />
                         {order.trackingNumber && (
                             <span className="text-[9px] font-mono font-bold text-zinc-400 flex items-center gap-1.5 uppercase tracking-wider bg-zinc-950 px-2 py-0.5 border border-zinc-900 rounded-sm">
                                 <Truck size={10} className="text-zinc-500" /> {order.carrier} <span className="text-zinc-600">//</span> {order.trackingNumber}
@@ -197,8 +213,8 @@ export default function VendorOrdersPage() {
                     <div className="flex items-center justify-end gap-2.5">
                        {updatingId === order.id && <Loader2 size={12} className="animate-spin text-[#991B1B]" />}
                        <select 
-                        disabled={updatingId === order.id || order.status === 'COMPLETED' || order.status === 'CANCELLED'}
-                        value={order.status}
+                        disabled={updatingId === order.id || order.displayStatus === 'COMPLETED' || order.displayStatus === 'CANCELLED'}
+                        value={order.displayStatus}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === 'SHIPPED') setShowTrackingModal(order.id);
@@ -266,7 +282,7 @@ export default function VendorOrdersPage() {
                 {expandedOrderId === order.id && (
                   <tr>
                     <td colSpan={6} className="bg-zinc-950/40 p-6 animate-in slide-in-from-top-4 duration-400 border-b border-zinc-900">
-                       <OrderItemsList items={order.items || []} orderStatus={order.status} />
+                       <OrderItemsList items={order.items || []} orderStatus={order.displayStatus} />
                     </td>
                   </tr>
                 )}
@@ -274,7 +290,7 @@ export default function VendorOrdersPage() {
             ))}
           </table>
           
-          {filteredOrders.length === 0 && <EmptyState />}
+          {processedOrders.length === 0 && <EmptyState />}
         </div>
       </div>
     </div>
@@ -317,9 +333,8 @@ function OrderItemsList({ items, orderStatus }: { items: any[], orderStatus: str
             <div className="text-right">
               <p className="text-xs font-bold text-zinc-100 font-mono">₦{Number(item.priceAtPurchase).toLocaleString()}</p>
               
-              {/* Informative block clarifying automated escrow distribution rules */}
               <div className="mt-1 flex items-center justify-end gap-1 font-mono font-bold text-[8px] uppercase tracking-wider">
-                {orderStatus === 'COMPLETED' ? (
+                {orderStatus === 'COMPLETED' || item.payoutStatus === 'RELEASED' ? (
                   <span className="text-emerald-500 flex items-center gap-0.5"><CheckCircle2 size={9} /> RELEASED</span>
                 ) : (
                   <span className="text-amber-600 flex items-center gap-0.5"><Lock size={8} /> ESCROW_HELD</span>
@@ -341,7 +356,7 @@ function StatusBadge({ status }: { status: string }) {
     SHIPPED: 'bg-zinc-950 border-zinc-800 text-blue-400',
     DELIVERED: 'bg-zinc-950 border-zinc-700 text-zinc-100',
     COMPLETED: 'bg-[#991B1B]/10 border-[#991B1B]/40 text-[#ef4444]',
-    CANCELLED: 'bg-zinc-950 border-zinc-900 text-zinc-700 lines-through',
+    CANCELLED: 'bg-zinc-950 border-zinc-900 text-zinc-700 line-through',
   };
   return (
     <span className={`px-2.5 py-1 border rounded-lg text-[8px] font-mono font-bold uppercase tracking-widest inline-block ${styles[status] || 'bg-zinc-950 border-zinc-900 text-zinc-500'}`}>
