@@ -33,7 +33,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Dynamic header title generation corresponding to system state
   const pageTitle = pathname.split('/').pop()?.replace('-', ' ') || 'overview';
   const isOverview = pathname === '/dashboard' || pathname === '/dashboard/overview';
 
@@ -47,7 +46,7 @@ export default function DashboardLayout({
       
       <Container className="pt-6 pb-24 lg:pb-16 px-4 sm:px-6 lg:px-8">
         
-        {/* LUXURY PORTAL CONTEXT HEADER */}
+        {/* SYSTEM STATUS HEADER */}
         <div className="flex items-center justify-between mb-6 bg-[#0A0A0C] border border-[#141416] rounded-2xl px-5 py-4 shadow-2xl">
           <div className="space-y-0.5">
             <span className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest block">
@@ -67,7 +66,7 @@ export default function DashboardLayout({
               <span>Active Node</span>
             </div>
             
-            {/* Mobile Menu Trigger */}
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 bg-[#0E0E10] rounded-xl border border-[#161619] text-zinc-300 active:scale-[0.99] transition-all"
@@ -79,14 +78,9 @@ export default function DashboardLayout({
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
-          {/* OBSIDIAN VERTICAL NAVIGATION ASIDE NODE */}
-          <aside
-            className={`
-              ${mobileMenuOpen ? 'block' : 'hidden'}
-              lg:block w-full lg:w-[250px] shrink-0 z-20
-            `}
-          >
-            <div className="bg-[#0A0A0C] rounded-2xl border border-[#141416] p-3 lg:sticky lg:top-6 space-y-6 shadow-2xl">
+          {/* DESKTOP SIDEBAR PANEL */}
+          <aside className="hidden lg:block w-[250px] shrink-0 z-20">
+            <div className="bg-[#0A0A0C] rounded-2xl border border-[#141416] p-3 sticky top-6 space-y-6 shadow-2xl">
               <div>
                 <p className="px-4 pt-2 pb-1 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">
                   Member Portal
@@ -101,8 +95,7 @@ export default function DashboardLayout({
                 </nav>
               </div>
 
-              {/* DYNAMIC EXTRA OVERLAY MENU OPTIONS STATED ON WIREFRAME MATRIX */}
-              <div className="hidden lg:block border-t border-[#141416] pt-4">
+              <div className="border-t border-[#141416] pt-4">
                 <p className="px-4 pb-1 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">
                   Ecosystem Utilities
                 </p>
@@ -116,24 +109,6 @@ export default function DashboardLayout({
                 </nav>
               </div>
 
-              {/* CONCIERGE ASSISTANCE CONTEXT LINK NODE */}
-              <div className="bg-black/40 rounded-xl border border-[#141416] p-4 mx-1">
-                <div className="flex items-start gap-3">
-                  <LifeBuoy size={14} className="text-zinc-600 mt-0.5 shrink-0" />
-                  <div className="space-y-1">
-                    <h4 className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-300">Need Assistance?</h4>
-                    <p className="text-[9px] text-zinc-500 font-sans leading-relaxed">Our Concierge Team is here to help you.</p>
-                  </div>
-                </div>
-                <Link 
-                  href="/dashboard/support"
-                  className="w-full mt-3 block text-center bg-transparent border border-[#161619] hover:border-zinc-700 text-zinc-300 text-[9px] font-mono font-bold uppercase tracking-widest py-2.5 rounded-lg transition-colors"
-                >
-                  Contact Support
-                </Link>
-              </div>
-
-              {/* LOGOUT MUTATION ACTION */}
               <div className="border-t border-[#141416] pt-2 px-1">
                 <button 
                   onClick={handleSignOut}
@@ -146,7 +121,58 @@ export default function DashboardLayout({
             </div>
           </aside>
 
-          {/* MAIN SECURE SYSTEM MATRIX VIEWPORT */}
+          {/* MOBILE SLIDEOUT DRAWERS OVERLAY */}
+          {mobileMenuOpen && (
+            <div 
+              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+          )}
+
+          <aside
+            className={`
+              lg:hidden fixed top-0 right-0 h-full w-[280px] bg-[#0A0A0C] border-l border-[#141416] p-4 z-50 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out
+              ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
+            `}
+          >
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#141416]">
+              <span className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-[0.2em]">Portal Navigation</span>
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1.5 bg-[#0E0E10] rounded-lg border border-[#161619] text-zinc-400"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <p className="px-3 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">Ecosystem Utilities</p>
+                <nav className="space-y-1 mt-2">
+                  <SidebarLink href="/dashboard/notifications" icon={Bell} label="Notifications" />
+                  <SidebarLink href="/dashboard/addresses" icon={MapPin} label="Addresses" />
+                  <SidebarLink href="/dashboard/payments" icon={CreditCard} label="Payment Methods" />
+                  <SidebarLink href="/dashboard/history" icon={History} label="Wishlist" />
+                  <SidebarLink href="/dashboard/reviews" icon={Star} label="Reviews" />
+                  <SidebarLink href="/dashboard/coupons" icon={Ticket} label="Coupons" />
+                  <SidebarLink href="/dashboard/security" icon={Shield} label="Security" />
+                  <SidebarLink href="/dashboard/support" icon={LifeBuoy} label="Support Manifest" />
+                </nav>
+              </div>
+
+              <div className="border-t border-[#141416] pt-4 px-1">
+                <button 
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-500 hover:text-red-400 hover:bg-red-950/10 text-[10px] font-mono font-bold uppercase tracking-widest transition-all duration-300 cursor-pointer text-left"
+                >
+                  <LogOut size={13} className="text-zinc-600" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          {/* MAIN SYSTEM VIEWPORT CONTAINER */}
           <main className="flex-1 min-w-0 w-full">
             <div className="bg-[#0A0A0C] rounded-2xl border border-[#141416] overflow-hidden min-h-[85vh] shadow-2xl flex flex-col">
               <div className="p-6 md:p-10 flex-1 flex flex-col bg-black/10">
@@ -158,8 +184,8 @@ export default function DashboardLayout({
         </div>
       </Container>
 
-      {/* ==================== MOBILE BOTTOM NAV ==================== */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0C]/90 backdrop-blur-md border-t border-[#141416] lg:hidden z-50 px-4">
+      {/* FIXED MOBILE BOTTOM NAVIGATION */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0C]/90 backdrop-blur-md border-t border-[#141416] lg:hidden z-30 px-4">
         <div className="flex items-center justify-around py-2 max-w-md mx-auto">
           <MobileNavLink href="/dashboard" icon={Home} label="Home" active={isOverview} />
           <MobileNavLink href="/dashboard/orders" icon={ShoppingBag} label="Orders" />
@@ -171,7 +197,7 @@ export default function DashboardLayout({
   );
 }
 
-/* ====================== HELPER COMPONENTS ====================== */
+/* ====================== UTILITY COMPONENTS ====================== */
 
 function SidebarLink({
   href,
