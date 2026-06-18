@@ -3,18 +3,15 @@
 import { useState, useEffect } from 'react';
 import { 
   Loader2, ShoppingBag, Clock, CheckCircle2, 
-  Star, ArrowUpRight, TrendingUp 
+  Star, ChevronRight, Bell, Heart, Store
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import Link from 'next/link';
 
-// API Architecture & Core Onboarding Engines
+// API Architecture & Core Services
 import { api } from '@/src/lib/axios';
 import { getCompletionStatus } from '@/src/services/completion.service';
 import { UserActivationCard } from '@/src/components/completion/UserActivationCard';
 import { CompletionEngineResponse } from '@/src/types/completion.types';
-
-// Complex Layout Components
-import DashboardOverview from '@/src/components/dashboard/MobileDashboard'; 
 
 export default function OverviewPage() {
   const [data, setData] = useState<any>(null);
@@ -25,14 +22,12 @@ export default function OverviewPage() {
     const fetchDashboardAndStatus = async () => {
       setLoading(true);
       try {
-        // Retrieve identity token payload for decoupled tracking operations
         const token = localStorage.getItem('token') || '';
 
-        // Execute metrics retrieval and compliance status tracking in parallel streams
         const [dashboardRes, completionResult] = await Promise.all([
           api.get('/user/dashboard'),
           getCompletionStatus('customer', token).catch((err) => {
-            console.error('Customer identity clearance stream safely decoupled:', err);
+            console.error('Identity clearance decoupled:', err);
             return null;
           })
         ]);
@@ -40,16 +35,10 @@ export default function OverviewPage() {
         setData(dashboardRes.data);
         setCompletionData(completionResult);
       } catch (error) {
-        console.error('Registry_Terminal_Sync_Failure:', error);
+        console.error('Dashboard registry sync failure:', error);
       } finally {
-        nodeSyncTimeout();
-      }
-    };
-
-    const nodeSyncTimeout = () => {
-      setTimeout(() => {
         setLoading(false);
-      }, 400);
+      }
     };
 
     fetchDashboardAndStatus();
@@ -57,162 +46,193 @@ export default function OverviewPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center gap-4 bg-[#0D0D0D]/10">
-        <Loader2 className="animate-spin text-[#C5A880]" size={28} />
-        <span className="text-[9px] font-mono font-bold tracking-[0.25em] text-zinc-600 uppercase">Synchronizing Node...</span>
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-3 bg-white">
+        <Loader2 className="animate-spin text-neutral-600" size={24} />
+        <p className="text-xs text-neutral-400 font-medium tracking-wide">Loading your dashboard overview...</p>
       </div>
     );
   }
 
+  // Fallback data mapping to mirror the layout elements found in the prototype
+  const customerName = data?.user?.fullName || "Hart Mason";
+  const avatarUrl = data?.user?.avatarUrl || "/api/placeholder/150/150";
+  const totalOrdersCount = data?.totalOrders || 12;
+  const wishlistCount = data?.wishlistItemsCount || 24;
+  const activeDeliveries = data?.activeDeliveries || [];
+  const recentlyViewedStores = data?.recentlyViewedStores || [];
+
   return (
-    <>
-      {/* 🖥️ DESKTOP LOOK */}
-      <div className="hidden lg:block space-y-8 w-full">
-        <header className="flex justify-between items-end pb-2 border-b border-zinc-900/40">
-          <div className="space-y-1.5">
-            <span className="text-[#C5A880] text-[9px] font-mono font-bold uppercase tracking-[0.3em]">System_Overview</span>
-            <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">
-              Registry <span className="text-zinc-600 font-normal font-sans tracking-normal">Snapshot</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-zinc-950 border border-zinc-900 rounded-lg">
-            <TrendingUp size={12} className="text-emerald-500 animate-pulse" />
-            <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-500">Live_Registry_Sync</span>
-          </div>
-        </header>
+    <div className="w-full max-w-4xl mx-auto space-y-6 text-neutral-800 bg-white min-h-screen pb-12 animate-in fade-in duration-200">
+      
+      {/* 1. GREETING PROFILE HEADER SECTION */}
+      <header className="flex justify-between items-center bg-white border border-neutral-100 p-5 rounded-2xl shadow-sm">
+        <div className="space-y-1">
+          <p className="text-xs text-neutral-400 font-medium">Good morning,</p>
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{customerName}</h1>
+          <p className="text-xs text-neutral-400 leading-relaxed max-w-xs md:max-w-md">
+            Welcome back! Here's what's happening with your orders and account today.
+          </p>
+        </div>
+        <div className="relative w-12 h-12 rounded-full border border-neutral-200 overflow-hidden shrink-0 shadow-inner">
+          <img 
+            src={avatarUrl} 
+            alt="Customer Profiler" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </header>
 
-        {/* ACCOUNT CLEARANCE TELEMETRY PIPELINE */}
-        {completionData && (
-          <div className="bg-[#161619]/40 border border-zinc-900 rounded-xl overflow-hidden p-1">
-            <UserActivationCard 
-              percentage={completionData.completionPercentage}
-              tasks={completionData.tasks}
-              isFullyActive={completionData.isFullyActive}
-            />
-          </div>
-        )}
+      {/* ONBOARDING ACTIVATION OVERLAY BAR */}
+      {completionData && !completionData.isFullyActive && (
+        <div className="bg-white border border-neutral-200 rounded-2xl p-1 shadow-sm">
+          <UserActivationCard 
+            percentage={completionData.completionPercentage}
+            tasks={completionData.tasks}
+            isFullyActive={completionData.isFullyActive}
+          />
+        </div>
+      )}
 
-        {/* METRICS QUAD-MATRIX GRID */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total_Manifests" value={data?.totalOrders || 0} icon={ShoppingBag} color="text-zinc-100" />
-          <StatCard label="Pending_Acquisitions" value={data?.pendingOrders || 0} icon={Clock} color="text-amber-500" />
-          <StatCard label="Successful_Deliveries" value={data?.deliveredOrders || 0} icon={CheckCircle2} color="text-emerald-500" />
-          <StatCard label="Registry_Feedback" value={data?.totalReviews || 0} icon={Star} color="text-[#C5A880]" />
+      {/* 2. DUAL METRICS COUNTER GRID */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Total Orders Metric Block */}
+        <div className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm flex flex-col justify-between space-y-4">
+          <div className="space-y-1">
+            <p className="text-xs text-neutral-400 font-medium">Total Orders</p>
+            <h3 className="text-3xl font-bold text-neutral-900 tracking-tight">{totalOrdersCount}</h3>
+          </div>
+          <Link href="/dashboard/orders" className="text-xs font-semibold text-neutral-900 inline-flex items-center gap-1 group hover:underline">
+            View all <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
 
-        {/* TRANSACTION ARCHIVE DATA MATRIX */}
-        <div className="bg-[#111113] rounded-xl border border-zinc-900 shadow-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-900/60 flex justify-between items-center bg-zinc-950/40">
-            <h2 className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-3">
-              Recent_Transactions
-            </h2>
-            <button className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#C5A880] hover:text-[#d9c2a3] transition-colors bg-zinc-950 px-3 py-1.5 border border-zinc-900 rounded-lg">
-              View_Full_Archive
-            </button>
+        {/* Wishlist Items Metric Block */}
+        <div className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm flex flex-col justify-between space-y-4">
+          <div className="space-y-1">
+            <p className="text-xs text-neutral-400 font-medium">Wishlist Items</p>
+            <h3 className="text-3xl font-bold text-neutral-900 tracking-tight">{wishlistCount}</h3>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-zinc-950/80 text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900/40">
-                <tr>
-                  <th className="px-6 py-3.5 tracking-[0.15em]">Reference Node</th>
-                  <th className="px-6 py-3.5 tracking-[0.15em]">Timeline</th>
-                  <th className="px-6 py-3.5 tracking-[0.15em]">Logistics_Status</th>
-                  <th className="px-6 py-3.5 text-right tracking-[0.15em]">Valuation</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900/40 bg-[#0D0D0D]/10">
-                {data?.recentOrders && data.recentOrders.length > 0 ? (
-                  data.recentOrders.map((order: any) => (
-                    <tr key={order.id} className="group hover:bg-[#161619]/40 transition-colors duration-200">
-                      <td className="px-6 py-4.5">
-                        <span className="text-xs font-mono font-bold text-zinc-200 tracking-wide transition-colors group-hover:text-white">
-                          #{order.orderNumber || order.id.slice(-6).toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4.5 text-[11px] font-sans text-zinc-500 font-medium">
-                        {new Date(order.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </td>
-                      <td className="px-6 py-4.5">
-                        <StatusBadge status={order.status} />
-                      </td>
-                      <td className="px-6 py-4.5 text-right font-mono font-bold text-sm text-zinc-300 group-hover:text-white transition-colors">
-                        QN{Number(order.totalAmount).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                      No matching records historical streams found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Link href="/dashboard/history" className="text-xs font-semibold text-neutral-900 inline-flex items-center gap-1 group hover:underline">
+            View all <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </div>
 
-      {/* 📱 MOBILE LOOK */}
-      <div className="block lg:hidden space-y-6 w-full">
-        {/* Render activation checklist on mobile stream if operations remain pending */}
-        {completionData && !completionData.isFullyActive && (
-          <div className="bg-[#111113] border border-zinc-900 rounded-xl p-1 shadow-xl">
-            <UserActivationCard 
-              percentage={completionData.completionPercentage}
-              tasks={completionData.tasks}
-              isFullyActive={completionData.isFullyActive}
-            />
-          </div>
-        )}
-        <DashboardOverview data={data} />
+      {/* 3. ACTIVE DELIVERIES LOGISTICS CONTAINER */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center px-1">
+          <h2 className="text-sm font-bold text-neutral-900 tracking-tight">Active Deliveries</h2>
+          <Link href="/dashboard/orders" className="text-xs font-semibold text-neutral-400 hover:text-neutral-600 transition-colors">
+            View all
+          </Link>
+        </div>
+
+        <div className="space-y-3">
+          {activeDeliveries.length > 0 ? (
+            activeDeliveries.map((delivery: any) => (
+              <div 
+                key={delivery.id} 
+                className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex gap-4 items-center justify-between group hover:border-neutral-300 transition-all"
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-12 h-12 bg-neutral-50 rounded-xl border border-neutral-100 flex items-center justify-center text-neutral-500 shrink-0 overflow-hidden">
+                    <img 
+                      src={delivery.itemImage || '/api/placeholder/100/100'} 
+                      alt="Product Thumb"
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-neutral-900">Order #{delivery.orderNumber || delivery.id.slice(-5).toUpperCase()}</p>
+                      <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">
+                        {delivery.status || 'In Transit'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 truncate max-w-xs sm:max-w-md">
+                      {delivery.summaryText || "2 items shipped • 1 item processing"}
+                    </p>
+                    <p className="text-[11px] text-neutral-500 font-medium">
+                      Estimated delivery: <span className="text-neutral-800 font-semibold">{delivery.estimatedDate || 'May 26 – May 30'}</span>
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0" />
+              </div>
+            ))
+          ) : (
+            /* Prototype placeholder display row */
+            <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex gap-4 items-center justify-between">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-12 h-12 bg-neutral-50 rounded-xl border border-neutral-100 flex items-center justify-center text-neutral-400 shrink-0">
+                  <ShoppingBag size={18} />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold text-neutral-900">Order #AV-20391</p>
+                    <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200 uppercase tracking-wide">
+                      In Transit
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 truncate">2 items shipped • 1 item processing</p>
+                  <p className="text-[11px] text-neutral-500 font-medium">
+                    Estimated delivery: <span className="text-neutral-800 font-semibold">May 26 – May 30</span>
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-neutral-300 shrink-0" />
+            </div>
+          )}
+        </div>
       </div>
-    </>
+
+      {/* 4. RECENTLY VIEWED STORES GRID CHANNEL */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center px-1">
+          <h2 className="text-sm font-bold text-neutral-900 tracking-tight">Recently Viewed Stores</h2>
+          <Link href="/dashboard/stores" className="text-xs font-semibold text-neutral-400 hover:text-neutral-600 transition-colors">
+            View all
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-4 gap-3">
+          {recentlyViewedStores.length > 0 ? (
+            recentlyViewedStores.slice(0, 4).map((store: any) => (
+              <Link 
+                key={store.id}
+                href={`/dashboard/stores/${store.id}`} 
+                className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2 hover:border-neutral-300 hover:shadow transition-all group"
+              >
+                <div className="w-11 h-11 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs shadow-sm uppercase group-hover:scale-105 transition-transform">
+                  {store.logoInitials || store.name?.slice(0, 2)}
+                </div>
+                <p className="text-xs font-bold text-neutral-900 truncate w-full px-1">{store.name}</p>
+              </Link>
+            ))
+          ) : (
+            /* Exact brand mock placeholders from the reference layouts */
+            <>
+              <MockStore NodeLogo="LF" title="Luxe Fashion" />
+              <MockStore NodeLogo="UE" title="Urban Essentials" />
+              <MockStore NodeLogo="BB" title="Belle Boutique" />
+              <MockStore NodeLogo="OW" title="Oceanic Watches" />
+            </>
+          )}
+        </div>
+      </div>
+
+    </div>
   );
 }
 
-/* --- ATOMS & STRUCTURAL MICRO-COMPONENTS --- */
-function StatCard({ label, value, icon: Icon, color }: any) {
+/* --- LIGHT COMPONENT ATOMS --- */
+function MockStore({ NodeLogo, title }: { NodeLogo: string; title: string }) {
   return (
-    <motion.div 
-      whileHover={{ y: -3, borderColor: 'rgba(197, 168, 128, 0.4)' }} 
-      transition={{ duration: 0.2 }}
-      className="bg-[#111113] p-5 rounded-xl border border-zinc-900/80 shadow-xl space-y-4 flex flex-col justify-between"
-    >
-      <div className="flex justify-between items-start">
-        <div className={`p-2.5 rounded-lg bg-zinc-950 border border-zinc-900/60 ${color}`}>
-          <Icon size={15} />
-        </div>
-        <ArrowUpRight size={12} className="text-zinc-700 transition-colors group-hover:text-zinc-500" />
+    <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2.5">
+      <div className="w-11 h-11 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs tracking-wider">
+        {NodeLogo}
       </div>
-      <div className="space-y-0.5">
-        <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-[0.2em]">
-          {label}
-        </p>
-        <h3 className="text-xl font-mono font-bold text-white tracking-wide">
-          {typeof value === 'number' ? value.toLocaleString() : value}
-        </h3>
-      </div>
-    </motion.div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: any = { 
-    DELIVERED: "bg-emerald-950/30 text-emerald-500 border-emerald-900/50", 
-    PENDING: "bg-amber-950/20 text-amber-500 border-amber-900/40",
-    PROCESSING: "bg-blue-950/20 text-blue-400 border-blue-900/40",
-    CANCELLED: "bg-zinc-950 text-zinc-600 border-zinc-900"
-  };
-  
-  return (
-    <span className={`inline-block px-2.5 py-1 rounded border text-[8px] font-mono font-bold uppercase tracking-widest transition-colors duration-200 ${styles[status] || "bg-zinc-950 text-zinc-400 border-zinc-900"}`}>
-      {status}
-    </span>
+      <p className="text-[11px] font-bold text-neutral-800 truncate w-full">{title}</p>
+    </div>
   );
 }

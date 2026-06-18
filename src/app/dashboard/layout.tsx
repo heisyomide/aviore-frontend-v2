@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, ComponentType } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -25,19 +25,24 @@ import {
 
 import { Container } from '../../components/layout/Container';
 
-export default function DashboardLayout({
-  children,
-}: {
+interface LayoutProps {
   children: ReactNode;
-}) {
+}
+
+export default function DashboardLayout({ children }: LayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const pageTitle = pathname.split('/').pop()?.replace('-', ' ') || 'overview';
+  // Fallback cleanly to overview if path is empty
+  const rawTitle = pathname.split('/').pop();
+  const pageTitle = rawTitle && rawTitle !== 'dashboard' ? rawTitle.replace('-', ' ') : 'overview';
   const isOverview = pathname === '/dashboard' || pathname === '/dashboard/overview';
 
   const handleSignOut = () => {
     localStorage.removeItem('token');
+    // Force a clean redirect and state flush
+    router.refresh();
     window.location.href = '/login';
   };
 
@@ -52,7 +57,7 @@ export default function DashboardLayout({
             <span className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest block">
               Verified Customer
             </span>
-            <h1 className="text-xs font-mono font-bold uppercase tracking-[0.15em] text-white">
+            <h1 className="text-xs font-mono font-bold uppercase tracking-[0.15em] text-white snap-all">
               {pageTitle}
             </h1>
             <p className="hidden md:block text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-wider">
@@ -62,14 +67,15 @@ export default function DashboardLayout({
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-400 bg-black/40 px-3 py-1.5 border border-[#161619] rounded-lg">
-              <div className="w-1 h-1 rounded-full bg-emerald-500" />
+              <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
               <span>Active Node</span>
             </div>
             
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 bg-[#0E0E10] rounded-xl border border-[#161619] text-zinc-300 active:scale-[0.99] transition-all"
+              className="lg:hidden p-2 bg-[#0E0E10] rounded-xl border border-[#161619] text-zinc-300 active:scale-[0.97] transition-all"
+              aria-label="Toggle Menu"
             >
               {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
             </button>
@@ -79,8 +85,8 @@ export default function DashboardLayout({
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
           {/* DESKTOP SIDEBAR PANEL */}
-          <aside className="hidden lg:block w-[250px] shrink-0 z-20">
-            <div className="bg-[#0A0A0C] rounded-2xl border border-[#141416] p-3 sticky top-6 space-y-6 shadow-2xl">
+          <aside className="hidden lg:block w-[250px] shrink-0 z-20 sticky top-6">
+            <div className="bg-[#0A0A0C] rounded-2xl border border-[#141416] p-3 space-y-6 shadow-2xl">
               <div>
                 <p className="px-4 pt-2 pb-1 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">
                   Member Portal
@@ -121,14 +127,15 @@ export default function DashboardLayout({
             </div>
           </aside>
 
-          {/* MOBILE SLIDEOUT DRAWERS OVERLAY */}
+          {/* MOBILE SLIDEOUT DRAWER OVERLAY */}
           {mobileMenuOpen && (
             <div 
-              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
               onClick={() => setMobileMenuOpen(false)}
             />
           )}
 
+          {/* MOBILE SIDEBAR PANEL */}
           <aside
             className={`
               lg:hidden fixed top-0 right-0 h-full w-[280px] bg-[#0A0A0C] border-l border-[#141416] p-4 z-50 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out
@@ -146,17 +153,27 @@ export default function DashboardLayout({
             </div>
 
             <div className="space-y-6">
+              {/* Added missing Member Portal links for mobile view */}
+              <div>
+                <p className="px-3 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">Member Portal</p>
+                <nav className="space-y-1 mt-2">
+                  <SidebarLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={isOverview} onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/orders" icon={ShoppingBag} label="Orders" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/history" icon={History} label="Wishlist" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/profile" icon={User} label="Profile Settings" onClick={() => setMobileMenuOpen(false)} />
+                </nav>
+              </div>
+
               <div>
                 <p className="px-3 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">Ecosystem Utilities</p>
                 <nav className="space-y-1 mt-2">
-                  <SidebarLink href="/dashboard/notifications" icon={Bell} label="Notifications" />
-                  <SidebarLink href="/dashboard/addresses" icon={MapPin} label="Addresses" />
-                  <SidebarLink href="/dashboard/payments" icon={CreditCard} label="Payment Methods" />
-                  <SidebarLink href="/dashboard/history" icon={History} label="Wishlist" />
-                  <SidebarLink href="/dashboard/reviews" icon={Star} label="Reviews" />
-                  <SidebarLink href="/dashboard/coupons" icon={Ticket} label="Coupons" />
-                  <SidebarLink href="/dashboard/security" icon={Shield} label="Security" />
-                  <SidebarLink href="/dashboard/support" icon={LifeBuoy} label="Support Manifest" />
+                  <SidebarLink href="/dashboard/notifications" icon={Bell} label="Notifications" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/addresses" icon={MapPin} label="Addresses" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/payments" icon={CreditCard} label="Payment Methods" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/reviews" icon={Star} label="Reviews" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/coupons" icon={Ticket} label="Coupons" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/security" icon={Shield} label="Security" onClick={() => setMobileMenuOpen(false)} />
+                  <SidebarLink href="/dashboard/support" icon={LifeBuoy} label="Support Manifest" onClick={() => setMobileMenuOpen(false)} />
                 </nav>
               </div>
 
@@ -199,23 +216,22 @@ export default function DashboardLayout({
 
 /* ====================== UTILITY COMPONENTS ====================== */
 
-function SidebarLink({
-  href,
-  icon: Icon,
-  label,
-  active,
-}: {
+interface SidebarLinkProps {
   href: string;
-  icon: any;
+  icon: ComponentType<{ size?: number; className?: string }>;
   label: string;
   active?: boolean;
-}) {
+  onClick?: () => void;
+}
+
+function SidebarLink({ href, icon: Icon, label, active, onClick }: SidebarLinkProps) {
   const pathname = usePathname();
   const isActive = active !== undefined ? active : pathname === href;
 
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`flex items-center justify-between px-4 py-3 rounded-xl text-[10px] font-mono font-bold uppercase tracking-[0.15em] transition-all duration-300 group ${
         isActive
           ? 'bg-[#141416] border border-[#27272A] text-white shadow-xl'
@@ -236,17 +252,14 @@ function SidebarLink({
   );
 }
 
-function MobileNavLink({
-  href,
-  icon: Icon,
-  label,
-  active,
-}: {
+interface MobileNavLinkProps {
   href: string;
-  icon: any;
+  icon: ComponentType<{ size?: number; className?: string }>;
   label: string;
   active?: boolean;
-}) {
+}
+
+function MobileNavLink({ href, icon: Icon, label, active }: MobileNavLinkProps) {
   const pathname = usePathname();
   const isActive = active !== undefined ? active : pathname === href;
 
