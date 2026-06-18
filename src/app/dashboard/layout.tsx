@@ -21,7 +21,7 @@ import {
   Home,
 } from 'lucide-react';
 
-import { Navbar } from '../../components/navbar/Navbar';
+
 import { Container } from '../../components/layout/Container';
 
 export default function DashboardLayout({
@@ -36,7 +36,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
-      <Navbar />
+    
 
       <Container className="pt-6 pb-20 lg:pb-10">
         {/* Desktop & Mobile Header Info */}
