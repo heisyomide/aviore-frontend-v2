@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Shield,
   Star,
+  Compass,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -24,48 +25,34 @@ interface MobileDashboardProps {
 }
 
 export function MobileDashboard({ data }: MobileDashboardProps) {
-const [couponCount, setCouponCount] = useState(0);
+  const [couponCount, setCouponCount] = useState(0);
 
-const greeting = useMemo(() => {
-  const hour = new Date().getHours();
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
 
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}, []);
+  const fullName = useMemo(() => {
+    return (
+      data?.name ||
+      `${data?.firstName || ''} ${data?.lastName || ''}`.trim()
+    );
+  }, [data]);
 
-/**
- * FULL NAME
- * Uses backend `name` first
- */
-const fullName = useMemo(() => {
-  return (
-    data?.name ||
-    `${data?.firstName || ''} ${data?.lastName || ''}`.trim()
-  );
-}, [data]);
+  const userInitials = useMemo(() => {
+    if (!fullName) return 'AV';
+    const parts = fullName.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return fullName.slice(0, 2).toUpperCase();
+  }, [fullName]);
 
-/**
- * USER INITIALS
- * Example: adedayo yomide => AY
- */
-const userInitials = useMemo(() => {
-  if (!fullName) return '';
-
-  const parts = fullName.trim().split(' ');
-
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-
-  return fullName.slice(0, 2).toUpperCase();
-}, [fullName]);
-
-  // 3. DATA SYNC: WISHLIST (Zustand Store)
   const { items: wishlistItems } = useWishlistStore();
   const wishlistCount = wishlistItems.length;
 
-  // 4. DATA SYNC: COUPONS (Fetch from /vendor/marketing/active)
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
@@ -81,146 +68,159 @@ const userInitials = useMemo(() => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header Section */}
-    <header className="bg-white px-4 pt-12 pb-6 border-b border-gray-100">
-  <div className="flex items-center justify-between gap-4">
-    <div className="flex-1">
-      <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-        {greeting},
-      </h1>
+    <div className="min-h-screen bg-[#0D0D0D] text-zinc-100 pb-28 font-mono antialiased">
+      
+      {/* 1. HARDWARE STATUS & IDENTITY HEADER */}
+      <header className="bg-[#111113] px-5 pt-8 pb-6 border-b border-zinc-900/80">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1 flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 text-[#991B1B]">
+              <Compass size={11} className="animate-pulse" />
+              <span className="text-[7px] tracking-[0.3em] font-bold uppercase">{greeting}_node</span>
+            </div>
+            <h1 className="text-lg font-bold text-white uppercase tracking-wide truncate">
+              {fullName || 'SYSTEM_OPERATOR'}
+            </h1>
+            <p className="text-[8px] text-zinc-500 uppercase tracking-widest">
+              Core Ledger Interface // Aviorè Client
+            </p>
+          </div>
 
-      <p className="text-xl font-semibold text-[#A4143D] capitalize mt-1">
-        {fullName}
-      </p>
+          <div className="w-11 h-11 rounded border border-zinc-800 bg-zinc-950 flex items-center justify-center text-zinc-300 font-bold text-xs shrink-0 tracking-tighter">
+            {userInitials}
+          </div>
+        </div>
 
-      <p className="text-xs text-gray-400 mt-2 uppercase tracking-wider">
-        Manage your account
-      </p>
-    </div>
+        {/* METRICS GRID AREA */}
+        <div className="grid grid-cols-2 gap-2 mt-6">
+          <QuickCard
+            icon={<Package size={14} />}
+            title="Orders"
+            value={data?._count?.orders || 0}
+            href="/dashboard/orders"
+          />
+          <QuickCard
+            icon={<Heart size={14} />}
+            title="Wishlist"
+            value={wishlistCount}
+            href="/wishlist"
+          />
+          <QuickCard
+            icon={<Ticket size={14} />}
+            title="Coupons"
+            value={couponCount}
+            href="/dashboard/coupons"
+          />
+          <QuickCard
+            icon={<Star size={14} />}
+            title="Reviews"
+            value={data?._count?.reviews || 0}
+            href="/dashboard/reviews"
+          />
+        </div>
+      </header>
 
-    <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
-      {userInitials}
-    </div>
-  </div>
-
-  <div className="grid grid-cols-2 gap-3 mt-8">
-    <QuickCard
-      icon={<Package size={18} />}
-      title="Orders"
-      value={data?._count?.orders || 0}
-      href="/dashboard/orders"
-    />
-
-    <QuickCard
-      icon={<Heart size={18} />}
-      title="History"
-      value={wishlistCount}
-      href="/history"
-    />
-
-    <QuickCard
-      icon={<Ticket size={18} />}
-      title="Coupons"
-      value={couponCount}
-      href="/dashboard/coupons"
-    />
-
-    <QuickCard
-      icon={<Star size={18} />}
-      title="Reviews"
-      value={data?._count?.reviews || 0}
-      href="/dashboard/reviews"
-    />
-  </div>
-</header>
-
-      {/* Saved Items Section */}
-      <section className="mt-4 bg-white py-6">
-        <div className="flex items-center justify-between px-4 mb-5">
-          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
-            Saved <span className="text-zinc-300">Products</span>
-          </h2>
-          <Link href="/wishlist" className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1">
-            See all <ChevronRight size={12} />
+      {/* 2. SCROLLABLE ASSET RUNWAY (WISHLIST) */}
+      <section className="mt-4 border-y border-zinc-900 bg-[#111113]/40 py-5">
+        <div className="flex items-center justify-between px-5 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-2 bg-[#991B1B]" />
+            <h2 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">
+              Saved_Products
+            </h2>
+          </div>
+          <Link href="/wishlist" className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-0.5 hover:text-white transition-colors">
+            See All <ChevronRight size={10} />
           </Link>
         </div>
 
         {wishlistItems.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
+          <div className="flex gap-3 overflow-x-auto px-5 pb-1 no-scrollbar scroll-smooth snap-x snap-mandatory">
             {wishlistItems.map((item: any) => (
               <SavedItemCard key={item.id} item={item} />
             ))}
           </div>
         ) : (
-          <div className="px-4">
-             <div className="py-6 border-2 border-dashed border-gray-100 rounded-2xl text-center">
-                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">No Saved Items</p>
-             </div>
+          <div className="px-5">
+            <div className="py-8 border border-dashed border-zinc-900 bg-zinc-950/20 rounded flex flex-col items-center justify-center">
+              <p className="text-[8px] font-bold text-zinc-600 uppercase tracking-[0.2em]">No allocated vault assets</p>
+            </div>
           </div>
         )}
       </section>
 
-      {/* Recent Manifests Section */}
-      <section className="mt-4 bg-white px-4 py-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
-            Recent <span className="text-zinc-300">Orders</span>
-          </h2>
-          <Link href="/dashboard/orders" className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1">
-            View all <ChevronRight size={12} />
+      {/* 3. LOGISTICS PIPELINE BLOCK (ORDERS) */}
+      <section className="mt-4 border-y border-zinc-900 bg-[#111113]/40 px-5 py-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-2 bg-[#991B1B]" />
+            <h2 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">
+              Recent_Manifests
+            </h2>
+          </div>
+          <Link href="/dashboard/orders" className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-0.5 hover:text-white transition-colors">
+            View All <ChevronRight size={10} />
           </Link>
         </div>
 
-        <div className="space-y-4">
+        <div className="divide-y divide-zinc-900/40">
           {data?.recentOrders?.length > 0 ? (
             data.recentOrders.slice(0, 3).map((order: any) => (
               <OrderRow key={order.id} order={order} />
             ))
           ) : (
-            <div className="text-center py-6 border-t border-gray-50">
-               <ShoppingBag className="mx-auto text-gray-200 mb-2" size={32} strokeWidth={1} />
-               <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">Zero_Active_Orders</p>
+            <div className="text-center py-8 bg-zinc-950/10 border border-zinc-900 rounded flex flex-col items-center justify-center">
+              <ShoppingBag className="text-zinc-800 mb-2" size={16} strokeWidth={1.5} />
+              <p className="text-[8px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Zero active transport lines</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Nav Menu */}
-      <section className="mt-4 bg-white px-4 py-2 mb-10 divide-y divide-gray-50">
-        <MenuItem label="Profile" icon={<User size={18} />} href="/dashboard/profile" />
-        <MenuItem label="Address" icon={<MapPin size={18} />} href="/dashboard/addresses" />
-        <MenuItem label="Support" icon={<MessageSquare size={18} />} href="/dashboard/support" />
-        <MenuItem label="Security" icon={<Shield size={18} />} href="/dashboard/security" />
+      {/* 4. HARDWARE TERMINAL NAVIGATION LIST */}
+      <section className="mt-4 border-t border-zinc-900 bg-[#111113] divide-y divide-zinc-900/50">
+        <MenuItem label="Profile Parameters" icon={<User size={14} />} href="/dashboard/profile" />
+        <MenuItem label="Routing Addresses" icon={<MapPin size={14} />} href="/dashboard/addresses" />
+        <MenuItem label="Matrix Support" icon={<MessageSquare size={14} />} href="/dashboard/support" />
+        <MenuItem label="Security Protocol" icon={<Shield size={14} />} href="/dashboard/security" />
 
         <button
           onClick={() => {
             localStorage.removeItem('token');
             window.location.href = '/login';
           }}
-          className="w-full flex items-center justify-between py-5 active:bg-red-50 transition-colors px-2"
+          className="w-full flex items-center justify-between py-4 px-5 bg-zinc-950/20 active:bg-[#991B1B]/10 group transition-colors text-left"
         >
-          <div className="flex items-center gap-3 text-red-500">
-            <LogOut size={18} />
-            <span className="text-[11px] font-black uppercase tracking-widest">Logout</span>
+          <div className="flex items-center gap-3 text-[#991B1B]">
+            <LogOut size={14} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Terminate Session</span>
           </div>
-          <ChevronRight size={16} className="text-gray-300" />
+          <ChevronRight size={12} className="text-zinc-700 group-active:text-white transition-colors" />
         </button>
       </section>
+
+      <div className="mt-8 text-center px-5">
+        <p className="text-[6.5px] font-bold text-zinc-700 uppercase tracking-[0.5em]">
+          AVIORÈ_MOBILE_CON_v1.0.4 // SYSTEM_READY
+        </p>
+      </div>
     </div>
   );
 }
 
-/* --- ATOMS --- */
+/* --- TELEMETRY SUBSYSTEM COMPONENTS --- */
 
 function QuickCard({ icon, title, value, href }: any) {
   return (
-    <Link href={href} className="border border-gray-100 rounded-[1.5rem] p-5 bg-white shadow-sm active:scale-95 transition-all">
-      <div className="flex items-center gap-2 text-zinc-400 mb-3">
-        {icon}
-        <span className="text-[9px] font-black uppercase tracking-widest">{title}</span>
+    <Link 
+      href={href} 
+      className="border border-zinc-900 rounded bg-zinc-950/60 p-3.5 flex flex-col justify-between h-20 active:border-zinc-700 active:bg-zinc-950 transition-all"
+    >
+      <div className="flex items-center gap-1.5 text-zinc-500">
+        <span className="text-zinc-600 group-active:text-[#991B1B]">{icon}</span>
+        <span className="text-[8px] font-bold uppercase tracking-wider truncate">{title}</span>
       </div>
-      <p className="text-xl font-black italic text-zinc-900 tracking-tighter">{value}</p>
+      <p className="text-lg font-bold text-white tracking-tight">{value.toString().padStart(2, '0')}</p>
     </Link>
   );
 }
@@ -228,17 +228,20 @@ function QuickCard({ icon, title, value, href }: any) {
 function SavedItemCard({ item }: any) {
   const displayImage = item.image || item.imageUrl || (item.images && item.images[0]?.imageUrl);
   return (
-    <Link href={`/product/${item.id}`} className="min-w-[150px] max-w-[150px] group shrink-0">
-      <div className="h-40 rounded-[1.8rem] bg-gray-50 overflow-hidden relative border border-gray-100 shadow-sm group-active:scale-95 transition-all">
+    <Link 
+      href={`/product/${item.id}`} 
+      className="min-w-[130px] max-w-[130px] shrink-0 snap-start bg-zinc-950/40 border border-zinc-900 rounded p-2 flex flex-col justify-between gap-2 active:border-zinc-800 transition-all"
+    >
+      <div className="h-28 rounded bg-zinc-900 overflow-hidden relative border border-zinc-950 shrink-0">
         {displayImage ? (
           <Image src={displayImage} alt={item.title} fill className="object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center"><ShoppingBag size={24} className="text-gray-200" /></div>
+          <div className="w-full h-full flex items-center justify-center"><ShoppingBag size={16} className="text-zinc-800" /></div>
         )}
       </div>
-      <div className="mt-3 px-1">
-        <p className="text-[10px] font-black uppercase italic text-zinc-900 line-clamp-1 leading-none">{item.title}</p>
-        <p className="text-[11px] font-black text-[#A4143D] mt-1 tracking-tighter">₦{Number(item.price || 0).toLocaleString()}</p>
+      <div className="space-y-0.5">
+        <p className="text-[8px] font-bold uppercase text-zinc-400 truncate tracking-wide">{item.title}</p>
+        <p className="text-[10px] font-bold text-white tracking-tight">₦{Number(item.price || 0).toLocaleString()}</p>
       </div>
     </Link>
   );
@@ -247,26 +250,26 @@ function SavedItemCard({ item }: any) {
 function OrderRow({ order }: any) {
   const orderImage = order.items?.[0]?.product?.images?.[0]?.imageUrl || order.items?.[0]?.product?.image;
   return (
-    <div className="flex items-center justify-between py-2 group">
-      <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+    <div className="flex items-center justify-between py-3 bg-transparent group">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-10 h-10 rounded border border-zinc-900 bg-zinc-950 flex items-center justify-center overflow-hidden shrink-0">
           {orderImage ? (
-            <Image src={orderImage} alt="manifest" width={56} height={56} className="object-cover h-full w-full" />
+            <Image src={orderImage} alt="manifest" width={40} height={40} className="object-cover h-full w-full" />
           ) : (
-            <ShoppingBag size={20} className="text-gray-300" />
+            <ShoppingBag size={14} className="text-zinc-700" />
           )}
         </div>
-        <div className="space-y-1">
-          <p className="font-black text-[11px] uppercase italic text-zinc-900">
+        <div className="space-y-0.5 min-w-0">
+          <p className="font-bold text-[10px] uppercase text-white tracking-wider truncate">
             #{order.orderNumber || order.id.slice(-6).toUpperCase()}
           </p>
           <div className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${order.status === 'DELIVERED' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`} />
-            <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">{order.status}</p>
+            <div className={`w-1 h-1 rounded-full ${order.status === 'DELIVERED' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+            <p className="text-[7px] font-bold uppercase text-zinc-500 tracking-widest">{order.status}</p>
           </div>
         </div>
       </div>
-      <p className="font-black italic text-sm text-zinc-900 tracking-tighter">
+      <p className="font-bold text-xs text-white tracking-tight shrink-0 pl-2">
         ₦{Number(order.totalAmount || 0).toLocaleString()}
       </p>
     </div>
@@ -275,12 +278,15 @@ function OrderRow({ order }: any) {
 
 function MenuItem({ label, icon, href }: any) {
   return (
-    <Link href={href} className="flex items-center justify-between py-5 group active:bg-gray-50 transition-colors px-2">
-      <div className="flex items-center gap-4">
-        <div className="text-zinc-400 group-active:text-[#A4143D] transition-colors">{icon}</div>
-        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-900">{label}</span>
+    <Link 
+      href={href} 
+      className="flex items-center justify-between py-4 px-5 bg-transparent active:bg-zinc-950/60 transition-colors group"
+    >
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div className="text-zinc-600 group-active:text-[#991B1B] transition-colors shrink-0">{icon}</div>
+        <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-zinc-300 truncate">{label}</span>
       </div>
-      <ChevronRight size={16} className="text-gray-300 group-hover:text-zinc-900 transition-colors" />
+      <ChevronRight size={12} className="text-zinc-700 group-active:text-white transition-colors shrink-0" />
     </Link>
   );
 }
