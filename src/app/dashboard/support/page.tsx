@@ -1,10 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageCircle, FileText, RefreshCw, HelpCircle, Loader2, X, Send, ShieldAlert, Check } from 'lucide-react';
+import { MessageCircle, FileText, RefreshCw, HelpCircle, Loader2, X, Send } from 'lucide-react';
 import { api } from '@/src/lib/axios';
-import { toast } from 'sonner';
 
 interface Ticket {
   id: string;
@@ -27,10 +25,9 @@ export default function SupportPage() {
   const fetchTickets = async () => {
     try {
       const res = await api.get('/user/tickets');
-      setTickets(Array.isArray(res.data) ? res.data : []);
+      setTickets(res.data);
     } catch (err) {
-      console.error("Telemetry Link Failure:", err);
-      toast.error("Failed to sync structural communications network");
+      console.error("Failed to fetch tickets");
     } finally {
       setLoading(false);
     }
@@ -43,200 +40,170 @@ export default function SupportPage() {
       setIsModalOpen(false);
       setForm({ subject: '', message: '' });
       fetchTickets();
-      toast.success("Support ledger payload entry created");
+      alert("Ticket submitted successfully!");
     } catch (err) {
-      toast.error("Host rejected connection handshake package");
+      alert("Failed to submit ticket");
     }
   };
 
+  // --- Backend Linked Actions ---
+
   const handleLiveChat = () => {
+    // Marketplace logic: Chat is order-based. 
+    // We send them to orders to pick a vendor to chat with.
     router.push('/dashboard/orders?intent=chat');
   };
 
   const handleReturns = () => {
+    // Redirects to orders where they can select a 'Delivered' item to return
     router.push('/dashboard/orders?intent=return');
   };
 
-  const handleFAQ = () => {
+  const handleFAQ = async () => {
+    // If you have a dedicated FAQ page:
     router.push('/dashboard/support/faq');
+    
+    // OR if you want to just fetch them:
+    // const res = await api.get('/user/support/faqs');
   };
 
-  if (loading) {
-    return (
-      <div className="py-24 flex flex-col items-center justify-center gap-4 bg-[#0D0D0D] min-h-[50vh]">
-        <Loader2 className="animate-spin text-[#991B1B]" size={24} />
-        <p className="text-[8px] font-mono font-bold tracking-[0.3em] text-zinc-600 uppercase">Indexing_Network_Communications...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-orange-500" /></div>;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 text-zinc-100">
-      
-      {/* 1. ARCHITECTURAL LAYER HEADER */}
-      <header className="flex flex-col gap-1.5 border-b border-zinc-900/60 pb-6">
-        <div className="flex items-center gap-2 text-[#991B1B]">
-          <ShieldAlert size={13} className="animate-pulse" />
-          <span className="text-[8px] font-mono font-bold uppercase tracking-[0.3em]">Communication_Control_Matrix</span>
-        </div>
-        <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">
-          Support <span className="text-zinc-600 font-normal font-sans tracking-normal">Center</span>
-        </h1>
+    <div className="max-w-4xl space-y-10 p-4 animate-in fade-in duration-500">
+      <header>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Support Center</h1>
+        <p className="text-gray-500 mt-1 font-medium">How can we help you today?</p>
       </header>
 
-      {/* 2. OPERATIONAL ACTION INTERFACES */}
+      {/* Quick Actions Grid - NOW LINKED */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <ActionCard 
           icon={MessageCircle} 
-          label="Live Chat Interface" 
-          description="Order-bound peer pipelines"
+          label="Live Chat" 
+          color="text-blue-500" 
           onClick={handleLiveChat} 
         />
         <ActionCard 
           icon={FileText} 
-          label="Open Matrix Ticket" 
-          description="File encrypted system event"
+          label="Open Ticket" 
+          color="text-orange-500" 
           onClick={() => setIsModalOpen(true)} 
         />
         <ActionCard 
           icon={RefreshCw} 
-          label="Logistics Returns" 
-          description="Reverse transit allocation"
+          label="Returns" 
+          color="text-emerald-500" 
           onClick={handleReturns} 
         />
         <ActionCard 
           icon={HelpCircle} 
-          label="Knowledge Base" 
-          description="System architecture parameters"
+          label="FAQ" 
+          color="text-purple-500" 
           onClick={handleFAQ} 
         />
       </div>
 
-      {/* 3. INCIDENT LEDGER TIMELINE */}
-      <section className="bg-[#111113] rounded-lg border border-zinc-900 overflow-hidden">
-        <div className="p-6 border-b border-zinc-900/60 flex justify-between items-center bg-zinc-950/20">
-          <h3 className="text-xs font-mono font-bold uppercase tracking-wide text-white">Historical Support Records</h3>
-          <span className="text-[8px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500">
-            {tickets.length.toString().padStart(2, '0')} Incidents Recorded
+      {/* Ticket History */}
+      <section className="bg-white rounded-4xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
+          <h3 className="font-bold text-gray-900">Recent Support Requests</h3>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            {tickets.length} Tickets
           </span>
         </div>
         
-        <div className="divide-y divide-zinc-900/40">
-          {tickets.map((t) => (
-            <div key={t.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-950/10 hover:bg-zinc-950/30 transition-colors group">
-              <div className="flex items-start gap-4 min-w-0">
-                <div className="font-mono text-[9px] font-bold text-zinc-600 bg-zinc-950 border border-zinc-900 px-2 py-1 rounded shrink-0">
-                  #{t.id.slice(-6).toUpperCase()}
-                </div>
-                <div className="min-w-0 space-y-0.5">
-                  <p className="text-sm font-mono font-bold text-white uppercase tracking-wide truncate pr-4">{t.subject}</p>
-                  <p className="text-[8px] font-mono text-zinc-500 uppercase tracking-wider">
-                    Timestamp: {new Date(t.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-              <div className="shrink-0 flex items-center">
-                <StatusBadge status={t.status} />
-              </div>
-            </div>
-          ))}
-          
-          {tickets.length === 0 && (
-            <div className="py-20 text-center flex flex-col items-center justify-center">
-              <p className="text-zinc-600 text-[9px] font-mono font-bold uppercase tracking-[0.2em]">No diagnostic log files discovered</p>
-            </div>
-          )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-widest text-gray-400 bg-gray-50/50">
+                <th className="px-6 py-4 font-bold">ID</th>
+                <th className="px-6 py-4 font-bold">Subject</th>
+                <th className="px-6 py-4 font-bold">Status</th>
+                <th className="px-6 py-4 font-bold">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {tickets.map((t) => (
+                <tr key={t.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="px-6 py-5 font-mono text-[10px] text-gray-400">
+                    {t.id.slice(-6).toUpperCase()}
+                  </td>
+                  <td className="px-6 py-5 font-bold text-gray-900 text-sm">{t.subject}</td>
+                  <td className="px-6 py-5"><StatusBadge status={t.status} /></td>
+                  <td className="px-6 py-5 text-xs text-gray-500 font-medium">
+                    {new Date(t.createdAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+              {tickets.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center text-gray-400 italic text-sm">
+                    No tickets found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 
-      {/* 4. MODAL LAYER FOR ENCRYPTED TICKET SUBMISSION */}
+      {/* Modal for Opening Ticket */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative m-auto w-full max-w-lg overflow-hidden rounded-lg bg-[#111113] p-6 shadow-2xl border border-zinc-900 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            
-            <div className="flex justify-between items-start mb-6 border-b border-zinc-900 pb-4">
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-[#991B1B]">
-                  <FileText size={11} />
-                  <span className="text-[8px] font-mono font-bold uppercase tracking-[0.25em]">Manifest_Incident_Payload</span>
-                </div>
-                <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-white truncate pr-2">Describe Operational Fault</h2>
-              </div>
-              <button 
-                onClick={() => setIsModalOpen(false)} 
-                className="p-1 rounded bg-zinc-950 border border-zinc-900 text-zinc-500 hover:text-white hover:border-zinc-800 transition-all shrink-0"
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitTicket} className="space-y-4 overflow-y-auto no-scrollbar">
-              <div className="space-y-1">
-                <label className="text-[8px] font-mono font-bold uppercase tracking-wider text-zinc-500 ml-0.5">Payload Header</label>
-                <input 
-                  placeholder="SUBJECT ENVELOPE (E.G., REVERSE TRANSLATION COMPLIANCE)" required
-                  className="w-full p-3 bg-zinc-950 border border-zinc-900 rounded outline-none focus:border-zinc-700 text-xs font-mono font-bold text-white uppercase tracking-wider placeholder:text-zinc-700"
-                  value={form.subject}
-                  onChange={e => setForm({ ...form, subject: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[8px] font-mono font-bold uppercase tracking-wider text-zinc-500 ml-0.5">Diagnostic Log Narrative</label>
-                <textarea 
-                  placeholder="SPECIFY UNRESOLVED DISCREPANCIES..." rows={4} required
-                  className="w-full p-3 bg-zinc-950 border border-zinc-900 rounded outline-none focus:border-zinc-700 text-xs font-mono font-bold text-white uppercase tracking-wide placeholder:text-zinc-700 resize-none leading-relaxed"
-                  value={form.message}
-                  onChange={e => setForm({ ...form, message: e.target.value })}
-                />
-              </div>
-
-              <button className="w-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 py-3.5 rounded text-[9px] font-mono font-bold uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 active:scale-[0.99]">
-                <Send size={11} /> Commit Pipeline Ticket
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-lg relative shadow-2xl animate-in zoom-in duration-300">
+            <button onClick={() => setIsModalOpen(false)} className="absolute right-6 top-6 p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition">
+              <X size={20} className="text-gray-400" />
+            </button>
+            <h2 className="text-2xl font-bold mb-6">Describe the Issue</h2>
+            <form onSubmit={handleSubmitTicket} className="space-y-4">
+              <input 
+                placeholder="Subject (e.g., Refund Request)" required
+                className="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 font-medium"
+                value={form.subject}
+                onChange={e => setForm({ ...form, subject: e.target.value })}
+              />
+              <textarea 
+                placeholder="How can we help you?" rows={4} required
+                className="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 font-medium resize-none"
+                value={form.message}
+                onChange={e => setForm({ ...form, message: e.target.value })}
+              />
+              <button className="w-full bg-orange-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-orange-700 transition shadow-lg shadow-orange-100">
+                <Send size={18} /> Submit Ticket
               </button>
             </form>
-
           </div>
         </div>
       )}
-      
-      <p className="text-center text-[7px] font-mono font-bold text-zinc-700 uppercase tracking-[0.4em]">
-        AVIORÈ_PIPELINE_SUPP_v1.02
-      </p>
     </div>
   );
 }
 
-// --- INTERNAL INTERFACE BLOCKS ---
+// --- Internal UI Components ---
 
-function ActionCard({ icon: Icon, label, description, onClick }: { icon: any, label: string, description: string, onClick: () => void }) {
+function ActionCard({ icon: Icon, label, color, onClick }: any) {
   return (
     <button 
       onClick={onClick} 
-      className="bg-[#111113] p-5 rounded-lg border border-zinc-900 hover:border-zinc-800 transition-all text-left flex flex-col justify-between h-36 group active:scale-[0.98]"
+      className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:border-orange-500 hover:shadow-xl hover:shadow-orange-50/50 transition-all text-center group"
     >
-      <div className="bg-zinc-950 border border-zinc-900 p-3 rounded text-zinc-600 transition-colors group-hover:text-[#991B1B] group-hover:border-[#991B1B]/30 shrink-0 self-start">
-        <Icon size={16} />
+      <div className={`w-12 h-12 ${color} bg-current/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
+        <Icon size={24} />
       </div>
-      <div className="space-y-0.5">
-        <p className="text-[10px] font-mono font-bold text-white uppercase tracking-wide">{label}</p>
-        <p className="text-[8px] font-mono text-zinc-500 uppercase tracking-tight leading-tight">{description}</p>
-      </div>
+      <p className="text-sm font-bold text-gray-900 tracking-tight">{label}</p>
     </button>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    RESOLVED: 'bg-emerald-950/40 text-emerald-400 border-emerald-900/60',
-    OPEN: 'bg-blue-950/40 text-blue-400 border-blue-900/60',
-    IN_PROGRESS: 'bg-amber-950/40 text-amber-400 border-amber-900/60',
+  const styles: any = {
+    RESOLVED: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    OPEN: 'bg-blue-50 text-blue-600 border-blue-100',
+    IN_PROGRESS: 'bg-orange-50 text-orange-600 border-orange-100',
   };
-
-  const activeStyle = styles[status] || styles.OPEN;
-
   return (
-    <span className={`px-2 py-0.5 rounded font-mono text-[8px] font-bold uppercase tracking-widest border ${activeStyle}`}>
+    <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest border ${styles[status] || styles.OPEN}`}>
       {status.replace('_', ' ')}
     </span>
   );

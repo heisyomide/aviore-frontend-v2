@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/src/lib/axios';
-import { Ticket, Copy, Loader2, ArrowUpRight, ShoppingBag, Gift } from 'lucide-react';
+import { Ticket, Copy, Loader2, Sparkles, ShoppingBag, ArrowUpRight, Zap, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -43,7 +43,7 @@ export default function CouponsPage() {
     navigator.clipboard.writeText(code);
     toast.success("CODE_COPIED", { 
       description: `${code} is ready for Checkout Security Protocol.`,
-      icon: <Ticket className="text-[#991B1B]" size={16} />
+      icon: <Ticket className="text-[#A4143D]" size={16} />
     });
   };
 
@@ -55,175 +55,173 @@ export default function CouponsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
-        <Loader2 className="animate-spin text-[#991B1B]" size={26} />
-        <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-zinc-600 uppercase">Syncing Incentives...</span>
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="animate-spin text-[#A4143D]" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-10 pb-16 w-full animate-in fade-in duration-500">
-      {/* 1. LUXURY HEADER DECK */}
-      <header className="flex flex-col gap-1.5 border-b border-zinc-900/60 pb-6">
-        <div className="flex items-center gap-2 text-[#991B1B]">
-          <Gift size={14} className="animate-pulse" />
-          <span className="text-[9px] font-mono font-bold uppercase tracking-[0.3em]">Incentive_Registry</span>
+    <div className="space-y-12 pb-20">
+      {/* 1. HEADER SECTION: Rule 1 (Identity Protocol) */}
+      <header className="flex flex-col gap-2 border-b border-zinc-100 pb-8">
+        <div className="flex items-center gap-2 text-[#A4143D]">
+          <Gift size={16} />
+          <span className="text-[10px] font-black uppercase tracking-[0.4em]">Incentive_Registry</span>
         </div>
-        <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">
-          Artifact <span className="text-zinc-600 font-normal font-sans tracking-normal">Rewards</span>
+        <h1 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900">
+          Artifact <span className="text-zinc-200">Rewards</span>
         </h1>
       </header>
 
-      {/* REWARDS GRID HUB */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link
-          href="/dashboard/referrals"
-          className="group relative overflow-hidden rounded-xl border border-zinc-900 bg-gradient-to-br from-[#161619] to-[#0D0D0D] p-6 transition-all duration-300 hover:border-zinc-800"
-        >
-          <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-[#991B1B]/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-60" />
+      {/* REWARDS HUB */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <Link
+    href="/dashboard/referrals"
+    className="group relative overflow-hidden rounded-[2rem] border border-[#A4143D]/10 bg-gradient-to-br from-[#A4143D] to-[#7f0f2d] p-8 text-white transition-all duration-300 hover:scale-[1.02]"
+  >
+    <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
 
-          <div className="relative z-10 flex flex-col justify-between h-full">
-            <div>
-              <div className="mb-3 flex items-center gap-2.5 text-[#991B1B]">
-                <Gift size={16} />
-                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]">
-                  Referral Program
-                </span>
-              </div>
-              <h3 className="text-xl font-mono font-bold uppercase text-white">
-                Earn ₦2,500
-              </h3>
-              <p className="mt-2 text-[11px] font-sans text-zinc-500 leading-relaxed max-w-sm">
-                Invite 5 verified accounts and unlock an infrastructure voucher credit usable on standard orders.
-              </p>
-            </div>
-
-            <div className="mt-6 flex items-center gap-2 text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-300 group-hover:text-white transition-colors">
-              <span>Open Referral Center</span>
-              <ArrowUpRight size={12} className="text-[#991B1B]" />
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/dashboard/vouchers"
-          className="group rounded-xl border border-zinc-900 bg-[#111113]/40 p-6 transition-all duration-300 hover:border-zinc-800"
-        >
-          <div className="flex flex-col justify-between h-full">
-            <div>
-              <div className="mb-3 flex items-center gap-2.5 text-zinc-600 group-hover:text-zinc-400 transition-colors">
-                <Ticket size={16} />
-                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]">
-                  My Vouchers
-                </span>
-              </div>
-              <h3 className="text-xl font-mono font-bold uppercase text-zinc-200 group-hover:text-white transition-colors">
-                Voucher Wallet
-              </h3>
-              <p className="mt-2 text-[11px] font-sans text-zinc-500 leading-relaxed max-w-sm">
-                View all tracking codes, system wide reductions, active credits, and operational dates.
-              </p>
-            </div>
-
-            <div className="mt-6 flex items-center gap-2 text-[8px] font-mono font-bold uppercase tracking-widest text-[#991B1B] group-hover:text-red-400 transition-colors">
-              <span>View Voucher Wallet</span>
-              <ArrowUpRight size={12} />
-            </div>
-          </div>
-        </Link>
+    <div className="relative z-10">
+      <div className="mb-4 flex items-center gap-3">
+        <Gift size={22} />
+        <span className="text-[11px] font-black uppercase tracking-[0.3em]">
+          Referral Program
+        </span>
       </div>
 
-      {/* 2. INDUSTRIAL TAB CONTROLLER */}
-      <div className="flex gap-8 border-b border-zinc-900/40">
+      <h3 className="text-3xl font-black uppercase">
+        Earn ₦2,500
+      </h3>
+
+      <p className="mt-3 text-sm text-white/80 max-w-sm">
+        Invite 5 verified customers and unlock a ₦2,500 voucher
+        usable on orders above ₦15,000.
+      </p>
+
+      <div className="mt-6 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em]">
+        Open Referral Center
+        <ArrowUpRight size={16} />
+      </div>
+    </div>
+  </Link>
+
+  <Link
+    href="/dashboard/vouchers"
+    className="group rounded-[2rem] border border-zinc-200 bg-white p-8 transition-all duration-300 hover:border-[#A4143D]/20 hover:shadow-xl"
+  >
+    <div className="mb-4 flex items-center gap-3 text-[#A4143D]">
+      <Ticket size={22} />
+      <span className="text-[11px] font-black uppercase tracking-[0.3em]">
+        My Vouchers
+      </span>
+    </div>
+
+    <h3 className="text-3xl font-black uppercase text-zinc-900">
+      Voucher Wallet
+    </h3>
+
+    <p className="mt-3 text-sm text-zinc-500 max-w-sm">
+      View all referral rewards, active vouchers,
+      redeemed vouchers and expiration dates.
+    </p>
+
+    <div className="mt-6 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-[#A4143D]">
+      View Voucher Wallet
+      <ArrowUpRight size={16} />
+    </div>
+  </Link>
+</div>
+
+      {/* 2. TAB HUD: Industrial Control System */}
+      <div className="flex gap-10 border-b border-zinc-100">
         {['available', 'expired'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
-            className={`pb-3.5 text-[9px] font-mono font-bold uppercase tracking-widest transition-all relative ${
-              activeTab === tab ? 'text-[#991B1B]' : 'text-zinc-600 hover:text-zinc-400'
+            className={`pb-5 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative ${
+              activeTab === tab ? 'text-[#A4143D]' : 'text-zinc-300 hover:text-zinc-600'
             }`}
           >
             {tab}_Coupons
             {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#991B1B]" />
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-[#A4143D] rounded-full animate-in fade-in zoom-in duration-300" />
             )}
           </button>
         ))}
       </div>
 
-      {/* 3. INCENTIVES PIPELINE VIEWPORT */}
+      {/* 3. REWARD GRID */}
       {filteredCoupons.length > 0 ? (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-8">
           {filteredCoupons.map((coupon) => (
             <div 
               key={coupon.id}
-              className={`group relative bg-[#111113] border rounded-xl p-6 transition-all duration-300 flex flex-col justify-between ${
-                activeTab === 'expired' 
-                  ? 'opacity-30 border-zinc-950 bg-black/40' 
-                  : 'border-zinc-900 bg-[#111113]/90 hover:border-zinc-800 shadow-xl'
+              className={`group relative bg-white border-2 rounded-[2.5rem] p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-zinc-200/50 ${
+                activeTab === 'expired' ? 'opacity-40 grayscale border-zinc-50' : 'border-zinc-50 hover:border-[#A4143D]/20'
               }`}
             >
               {/* Floating Validity Badge */}
-              <div className="absolute top-6 right-6 text-[7px] font-mono font-bold text-zinc-600 uppercase tracking-widest bg-zinc-950 px-2.5 py-1 border border-zinc-900 rounded">
-                EXP: {coupon.endDate ? new Date(coupon.endDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'INFINITE'}
+              <div className="absolute top-8 right-8 text-[8px] font-black text-zinc-300 uppercase italic tracking-widest bg-zinc-50 px-3 py-1 rounded-full">
+                Expiry: {coupon.endDate ? new Date(coupon.endDate).toLocaleDateString().toUpperCase() : 'INFINITE'}
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <div className={`text-[7px] font-mono font-bold uppercase px-2.5 py-1 rounded border tracking-widest inline-block ${
-                    coupon.type === 'GLOBAL' ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 
-                    coupon.type === 'JOINT' ? 'bg-zinc-950 border-[#991B1B]/40 text-red-400' : 
-                    'bg-zinc-950 border-zinc-900 text-zinc-500'
+              <div className="flex justify-between items-start mb-8">
+                <div className="space-y-2">
+                  <div className={`text-[8px] font-black uppercase px-4 py-1.5 rounded-full tracking-[0.2em] inline-block ${
+                    coupon.type === 'GLOBAL' ? 'bg-zinc-900 text-white' : 
+                    coupon.type === 'JOINT' ? 'bg-[#A4143D] text-white' : 
+                    'bg-zinc-100 text-zinc-500'
                   }`}>
                     {coupon.type === 'GLOBAL' ? 'System_Wide' : 
                      coupon.type === 'JOINT' ? 'Joint_Protocol' : 
                      coupon.vendor?.storeName || 'Vendor_Specific'}
                   </div>
                   
-                  <h3 className="text-xl font-mono font-bold text-white tracking-wide pt-2">
+                  <h3 className="text-4xl font-black text-zinc-900 italic tracking-tighter leading-none pt-4 uppercase">
                     {coupon.discountType === 'FREE_SHIPPING' ? 'Logistics_Null' : 
                      coupon.discountType === 'PERCENTAGE' ? `${Number(coupon.discountValue)}% Index` : 
                      `₦${Number(coupon.discountValue).toLocaleString()}`}
                   </h3>
                   
-                  <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-wider">
-                    Threshold: ₦{(Number(coupon.minOrderValue) || 0).toLocaleString()}
+                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] font-mono">
+                    Threshold: ₦{(Number(coupon.minOrderValue) || 0).toLocaleString().padStart(6, '0')}
                   </p>
-                </div>
-
-                <div className="bg-zinc-950/60 rounded-lg p-3.5 border border-zinc-900/60">
-                   <p className="text-[10px] text-zinc-500 font-sans leading-relaxed">
-                     // {coupon.description || "Active metrics reduction architecture applied directly onto standard workspace registry."}
-                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 mt-6 border-t border-zinc-900/60">
-                <div className="space-y-0.5">
-                  <p className="text-[7px] font-mono font-bold text-zinc-600 uppercase tracking-widest">Protocol_Code</p>
-                  <p className="text-sm font-mono font-bold text-white tracking-widest uppercase">
+              <div className="bg-zinc-50 rounded-3xl p-6 mb-8 border border-zinc-100 group-hover:bg-zinc-100/50 transition-colors">
+                 <p className="text-[10px] text-zinc-500 font-bold italic uppercase tracking-tight leading-relaxed">
+                   // {coupon.description || "Active reduction protocol applied to selected artifact nodes."}
+                 </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-6 border-t border-zinc-50">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-zinc-300 uppercase tracking-[0.3em]">Protocol_Code</p>
+                  <p className="text-lg font-black text-zinc-900 tracking-[0.2em] uppercase font-mono">
                     {coupon.code}
                   </p>
                 </div>
                 
                 {activeTab === 'available' && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <button 
                       onClick={() => copyCode(coupon.code)}
-                      className="p-2.5 bg-zinc-950 hover:bg-zinc-900 text-zinc-500 hover:text-white rounded border border-zinc-900 hover:border-zinc-800 transition-colors active:scale-[0.96]"
-                      title="Copy Code"
+                      className="p-4 bg-zinc-50 hover:bg-zinc-900 hover:text-white text-zinc-400 rounded-2xl transition-all border border-zinc-100 active:scale-95"
+                      title="Sync Code"
                     >
-                      <Copy size={12} />
+                      <Copy size={16} />
                     </button>
                     
                     <Link 
                       href="/shop"
-                      className="group relative px-4 py-2.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 overflow-hidden rounded transition-all active:scale-[0.96]"
+                      className="group relative px-8 py-4 bg-black overflow-hidden rounded-2xl transition-all active:scale-95 shadow-xl shadow-zinc-200"
                     >
-                      <span className="relative z-10 flex items-center gap-2 text-[8px] font-mono font-bold uppercase tracking-widest text-white">
-                        Deploy <ArrowUpRight size={10} className="text-[#991B1B]" />
+                      <span className="relative z-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                        Deploy <ArrowUpRight size={14} />
                       </span>
+                      <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     </Link>
                   </div>
                 )}
@@ -232,12 +230,10 @@ export default function CouponsPage() {
           ))}
         </div>
       ) : (
-        <div className="py-24 flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-xl text-center bg-[#111113]/20">
-          <div className="p-4 bg-zinc-950 border border-zinc-900 text-zinc-700 rounded-xl mb-4">
-            <ShoppingBag size={22} />
-          </div>
-          <p className="text-[9px] font-mono font-bold uppercase tracking-[0.25em] text-zinc-600">Reward_Registry_Empty</p>
-          <p className="text-[8px] uppercase tracking-widest text-zinc-500 mt-1 font-sans">Awaiting secure reduction allocations.</p>
+        <div className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 rounded-[4rem] text-center bg-zinc-50/20">
+            <ShoppingBag size={48} className="text-zinc-100 mb-6" />
+            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-zinc-300">Reward_Registry_Empty</p>
+            <p className="text-[9px] uppercase tracking-widest text-zinc-400 mt-2 italic">Awaiting new Coupons...</p>
         </div>
       )}
     </div>

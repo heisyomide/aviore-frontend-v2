@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, Ticket, Copy, Check, ShieldAlert, History } from 'lucide-react';
 
 interface Voucher {
   id: string;
@@ -19,38 +18,43 @@ export default function VoucherWalletPage() {
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchVouchers() {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('AUTHENTICATION_TOKEN_MISSING');
-        }
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/storefront/vouchers/my-vouchers`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error('FAILED_TO_SYNC_VOUCHER_LEDGER');
-        }
-        const result = await response.json();
-        setVouchers(Array.isArray(result) ? result : []);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || 'COMMUNICATION_LAYER_FAILURE');
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  async function fetchVouchers() {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token missing.');
       }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/storefront/vouchers/my-vouchers`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(errorText);
+        throw new Error(
+          'Failed to retrieve your wallet vouchers.'
+        );
+      }
+      const result = await response.json();
+      setVouchers(result);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Communication layer failure.');
+    } finally {
+      setLoading(false);
     }
-    fetchVouchers();
-  }, []);
+  }
+  fetchVouchers();
+}, []);
+
 
   const handleCopyCode = async (id: string, code: string) => {
     try {
@@ -58,118 +62,105 @@ export default function VoucherWalletPage() {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
-      console.error('Failed to copy code segment:', err);
+      console.error('Failed to copy reward code context:', err);
     }
   };
 
   if (loading) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center gap-4 bg-[#0D0D0D] min-h-[50vh]">
-        <Loader2 className="animate-spin text-[#991B1B]" size={24} />
-        <p className="text-[8px] font-mono font-bold tracking-[0.3em] text-zinc-600 uppercase">Indexing_Voucher_Nodes...</p>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-emerald-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="mx-auto max-w-md border border-[#991B1B]/40 bg-[#111113] p-6 rounded-lg my-8 flex items-start gap-3">
-        <ShieldAlert size={16} className="text-[#991B1B] shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-white">System Fault Encountered</p>
-          <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-tight">{error}</p>
-        </div>
+      <div className="mx-auto max-w-md rounded-xl bg-red-50 p-6 text-center border border-red-100 my-8">
+        <p className="text-sm font-medium text-red-800">{error}</p>
       </div>
     );
   }
 
+  // Separate active/usable vouchers from used/expired history rows
   const activeVouchers = vouchers.filter(v => v.status === 'ACTIVE');
   const pastVouchers = vouchers.filter(v => v.status !== 'ACTIVE');
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 text-zinc-100">
-      
-      {/* 1. ARCHITECTURAL LAYER HEADER */}
-      <header className="flex flex-col gap-1.5 border-b border-zinc-900/60 pb-6">
-        <div className="flex items-center gap-2 text-[#991B1B]">
-          <Ticket size={13} />
-          <span className="text-[8px] font-mono font-bold uppercase tracking-[0.3em]">Reward_Allocation_Registry</span>
-        </div>
-        <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">
-          My Reward <span className="text-zinc-600 font-normal font-sans tracking-normal">Wallet</span>
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      {/* Header Context */}
+      <div className="mb-8 border-b border-neutral-100 pb-5">
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
+          My Reward Wallet
         </h1>
-      </header>
+        <p className="mt-2 text-sm text-neutral-500">
+          Claim, verify, and track your discount voucher codes earned across the Aviore network.
+        </p>
+      </div>
 
       {/* =====================================================
-          SECTION 1: ACTIVE PIPELINE RECORDS
+          SECTION 1: ACTIVE / UNLOCKED REWARDS
          ===================================================== */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
-          <h2 className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500">
-            Active Allocations ({activeVouchers.length.toString().padStart(2, '0')})
-          </h2>
-        </div>
+      <div className="mb-12">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-4">
+          Active Vouchers ({activeVouchers.length})
+        </h2>
 
         {activeVouchers.length === 0 ? (
-          <div className="rounded-lg border border-zinc-900 bg-[#111113]/40 p-10 text-center flex flex-col items-center justify-center">
-            <Ticket size={24} className="text-zinc-800 mb-3" />
-            <p className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-600">No active codes mapped to profile</p>
-            <p className="text-[8px] font-mono text-zinc-700 uppercase tracking-tight mt-1">Complete referral progression matrices to release assets.</p>
+          <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-8 text-center">
+            <p className="text-sm text-neutral-500">You don't have any active discount codes yet.</p>
+            <p className="text-xs text-neutral-400 mt-1">Complete your referral milestone progress bar to unlock a voucher!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {activeVouchers.map((voucher) => (
               <div 
                 key={voucher.id} 
-                className="relative overflow-hidden rounded-lg border border-zinc-900 bg-[#111113] p-5 flex flex-col justify-between gap-5 group transition-colors duration-300 hover:border-zinc-800"
+                className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
               >
-                <div className="space-y-4">
+                {/* Left Side Ticket Cutout Accent Pattern via CSS */}
+                <div className="absolute top-1/2 -left-2 h-4 w-4 -translate-y-1/2 rounded-full bg-neutral-50 border border-neutral-200"></div>
+                <div className="absolute top-1/2 -right-2 h-4 w-4 -translate-y-1/2 rounded-full bg-neutral-50 border border-neutral-200"></div>
+
+                <div>
                   <div className="flex items-start justify-between">
-                    <div className="space-y-0.5">
-                      <span className="text-xl font-mono font-bold tracking-tight text-white">
+                    <div>
+                      <span className="text-2xl font-black text-neutral-900">
                         ₦{voucher.discountAmount.toLocaleString()} OFF
                       </span>
-                      <p className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-wide">
-                        Min. Spending: ₦{voucher.minimumOrder.toLocaleString()}
+                      <p className="text-xs font-semibold text-neutral-500 mt-0.5">
+                        Minimum Spend: ₦{voucher.minimumOrder.toLocaleString()}
                       </p>
                     </div>
-                    <span className="text-[8px] font-mono font-bold text-emerald-500 bg-emerald-950/40 border border-emerald-900/60 px-2 py-0.5 rounded uppercase tracking-widest">
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
                       Usable
                     </span>
                   </div>
 
-                  {/* Operational Code Interactive Area */}
-                  <div className="flex items-center gap-2 rounded bg-zinc-950 border border-zinc-900 p-1">
-                    <span className="flex-1 font-mono text-[11px] font-bold tracking-[0.15em] text-zinc-300 px-2 uppercase truncate">
+                  {/* Field Code Input Wrap */}
+                  <div className="mt-5 flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-1.5">
+                    <span className="flex-1 font-mono text-sm font-bold tracking-wider text-neutral-800 px-2">
                       {voucher.code}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleCopyCode(voucher.id, voucher.code)}
-                      className={`h-7 px-3 rounded font-mono text-[9px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${
+                      className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${
                         copiedId === voucher.id
-                          ? 'bg-zinc-900 border border-zinc-800 text-white'
-                          : 'bg-[#111113] text-zinc-400 border border-zinc-900 hover:text-white hover:border-zinc-800'
+                          ? 'bg-neutral-900 text-white'
+                          : 'bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50 shadow-sm'
                       }`}
                     >
-                      {copiedId === voucher.id ? (
-                        <>
-                          <Check size={10} className="text-emerald-500" /> Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={10} /> Copy
-                        </>
-                      )}
+                      {copiedId === voucher.id ? 'Copied ✓' : 'Copy'}
                     </button>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-zinc-900/60 flex items-center justify-between text-[8px] font-mono font-bold uppercase tracking-wide text-zinc-600">
-                  <span className="text-[#991B1B] flex items-center gap-1">
-                    ⏱ TTL: {voucher.daysRemaining} Cycles Remaining
+                <div className="mt-4 pt-4 border-t border-dashed border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
+                  <span className="flex items-center gap-1 font-medium text-amber-600">
+                    ⏱ Expires in {voucher.daysRemaining} days
                   </span>
-                  <span>Closing: {new Date(voucher.expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}</span>
+                  <span>Ends {new Date(voucher.expiresAt).toLocaleDateString()}</span>
                 </div>
               </div>
             ))}
@@ -180,43 +171,40 @@ export default function VoucherWalletPage() {
       {/* =====================================================
           SECTION 2: TRANSACTION HISTORICAL HISTORY
          ===================================================== */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-900 pb-2">
-          <History size={11} className="text-zinc-600" />
-          <h2 className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500">
-            Historical Archive Ledger
-          </h2>
-        </div>
+      <div>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-4">
+          History Ledger
+        </h2>
 
         {pastVouchers.length === 0 ? (
-          <p className="text-[9px] font-mono font-bold text-zinc-700 uppercase tracking-wider pl-1">No structural historic mutations logged.</p>
+          <p className="text-xs text-neutral-400 italic">No historical archive records found.</p>
         ) : (
-          <div className="rounded-lg border border-zinc-900 bg-[#111113] overflow-hidden">
-            <div className="divide-y divide-zinc-900/40">
+          <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white">
+            <div className="divide-y divide-neutral-100">
               {pastVouchers.map((voucher) => (
-                <div key={voucher.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-zinc-950/20 hover:bg-zinc-950/40 transition-colors opacity-60">
-                  <div className="space-y-0.5">
+                <div key={voucher.id} className="flex items-center justify-between p-4 bg-neutral-50/50 opacity-70">
+                  <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs tracking-wider text-zinc-500 line-through uppercase">
+                      <span className="font-mono font-bold text-sm tracking-wide text-neutral-600 line-through">
                         {voucher.code}
                       </span>
-                      <span className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wide">
-                        (₦{voucher.discountAmount.toLocaleString()} Reduction)
+                      <span className="text-xs font-medium text-neutral-500">
+                        (₦{voucher.discountAmount.toLocaleString()} Off)
                       </span>
                     </div>
-                    <p className="text-[8px] font-mono text-zinc-600 uppercase tracking-tight">
-                      Checkout Threshold Constraint: ₦{voucher.minimumOrder.toLocaleString()}
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Target checkout constraint subtotal: ₦{voucher.minimumOrder.toLocaleString()}
                     </p>
                   </div>
 
-                  <div className="shrink-0">
+                  <div>
                     {voucher.status === 'USED' ? (
-                      <span className="px-2 py-0.5 rounded font-mono text-[8px] font-bold uppercase tracking-widest border border-zinc-800 bg-zinc-900 text-zinc-400">
-                        Redeemed
+                      <span className="text-xs font-bold text-neutral-500 bg-neutral-200/60 px-2.5 py-1 rounded-md">
+                        Redeemed 🎉
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded font-mono text-[8px] font-bold uppercase tracking-widest border border-[#991B1B]/40 bg-zinc-950 text-[#991B1B]">
-                        Expired
+                      <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-md">
+                        Expired ⏰
                       </span>
                     )}
                   </div>
@@ -226,10 +214,6 @@ export default function VoucherWalletPage() {
           </div>
         )}
       </div>
-
-      <p className="text-center text-[7px] font-mono font-bold text-zinc-700 uppercase tracking-[0.4em]">
-        AVIORÈ_PIPELINE_VUCH_v1.12
-      </p>
     </div>
   );
 }

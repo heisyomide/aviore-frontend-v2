@@ -49,7 +49,7 @@ function OrdersContent() {
       const response = await api.get('/orders/my-history');
       setOrders(response.data);
     } catch (error) {
-      toast.error("Failed to sync personal transaction registry lines.");
+      toast.error("Failed to sync your order history.");
     } finally {
       setLoading(false);
     }
@@ -58,13 +58,13 @@ function OrdersContent() {
   const handleConfirmReceipt = async (orderItemId: string) => {
     try {
       setIsSettling(orderItemId);
-      const response = await api.post(`/orders/fulfillment/${orderItemId}/confirm-receipt`);
+      const response = await api.post(`/orders/${orderItemId}/confirm-receipt`);
       if (response.data.success) {
-        toast.success("Receipt Confirmed", { description: "Funds successfully signed over to vendor wallet protocol." });
+        toast.success("Receipt Confirmed", { description: "Funds released to vendor." });
         await fetchOrders();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Protocol signature failed.");
+      toast.error(error.response?.data?.message || "Confirmation failed.");
     } finally {
       setIsSettling(null);
     }
@@ -88,60 +88,60 @@ function OrdersContent() {
   if (loading) return <LoadingRegistry />;
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 text-zinc-100 selection:bg-[#C5A880]/20">
+    <div className="w-full max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-700">
       
-      {/* ARCHITECTURAL HEADER HUD */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-end justify-between border-b border-zinc-900 pb-6">
-          <div className="space-y-1.5">
-            <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">Order Registry</h1>
-            <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-[0.25em]">Transaction_Archive // {filteredOrders.length}_Records</p>
+      {/* HEADER HUD */}
+      <div className="flex flex-col gap-8">
+        <div className="flex items-end justify-between border-b border-zinc-50 pb-8">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black text-zinc-900 uppercase italic tracking-tighter leading-none">Order History</h1>
+            <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.4em]">Transaction_Archive // {filteredOrders.length}_Records</p>
           </div>
-          <div className="hidden md:flex items-center gap-2.5 px-4 py-2 bg-zinc-950 border border-zinc-900 rounded-lg text-[#C5A880]">
-            <Package size={13} className="animate-pulse" />
-            <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-white">Ledger_Online</span>
+          <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-zinc-950 rounded-xl text-[#A4143D] shadow-2xl shadow-zinc-200">
+            <Package size={18} />
+            <span className="text-[9px] font-black uppercase tracking-widest text-white">Registry_Active</span>
           </div>
         </div>
 
-        {/* SEARCH & DISPLAY TUNING GRID */}
+        {/* SEARCH & FILTERS */}
         <div className="grid md:grid-cols-12 gap-4 items-center">
           <div className="md:col-span-9 relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-[#C5A880] transition-colors" size={13} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[#A4143D] transition-colors" size={18} />
             <input 
               type="text"
-              placeholder="Query Manifest ID Reference Key..."
+              placeholder="SEARCH BY ORDER REFERENCE OR ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-5 py-3.5 bg-[#111113]/60 border border-zinc-900 rounded-lg text-[10px] font-mono font-bold outline-none focus:bg-zinc-950 focus:border-zinc-800 transition-all uppercase placeholder:text-zinc-700 tracking-wider text-white"
+              className="w-full pl-14 pr-6 py-5 bg-zinc-50/50 border border-zinc-100 rounded-3xl text-[12px] font-black outline-none focus:bg-white focus:ring-8 focus:ring-[#A4143D]/5 transition-all uppercase placeholder:text-zinc-300"
             />
           </div>
-          <div className="md:col-span-3 flex justify-end gap-1.5 p-1 bg-zinc-950 border border-zinc-900/60 rounded-lg max-w-[120px] ml-auto w-full">
-             <button className="p-2 rounded bg-[#111113] border border-zinc-900 text-white w-1/2 flex justify-center"><List size={12} /></button>
-             <button className="p-2 rounded text-zinc-600 hover:text-zinc-400 w-1/2 flex justify-center transition-colors"><LayoutGrid size={12} /></button>
+          <div className="md:col-span-3 flex justify-end gap-2 p-1.5 bg-zinc-100 rounded-2xl">
+             <button className="p-2.5 rounded-xl bg-white text-zinc-900 shadow-sm"><List size={16} /></button>
+             <button className="p-2.5 rounded-xl text-zinc-400 hover:text-zinc-600"><LayoutGrid size={16} /></button>
           </div>
         </div>
       </div>
 
-      {/* SEGMENTED TAB MATRIX TIMELINE */}
-      <div className="flex gap-8 border-b border-zinc-900/40 overflow-x-auto no-scrollbar scroll-smooth">
-        {(['all', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'] as OrderStatus[]).map((tab) => (
+      {/* STATUS TABS */}
+      <div className="flex gap-10 border-b border-zinc-100 overflow-x-auto no-scrollbar scroll-smooth">
+        {['all', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`pb-3.5 text-[9px] font-mono font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${
-              activeTab === tab ? 'text-[#C5A880]' : 'text-zinc-600 hover:text-zinc-400'
+            onClick={() => setActiveTab(tab as OrderStatus)}
+            className={`pb-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${
+              activeTab === tab ? 'text-[#A4143D]' : 'text-zinc-300 hover:text-zinc-400'
             }`}
           >
             {tab}
             {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#C5A880]" />
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-[#A4143D] rounded-full shadow-[0_2px_10px_rgba(164,20,61,0.3)]" />
             )}
           </button>
         ))}
       </div>
 
-      {/* LOGISTICS DATA FEED */}
-      <div className="space-y-4">
+      {/* ORDER LIST */}
+      <div className="space-y-6">
         {filteredOrders.length > 0 ? (
           filteredOrders.map((order: any) => {
             const firstItem = order.items?.[0];
@@ -151,7 +151,7 @@ function OrdersContent() {
                 key={order.id}
                 fullId={order.id}
                 id={order.orderNumber || order.id.slice(-8).toUpperCase()}
-                date={new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
+                date={new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 amount={Number(order.totalAmount)}
                 status={order.status.toLowerCase() as any}
                 vendorId={order.vendorId}
@@ -175,7 +175,7 @@ function OrdersContent() {
         )}
       </div>
 
-      {/* PORTAL MODALS CONTROLLER */}
+      {/* MODALS */}
       {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrderId(null)} />}
       {selectedProductToRate && <ReviewModal product={selectedProductToRate} onClose={() => setSelectedProductToRate(null)} onSuccess={fetchOrders} />}
       {selectedReturnOrder && <ReturnRequestModal order={selectedReturnOrder} onClose={() => setSelectedReturnOrder(null)} onSuccess={fetchOrders} />}
@@ -185,22 +185,22 @@ function OrdersContent() {
 
 function LoadingRegistry() {
   return (
-    <div className="h-[50vh] flex flex-col items-center justify-center gap-4 bg-[#0D0D0D]">
-      <Loader2 className="animate-spin text-[#C5A880]" size={22} />
-      <p className="text-[8px] font-mono font-bold uppercase tracking-[0.25em] text-zinc-600">Synchronizing Ledger Streams...</p>
+    <div className="h-[50vh] flex flex-col items-center justify-center gap-6">
+      <Loader2 className="animate-spin text-[#A4143D]" size={40} />
+      <p className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-300 animate-pulse">Syncing History</p>
     </div>
   );
 }
 
 function EmptyRegistry() {
   return (
-    <div className="py-24 flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-lg text-center bg-[#111113]/20">
-      <div className="p-4 bg-zinc-950 border border-zinc-900 text-zinc-700 rounded-xl mb-4">
-        <Inbox size={18} strokeWidth={1.5} />
+    <div className="py-40 flex flex-col items-center gap-6 border border-zinc-100 rounded-[3rem] bg-zinc-50/40">
+      <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-sm">
+        <Inbox size={32} className="text-zinc-200" />
       </div>
       <div className="text-center space-y-1">
-        <p className="text-zinc-400 text-[10px] font-mono font-bold uppercase tracking-wider">No Transactions Registered</p>
-        <p className="text-zinc-600 text-xs font-sans">Your personal ledger pipeline is empty.</p>
+        <p className="text-zinc-900 text-[11px] font-black uppercase tracking-[0.3em]">No Transactions Found</p>
+        <p className="text-zinc-400 text-[9px] font-bold uppercase tracking-widest italic">Your personal registry is currently clear.</p>
       </div>
     </div>
   );

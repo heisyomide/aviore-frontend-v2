@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode, useState, ComponentType } from 'react';
+import { ReactNode, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -12,266 +12,194 @@ import {
   Ticket,
   Store,
   MapPin,
+  CreditCard,
   Shield,
   Bell,
   LifeBuoy,
   LogOut,
   Menu,
-  X,
-  Home,
-  ChevronRight,
-  CreditCard
+  X
 } from 'lucide-react';
 
+import { Navbar } from '../../components/navbar/Navbar';
 import { Container } from '../../components/layout/Container';
 
-interface LayoutProps {
+export default function DashboardLayout({
+  children,
+}: {
   children: ReactNode;
-}
-
-export default function DashboardLayout({ children }: LayoutProps) {
+}) {
   const pathname = usePathname();
-  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Fallback cleanly to overview if path is empty
-  const rawTitle = pathname.split('/').pop();
-  const pageTitle = rawTitle && rawTitle !== 'dashboard' ? rawTitle.replace('-', ' ') : 'overview';
-  const isOverview = pathname === '/dashboard' || pathname === '/dashboard/overview';
+  const pageTitle =
+    pathname.split('/').pop()?.replace('-', ' ') || 'overview';
 
-  const handleSignOut = () => {
-    localStorage.removeItem('token');
-    // Force a clean redirect and state flush
-    router.refresh();
-    window.location.href = '/login';
+  const navItem = (
+    href: string,
+    label: string,
+    Icon: any
+  ) => {
+    const active = pathname === href;
+
+    return (
+      <Link
+        href={href}
+        onClick={() => setMobileMenuOpen(false)}
+        className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all ${
+          active
+            ? 'bg-[#A4143D] text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+        }`}
+      >
+        <Icon size={18} />
+        <span>{label}</span>
+      </Link>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-[#070708] text-[#E4E4E7] antialiased selection:bg-[#C5A880]/20 select-none">
-      
-      <Container className="pt-6 pb-24 lg:pb-16 px-4 sm:px-6 lg:px-8">
-        
-        {/* SYSTEM STATUS HEADER */}
-        <div className="flex items-center justify-between mb-6 bg-[#0A0A0C] border border-[#141416] rounded-2xl px-5 py-4 shadow-2xl">
-          <div className="space-y-0.5">
-            <span className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest block">
-              Verified Customer
-            </span>
-            <h1 className="text-xs font-mono font-bold uppercase tracking-[0.15em] text-white snap-all">
-              {pageTitle}
-            </h1>
-            <p className="hidden md:block text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-wider">
-              AVIORÈ System Node // Secure Environment
-            </p>
-          </div>
+    <div className="min-h-screen bg-zinc-50">
+      <Navbar />
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-400 bg-black/40 px-3 py-1.5 border border-[#161619] rounded-lg">
-              <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Active Node</span>
-            </div>
-            
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 bg-[#0E0E10] rounded-xl border border-[#161619] text-zinc-300 active:scale-[0.97] transition-all"
-              aria-label="Toggle Menu"
-            >
-              {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
-            </button>
-          </div>
-        </div>
+      <Container className="pt-6 pb-10">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() =>
+            setMobileMenuOpen(!mobileMenuOpen)
+          }
+          className="lg:hidden w-full mb-4 bg-white border border-zinc-200 rounded-2xl px-4 py-4 flex items-center justify-between"
+        >
+          <span className="font-medium text-gray-900 text-sm">
+            Dashboard Menu
+          </span>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
-          {/* DESKTOP SIDEBAR PANEL */}
-          <aside className="hidden lg:block w-[250px] shrink-0 z-20 sticky top-6">
-            <div className="bg-[#0A0A0C] rounded-2xl border border-[#141416] p-3 space-y-6 shadow-2xl">
-              <div>
-                <p className="px-4 pt-2 pb-1 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">
-                  Member Portal
-                </p>
-                <nav className="space-y-1 mt-2">
-                  <SidebarLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={isOverview} />
-                  <SidebarLink href="/dashboard/orders" icon={ShoppingBag} label="Orders" />
-                  <SidebarLink href="/dashboard/history" icon={History} label="Wishlist" />
-                  <SidebarLink href="/dashboard/addresses" icon={MapPin} label="Addresses" />
-                  <SidebarLink href="/dashboard/payments" icon={CreditCard} label="Payment Methods" />
-                  <SidebarLink href="/dashboard/profile" icon={User} label="Profile Settings" />
-                </nav>
-              </div>
-
-              <div className="border-t border-[#141416] pt-4">
-                <p className="px-4 pb-1 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">
-                  Ecosystem Utilities
-                </p>
-                <nav className="space-y-1 mt-2">
-                  <SidebarLink href="/dashboard/notifications" icon={Bell} label="Notifications" />
-                  <SidebarLink href="/dashboard/reviews" icon={Star} label="Reviews" />
-                  <SidebarLink href="/dashboard/coupons" icon={Ticket} label="Coupons" />
-                  <SidebarLink href="/dashboard/stores" icon={Store} label="Stores" />
-                  <SidebarLink href="/dashboard/security" icon={Shield} label="Security" />
-                  <SidebarLink href="/dashboard/support" icon={LifeBuoy} label="Support Manifest" />
-                </nav>
-              </div>
-
-              <div className="border-t border-[#141416] pt-2 px-1">
-                <button 
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-red-400 hover:bg-red-950/10 text-[10px] font-mono font-bold uppercase tracking-widest transition-all duration-300 cursor-pointer text-left"
-                >
-                  <LogOut size={13} className="text-zinc-600 transition-colors" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            </div>
-          </aside>
-
-          {/* MOBILE SLIDEOUT DRAWER OVERLAY */}
-          {mobileMenuOpen && (
-            <div 
-              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
-              onClick={() => setMobileMenuOpen(false)}
-            />
+          {mobileMenuOpen ? (
+            <X size={20} />
+          ) : (
+            <Menu size={20} />
           )}
+        </button>
 
-          {/* MOBILE SIDEBAR PANEL */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar */}
           <aside
             className={`
-              lg:hidden fixed top-0 right-0 h-full w-[280px] bg-[#0A0A0C] border-l border-[#141416] p-4 z-50 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out
-              ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
+              ${
+                mobileMenuOpen
+                  ? 'block'
+                  : 'hidden'
+              }
+              lg:block w-full lg:w-[260px] shrink-0
             `}
           >
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#141416]">
-              <span className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-[0.2em]">Portal Navigation</span>
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 bg-[#0E0E10] rounded-lg border border-[#161619] text-zinc-400"
-              >
-                <X size={14} />
-              </button>
-            </div>
+            <div className="bg-white rounded-3xl border border-zinc-200 p-3 sticky top-24">
+              <nav className="space-y-2">
+                {navItem(
+                  '/dashboard',
+                  'Overview',
+                  LayoutDashboard
+                )}
 
-            <div className="space-y-6">
-              {/* Added missing Member Portal links for mobile view */}
-              <div>
-                <p className="px-3 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">Member Portal</p>
-                <nav className="space-y-1 mt-2">
-                  <SidebarLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={isOverview} onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/orders" icon={ShoppingBag} label="Orders" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/history" icon={History} label="Wishlist" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/profile" icon={User} label="Profile Settings" onClick={() => setMobileMenuOpen(false)} />
-                </nav>
-              </div>
+                {navItem(
+                  '/dashboard/orders',
+                  'Orders',
+                  ShoppingBag
+                )}
 
-              <div>
-                <p className="px-3 text-[8px] font-mono font-extrabold tracking-[0.25em] text-zinc-600 uppercase">Ecosystem Utilities</p>
-                <nav className="space-y-1 mt-2">
-                  <SidebarLink href="/dashboard/notifications" icon={Bell} label="Notifications" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/addresses" icon={MapPin} label="Addresses" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/payments" icon={CreditCard} label="Payment Methods" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/reviews" icon={Star} label="Reviews" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/coupons" icon={Ticket} label="Coupons" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/security" icon={Shield} label="Security" onClick={() => setMobileMenuOpen(false)} />
-                  <SidebarLink href="/dashboard/support" icon={LifeBuoy} label="Support Manifest" onClick={() => setMobileMenuOpen(false)} />
-                </nav>
-              </div>
+                {navItem(
+                  '/dashboard/history',
+                  'History',
+                  History
+                )}
 
-              <div className="border-t border-[#141416] pt-4 px-1">
-                <button 
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-zinc-500 hover:text-red-400 hover:bg-red-950/10 text-[10px] font-mono font-bold uppercase tracking-widest transition-all duration-300 cursor-pointer text-left"
-                >
-                  <LogOut size={13} className="text-zinc-600" />
-                  <span>Sign Out</span>
+                {navItem(
+                  '/dashboard/notifications',
+                  'Notifications',
+                  Bell
+                )}
+
+                {navItem(
+                  '/dashboard/reviews',
+                  'Reviews',
+                  Star
+                )}
+
+                {navItem(
+                  '/dashboard/profile',
+                  'Profile',
+                  User
+                )}
+
+                {navItem(
+                  '/dashboard/coupons',
+                  'Coupons',
+                  Ticket
+                )}
+
+                {navItem(
+                  '/dashboard/stores',
+                  'Stores',
+                  Store
+                )}
+
+                {navItem(
+                  '/dashboard/addresses',
+                  'Address',
+                  MapPin
+                )}
+
+                {navItem(
+                  '/dashboard/payments',
+                  'Payments',
+                  CreditCard
+                )}
+
+                {navItem(
+                  '/dashboard/security',
+                  'Security',
+                  Shield
+                )}
+
+                {navItem(
+                  '/dashboard/support',
+                  'Support',
+                  LifeBuoy
+                )}
+
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-600 hover:bg-red-50 mt-4">
+                  <LogOut size={18} />
+                  <span>Logout</span>
                 </button>
-              </div>
+              </nav>
             </div>
           </aside>
 
-          {/* MAIN SYSTEM VIEWPORT CONTAINER */}
-          <main className="flex-1 min-w-0 w-full">
-            <div className="bg-[#0A0A0C] rounded-2xl border border-[#141416] overflow-hidden min-h-[85vh] shadow-2xl flex flex-col">
-              <div className="p-6 md:p-10 flex-1 flex flex-col bg-black/10">
+          {/* Main Content */}
+          <main className="flex-1 min-w-0">
+            <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden min-h-[80vh]">
+              {/* Fixed Top Header */}
+              <div className="px-6 py-5 border-b border-zinc-100 bg-white sticky top-0 z-10">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-lg font-semibold capitalize text-zinc-900">
+                    {pageTitle}
+                  </h1>
+
+                  <div className="flex items-center gap-2 text-sm text-zinc-500">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    Active
+                  </div>
+                </div>
+              </div>
+
+              {/* Stable Content Area */}
+              <div className="p-5 md:p-8 min-h-[70vh]">
                 {children}
               </div>
             </div>
           </main>
-
         </div>
       </Container>
-
-      {/* FIXED MOBILE BOTTOM NAVIGATION */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0C]/90 backdrop-blur-md border-t border-[#141416] lg:hidden z-30 px-4">
-        <div className="flex items-center justify-around py-2 max-w-md mx-auto">
-          <MobileNavLink href="/dashboard" icon={Home} label="Home" active={isOverview} />
-          <MobileNavLink href="/dashboard/orders" icon={ShoppingBag} label="Orders" />
-          <MobileNavLink href="/dashboard/stores" icon={Store} label="Stores" />
-          <MobileNavLink href="/dashboard/profile" icon={User} label="Profile" />
-        </div>
-      </div>
     </div>
-  );
-}
-
-/* ====================== UTILITY COMPONENTS ====================== */
-
-interface SidebarLinkProps {
-  href: string;
-  icon: ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}
-
-function SidebarLink({ href, icon: Icon, label, active, onClick }: SidebarLinkProps) {
-  const pathname = usePathname();
-  const isActive = active !== undefined ? active : pathname === href;
-
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={`flex items-center justify-between px-4 py-3 rounded-xl text-[10px] font-mono font-bold uppercase tracking-[0.15em] transition-all duration-300 group ${
-        isActive
-          ? 'bg-[#141416] border border-[#27272A] text-white shadow-xl'
-          : 'text-zinc-500 hover:text-zinc-200 hover:bg-[#0E0E10]/50'
-      }`}
-    >
-      <div className="flex items-center gap-3.5">
-        <Icon 
-          size={14} 
-          className={`transition-colors duration-300 ${
-            isActive ? 'text-[#C5A880]' : 'text-zinc-600 group-hover:text-zinc-400'
-          }`} 
-        />
-        <span>{label}</span>
-      </div>
-      {isActive && <ChevronRight size={12} className="text-[#C5A880]" />}
-    </Link>
-  );
-}
-
-interface MobileNavLinkProps {
-  href: string;
-  icon: ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  active?: boolean;
-}
-
-function MobileNavLink({ href, icon: Icon, label, active }: MobileNavLinkProps) {
-  const pathname = usePathname();
-  const isActive = active !== undefined ? active : pathname === href;
-
-  return (
-    <Link
-      href={href}
-      className={`flex flex-col items-center py-2 px-4 rounded-xl transition-colors duration-300 ${
-        isActive ? 'text-[#C5A880]' : 'text-zinc-500 hover:text-zinc-300'
-      }`}
-    >
-      <Icon size={18} className="transition-colors duration-300" />
-      <span className="text-[8px] font-mono font-bold uppercase tracking-wider mt-1">{label}</span>
-    </Link>
   );
 }

@@ -39,13 +39,13 @@ export default function OrderCard({
   const router = useRouter();
 
   const statusStyles: Record<OrderStatus, string> = {
-    paid: 'bg-amber-950/20 text-amber-500 border-amber-900/40',
-    processing: 'bg-zinc-900/40 text-zinc-400 border-zinc-800/60',
-    shipped: 'bg-blue-950/20 text-blue-400 border-blue-900/40',
-    delivered: 'bg-[#C5A880]/10 text-[#C5A880] border-[#C5A880]/20',
-    completed: 'bg-emerald-950/30 text-emerald-500 border-emerald-900/50',
-    returned: 'bg-red-950/20 text-red-400 border-red-900/40',
-    cancelled: 'bg-zinc-950 text-zinc-600 border-zinc-900',
+    paid: 'bg-orange-50 text-orange-600 border-orange-100',
+    processing: 'bg-orange-50 text-orange-600 border-orange-100',
+    shipped: 'bg-blue-50 text-blue-600 border-blue-100',
+    delivered: 'bg-[#A4143D]/5 text-[#A4143D] border-[#A4143D]/10',
+    completed: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    returned: 'bg-red-50 text-red-600 border-red-100',
+    cancelled: 'bg-slate-50 text-slate-400 border-slate-100',
   };
 
   const navigateToChat = () => {
@@ -54,62 +54,64 @@ export default function OrderCard({
 
   return (
     <div 
-      className={`bg-[#111113] p-5 md:p-7 rounded-xl border transition-all duration-300 group hover:border-zinc-700 select-none ${
+      className={`bg-white p-5 md:p-7 rounded-3xl border transition-all duration-300 group hover:shadow-xl hover:border-[#A4143D]/20 ${
         intent === 'chat' 
-          ? 'border-[#C5A880] shadow-[0_0_20px_rgba(197,168,128,0.05)]' 
-          : 'border-zinc-900 shadow-xl'
+          ? 'border-[#A4143D] shadow-lg shadow-[#A4143D]/5 ring-1 ring-[#A4143D]/20' 
+          : 'border-gray-100 shadow-sm'
       }`}
     >
       
       {/* HEADER */}
       <div className="flex justify-between items-start gap-4">
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <p className="text-[8px] font-mono font-bold uppercase text-zinc-500 tracking-widest">#{id}</p>
-            <span className="text-[8px] text-zinc-700">•</span>
-            <p className="text-[8px] font-mono font-bold uppercase text-zinc-500 tracking-widest">{date}</p>
+            <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">#{id}</p>
+            <span className="text-[8px] text-slate-300">•</span>
+            <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">{date}</p>
           </div>
-          <h3 className="font-mono font-bold text-white text-base uppercase tracking-wider">
-            Acquisition Manifest
-          </h3>
+          <div className="flex items-center gap-2">
+             <h3 className="font-black italic text-slate-900 text-lg md:text-xl uppercase tracking-tight">
+               Purchase Product
+             </h3>
+          </div>
         </div>
-        <span className={`text-[8px] px-3 py-1.5 rounded-lg font-mono font-bold border uppercase tracking-widest ${statusStyles[status]}`}>
+        <span className={`text-[8px] px-3 py-1.5 rounded-lg font-black border uppercase tracking-widest ${statusStyles[status]}`}>
           {status}
         </span>
       </div>
 
-      {/* TRACKING (IF SHIPPED/DELIVERED) */}
+      {/* TRACKING (IF SHIPPED) */}
       {(trackingNumber || carrier) && (status === 'shipped' || status === 'delivered') && (
-        <div className="mt-5 p-4 bg-zinc-950 rounded-lg border border-zinc-900 flex items-center justify-between">
+        <div className="mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-[#111113] p-2.5 rounded border border-zinc-900 text-zinc-500">
-              <Truck size={14} />
+            <div className="bg-white p-2.5 rounded-xl shadow-sm text-slate-400">
+              <Truck size={16} />
             </div>
             <div>
-              <p className="text-[8px] font-mono font-bold uppercase text-zinc-500 leading-none mb-1">Carrier // {carrier}</p>
-              <p className="text-[10px] font-mono font-bold text-zinc-300 tracking-tight">{trackingNumber}</p>
+              <p className="text-[8px] font-bold uppercase text-slate-400 leading-none mb-1">Via {carrier}</p>
+              <p className="text-[10px] font-bold text-slate-700 font-mono tracking-tight">{trackingNumber}</p>
             </div>
           </div>
-          <ExternalLink size={12} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+          <ExternalLink size={14} className="text-slate-300" />
         </div>
       )}
 
       {/* FOOTER: PRICE & ACTIONS */}
-      <div className="mt-6 pt-6 border-t border-zinc-900/60 flex flex-col sm:flex-row justify-between items-center gap-6">
+      <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-6">
         <div className="w-full sm:w-auto text-center sm:text-left">
-          <p className="text-[8px] font-mono font-bold uppercase text-zinc-600 tracking-[0.2em] mb-0.5">Settlement_Total</p>
-          <p className="font-mono font-bold text-2xl text-white tracking-wide">₦{amount.toLocaleString()}</p>
+          <p className="text-[8px] font-black uppercase text-slate-300 tracking-[0.2em] mb-0.5">Settlement_Total</p>
+          <p className="font-black italic text-2xl text-slate-900 tracking-tighter">₦{amount.toLocaleString()}</p>
         </div>
 
         <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2 w-full sm:w-auto">
           
-          {/* Vendor Chat Trigger */}
+          {/* Direct Vendor Communication Gateway */}
           <button 
             onClick={navigateToChat}
-            className="p-3.5 bg-zinc-950 text-zinc-400 rounded-lg border border-zinc-900 hover:bg-[#C5A880]/10 hover:text-[#C5A880] hover:border-[#C5A880]/20 transition-all flex items-center justify-center"
-            title="Open Vendor Communication Portal"
+            className="p-3.5 bg-zinc-50 text-zinc-900 rounded-xl hover:bg-[#A4143D]/10 hover:text-[#A4143D] transition-all flex items-center justify-center"
+            title="Open Vendor Chat"
           >
-            <MessageCircle size={15} />
+            <MessageCircle size={16} />
           </button>
 
           {/* Action: Release Escrow Funds */}
@@ -117,37 +119,37 @@ export default function OrderCard({
             <button 
               onClick={onConfirmReceipt}
               disabled={isSettling}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-mono font-bold uppercase tracking-widest px-6 py-3.5 bg-[#C5A880] text-zinc-950 rounded-lg shadow-md hover:bg-white transition-all disabled:opacity-50"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest px-6 py-3.5 bg-[#A4143D] text-white rounded-xl shadow-md hover:bg-black transition-all active:scale-95 disabled:opacity-50"
             >
-              {isSettling ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} />}
+              {isSettling ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
               Confirm_Receipt
             </button>
           )}
 
           {/* Contextual Options */}
-          <div className="flex items-center gap-2 flex-1 sm:flex-none w-full sm:w-auto">
+          <div className="flex items-center gap-2">
             {status === 'completed' && (
               <button 
                 onClick={onRateProduct}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-mono font-bold uppercase px-6 py-3.5 border border-[#C5A880]/30 text-[#C5A880] rounded-lg hover:bg-[#C5A880]/10 transition-all"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-black uppercase px-6 py-3.5 border border-[#A4143D] text-[#A4143D] rounded-xl hover:bg-[#A4143D] hover:text-white transition-all"
               >
-                <Star size={13} /> Rate
+                <Star size={14} /> Rate
               </button>
             )}
             
             <button 
                onClick={() => onOpenDetails(fullId)}
-               className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-mono font-bold uppercase tracking-widest px-6 py-3.5 bg-zinc-950 border border-zinc-900 text-zinc-300 rounded-lg hover:border-zinc-700 transition-all"
+               className="flex-1 sm:flex-nowrap flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest px-6 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-black transition-all"
             >
-              Details <ChevronRight size={13} />
+              Details <ChevronRight size={14} />
             </button>
           </div>
 
-          {/* Invoice Document Handler */}
+          {/* Invoice Clipboard Anchor */}
           <button 
-            className="p-3.5 bg-zinc-950 text-zinc-500 border border-zinc-900 rounded-lg hover:text-zinc-300 transition-all"
+            className="p-3.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#A4143D]/10 hover:text-[#A4143D] transition-all"
           >
-            <FileText size={15} />
+            <FileText size={18} />
           </button>
         </div>
       </div>
