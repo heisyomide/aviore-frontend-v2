@@ -15,10 +15,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Re-ordered options to reflect explicit sequential supply chain flow
+// Options to reflect sequential supply chain flow
 const STATUS_OPTIONS = ['ALL', 'PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 
 export default function VendorOrdersPage() {
+  // state arrays now hold isolated orderItem records sent from your refined NestJS endpoint
   const [orders, setOrders] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('ALL');
   const [loading, setLoading] = useState(true);
@@ -50,14 +51,15 @@ export default function VendorOrdersPage() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      const matchesStatus = activeTab === 'ALL' || order.status === activeTab;
-      const ref = (order.orderNumber || order.id).toLowerCase();
+      // ✅ FIXED: Read orderItem specific 'itemStatus' sent down from your controller map
+      const matchesStatus = activeTab === 'ALL' || order.itemStatus === activeTab;
+      const ref = (order.orderNumber || order.orderId || '').toLowerCase();
       const matchesSearch = ref.includes(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
     });
   }, [activeTab, orders, searchQuery]);
 
-  const handleUpdateStatus = async (orderId: string, newStatus: string, tracking?: typeof trackingData) => {
+  const handleUpdateStatus = async (orderId: string, orderItemId: string, newStatus: string, tracking?: typeof trackingData) => {
     if (newStatus === 'COMPLETED') {
       toast.error("Action Prohibited", { 
         description: "Escrow settlement distribution requires buyer cryptographic handshake confirmation." 
@@ -65,7 +67,9 @@ export default function VendorOrdersPage() {
       return;
     }
 
-    setUpdatingId(orderId);
+    setUpdatingId(orderItemId);
+    
+    // ✅ FIXED: Injects orderId into route parameter string cleanly without passing "undefined"
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/vendor/orders/${orderId}/status`;
 
     try {
@@ -80,7 +84,8 @@ export default function VendorOrdersPage() {
       });
 
       if (response.ok) {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, ...tracking } : o));
+        // ✅ FIXED: Sync internal client state using unique orderItemId identity tracking
+        setOrders(prev => prev.map(o => o.orderItemId === orderItemId ? { ...o, itemStatus: newStatus, ...tracking } : o));
         setShowTrackingModal(null);
         setTrackingData({ trackingNumber: '', carrier: '' });
         toast.success(`Protocol Committed: ${newStatus}`);
@@ -154,11 +159,11 @@ export default function VendorOrdersPage() {
               </tr>
             </thead>
             {filteredOrders.map((order) => (
-              <tbody key={order.id} className="border-b border-zinc-900/50 last:border-none">
+              <tbody key={order.orderItemId} className="border-b border-zinc-900/50 last:border-none">
                 <tr className="hover:bg-zinc-950/40 transition-colors group">
                   <td className="p-5">
                     <div className="font-mono text-xs font-bold text-white tracking-wide">
-                       {order.orderNumber || `#${order.id.slice(-8).toUpperCase()}`}
+                       {order.orderNumber || `#${order.orderId.slice(-8).toUpperCase()}`}
                     </div>
                     <div className="text-[9px] text-zinc-600 font-medium mt-1 uppercase font-mono tracking-wider">
                         {new Date(order.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -166,17 +171,21 @@ export default function VendorOrdersPage() {
                   </td>
                   <td className="p-5">
                     <div className="text-xs font-medium text-zinc-200 uppercase tracking-wide">
-                      {order.user?.firstName} {order.user?.lastName}
+                      {order.customer?.firstName} {order.customer?.lastName}
                     </div>
-                    <div className="text-[10px] text-zinc-500 font-light lowercase font-mono tracking-tight mt-0.5">{order.user?.email}</div>
+                    <div className="text-[10px] text-zinc-500 font-light lowercase font-mono tracking-tight mt-0.5">{order.customer?.email}</div>
                   </td>
                   <td className="p-5 text-right">
-                    <div className="text-xs font-bold text-zinc-100 font-mono">₦{Number(order.totalAmount).toLocaleString()}</div>
+                    {/* ✅ FIXED: Reads vendorSubtotalAmount instead of master order totalAmount object to prevent NaN render */}
+                    <div className="text-xs font-bold text-zinc-100 font-mono">
+                      ₦{Number(order.vendorSubtotalAmount ?? 0).toLocaleString()}
+                    </div>
                     <p className="text-[8px] text-zinc-600 font-mono font-bold uppercase tracking-wider mt-0.5">AUTH_ESCROW</p>
                   </td>
                   <td className="p-5">
                     <div className="flex flex-col gap-1.5 items-start">
-                        <StatusBadge status={order.status} />
+                        {/* ✅ FIXED: Points directly to isolated itemStatus property */}
+                        <StatusBadge status={order.itemStatus} />
                         {order.trackingNumber && (
                             <span className="text-[9px] font-mono font-bold text-zinc-400 flex items-center gap-1.5 uppercase tracking-wider bg-zinc-950 px-2 py-0.5 border border-zinc-900 rounded-sm">
                                 <Truck size={10} className="text-zinc-500" /> {order.carrier} <span className="text-zinc-600">//</span> {order.trackingNumber}
@@ -186,23 +195,23 @@ export default function VendorOrdersPage() {
                   </td>
                   <td className="p-5 text-right">
                     <button 
-                      onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                      onClick={() => setExpandedOrderId(expandedOrderId === order.orderItemId ? null : order.orderItemId)}
                       className="inline-flex items-center gap-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-white transition-colors bg-zinc-950 border border-zinc-900 px-3 py-1.5 rounded-lg cursor-pointer"
                     >
-                      {expandedOrderId === order.id ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                      {expandedOrderId === order.orderItemId ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                       View_Nodes
                     </button>
                   </td>
                   <td className="p-5 text-right relative">
                     <div className="flex items-center justify-end gap-2.5">
-                       {updatingId === order.id && <Loader2 size={12} className="animate-spin text-[#991B1B]" />}
+                       {updatingId === order.orderItemId && <Loader2 size={12} className="animate-spin text-[#991B1B]" />}
                        <select 
-                        disabled={updatingId === order.id || order.status === 'COMPLETED' || order.status === 'CANCELLED'}
-                        value={order.status}
+                        disabled={updatingId === order.orderItemId || order.itemStatus === 'COMPLETED' || order.itemStatus === 'CANCELLED'}
+                        value={order.itemStatus}
                         onChange={(e) => {
                           const val = e.target.value;
-                          if (val === 'SHIPPED') setShowTrackingModal(order.id);
-                          else handleUpdateStatus(order.id, val);
+                          if (val === 'SHIPPED') setShowTrackingModal(order.orderItemId);
+                          else handleUpdateStatus(order.orderId, order.orderItemId, val);
                         }}
                         className="appearance-none bg-zinc-950 border border-zinc-900 text-zinc-300 text-[9px] font-mono font-bold uppercase tracking-widest rounded-xl px-4 py-2.5 outline-none cursor-pointer hover:border-zinc-700 transition-all disabled:opacity-20"
                        >
@@ -223,7 +232,7 @@ export default function VendorOrdersPage() {
                     </div>
 
                     {/* PREMIUM OBSIDIAN TRACKING OVERLAY */}
-                    {showTrackingModal === order.id && (
+                    {showTrackingModal === order.orderItemId && (
                         <div className="absolute right-6 top-16 z-30 bg-zinc-950 border border-zinc-900 shadow-2xl p-5 rounded-2xl w-72 text-left animate-in zoom-in-95 duration-200">
                             <div className="flex items-center gap-2 mb-4">
                                 <Truck size={14} className="text-[#991B1B]" />
@@ -244,7 +253,7 @@ export default function VendorOrdersPage() {
                                 />
                                 <div className="flex gap-2 pt-1">
                                     <button 
-                                        onClick={() => handleUpdateStatus(order.id, 'SHIPPED', trackingData)}
+                                        onClick={() => handleUpdateStatus(order.orderId, order.orderItemId, 'SHIPPED', trackingData)}
                                         className="flex-1 bg-[#991B1B] border border-[#991B1B] text-white text-[9px] font-mono font-bold uppercase tracking-widest py-2.5 rounded-lg hover:bg-[#7f1616] hover:border-[#7f1616] transition-colors cursor-pointer"
                                     >
                                         Deploy
@@ -263,10 +272,11 @@ export default function VendorOrdersPage() {
                 </tr>
                 
                 {/* EXPANDABLE LOGISTICS INFRASTRUCTURE MANIFEST */}
-                {expandedOrderId === order.id && (
+                {expandedOrderId === order.orderItemId && (
                   <tr>
                     <td colSpan={6} className="bg-zinc-950/40 p-6 animate-in slide-in-from-top-4 duration-400 border-b border-zinc-900">
-                       <OrderItemsList items={order.items || []} orderStatus={order.status} />
+                       {/* Pass down unified details object map */}
+                       <OrderItemsList item={order} />
                     </td>
                   </tr>
                 )}
@@ -285,49 +295,47 @@ export default function VendorOrdersPage() {
 /* LOGISTICS MANIFEST SUB-COMPONENTS */
 /* --------------------------------- */
 
-function OrderItemsList({ items, orderStatus }: { items: any[], orderStatus: string }) {
+function OrderItemsList({ item }: { item: any }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
         <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-          <ClipboardList size={13} /> Loaded Manifest Items ({items.length})
+          <ClipboardList size={13} /> Loaded Manifest Item
         </h4>
         <button className="text-[9px] font-mono font-bold text-zinc-400 hover:text-white uppercase flex items-center gap-1.5 transition-colors cursor-pointer">
            <ExternalLink size={11} /> Print packing slip
         </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-5 bg-[#111113] p-4 rounded-xl border border-zinc-900/60 shadow-sm">
-            <div className="w-14 h-14 bg-zinc-950 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-900 relative">
-              <img 
-                src={item.product?.images?.[0]?.imageUrl || 'https://via.placeholder.com/100'} 
-                alt="Product Item" 
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
-              />
-              <div className="absolute top-1 right-1 bg-zinc-900 border border-zinc-800 text-white text-[8px] font-mono font-bold px-1 py-0.5 rounded-sm">
-                x{item.quantity}
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-zinc-200 uppercase tracking-wide truncate">{item.product?.title || 'Unknown Artifact'}</p>
-              <p className="text-[9px] text-zinc-600 font-mono font-bold mt-1 uppercase tracking-wider">SKU: {item.productId.slice(0, 8).toUpperCase()}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-bold text-zinc-100 font-mono">₦{Number(item.priceAtPurchase).toLocaleString()}</p>
-              
-              {/* Informative block clarifying automated escrow distribution rules */}
-              <div className="mt-1 flex items-center justify-end gap-1 font-mono font-bold text-[8px] uppercase tracking-wider">
-                {orderStatus === 'COMPLETED' ? (
-                  <span className="text-emerald-500 flex items-center gap-0.5"><CheckCircle2 size={9} /> RELEASED</span>
-                ) : (
-                  <span className="text-amber-600 flex items-center gap-0.5"><Lock size={8} /> ESCROW_HELD</span>
-                )}
-              </div>
+      <div className="max-w-2xl">
+        <div className="flex items-center gap-5 bg-[#111113] p-4 rounded-xl border border-zinc-900/60 shadow-sm">
+          <div className="w-14 h-14 bg-zinc-950 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-900 relative">
+            <img 
+              src={item.productDetails?.mainImage || 'https://via.placeholder.com/100'} 
+              alt="Product Line Node" 
+              className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+            />
+            <div className="absolute top-1 right-1 bg-zinc-900 border border-zinc-800 text-white text-[8px] font-mono font-bold px-1 py-0.5 rounded-sm">
+              x{item.quantity}
             </div>
           </div>
-        ))}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-zinc-200 uppercase tracking-wide truncate">{item.productDetails?.title || 'Unknown Artifact'}</p>
+            <p className="text-[9px] text-zinc-600 font-mono font-bold mt-1 uppercase tracking-wider">SKU: {item.productDetails?.productId?.slice(0, 8).toUpperCase()}</p>
+          </div>
+          <div className="text-right">
+            <div className="text-xs font-bold text-zinc-100 font-mono">₦{Number(item.pricePerUnit).toLocaleString()}</div>
+            
+            {/* Sync escrow display badges safely with the isolated itemStatus level */}
+            <div className="mt-1 flex items-center justify-end gap-1 font-mono font-bold text-[8px] uppercase tracking-wider">
+              {item.itemStatus === 'COMPLETED' || item.payoutStatus === 'SETTLED' ? (
+                <span className="text-emerald-500 flex items-center gap-0.5"><CheckCircle2 size={9} /> RELEASED</span>
+              ) : (
+                <span className="text-amber-600 flex items-center gap-0.5"><Lock size={8} /> ESCROW_HELD</span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -341,7 +349,7 @@ function StatusBadge({ status }: { status: string }) {
     SHIPPED: 'bg-zinc-950 border-zinc-800 text-blue-400',
     DELIVERED: 'bg-zinc-950 border-zinc-700 text-zinc-100',
     COMPLETED: 'bg-[#991B1B]/10 border-[#991B1B]/40 text-[#ef4444]',
-    CANCELLED: 'bg-zinc-950 border-zinc-900 text-zinc-700 lines-through',
+    CANCELLED: 'bg-zinc-950 border-zinc-900 text-zinc-700 line-through',
   };
   return (
     <span className={`px-2.5 py-1 border rounded-lg text-[8px] font-mono font-bold uppercase tracking-widest inline-block ${styles[status] || 'bg-zinc-950 border-zinc-900 text-zinc-500'}`}>
