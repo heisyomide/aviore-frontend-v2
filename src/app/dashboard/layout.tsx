@@ -50,7 +50,7 @@ export default function DashboardLayout({
         <div className="flex items-center justify-between mb-6 bg-[#0A0A0C] border border-[#141416] rounded-2xl px-5 py-4 shadow-2xl">
           <div className="space-y-0.5">
             <span className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest block">
-              Verified Session Token
+              Verified Customer
             </span>
             <h1 className="text-xs font-mono font-bold uppercase tracking-[0.15em] text-white">
               {pageTitle}

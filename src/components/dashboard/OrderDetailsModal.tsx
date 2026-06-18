@@ -9,7 +9,7 @@ interface OrderDetailsModalProps {
 }
 
 export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalProps) {
-  // Prevent background scrolling while the user interacts with the dataset
+  // Lock background thread scroll streams safely during interface interactions
   useEffect(() => {
     if (order) {
       document.body.style.overflow = 'hidden';
@@ -22,12 +22,12 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
   if (!order) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-6 transition-all duration-300">
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-6 transition-all duration-300 select-none">
       
-      {/* BACKGROUND TAP DISMISSAL BOUNDARY */}
+      {/* BACKDROP ACTION BOUNDARY */}
       <div className="absolute inset-0 -z-10" onClick={onClose} />
         
-      {/* OVERALL CONTAINER MODAL LAYER */}
+      {/* MODAL STRUCTURE SHELL */}
       <div
         className="
           relative
@@ -37,7 +37,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
           rounded-t-xl
           md:rounded-xl
           border-t md:border border-zinc-900
-          shadow-[0_24px_64px_rgba(0,0,0,0.8)]
+          shadow-[0_24px_64px_rgba(0,0,0,0.9)]
           max-h-[90vh]
           md:max-h-[85vh]
           flex
@@ -50,37 +50,18 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
         "
       >
 
-        {/* 1. STICKY SYSTEM HEADER PANEL */}
-        <div
-          className="
-            sticky
-            top-0
-            z-30
-            flex
-            items-center
-            justify-between
-            px-5
-            md:px-6
-            py-4
-            bg-[#111113]/95
-            backdrop-blur-md
-            border-b
-            border-zinc-900/60
-            shrink-0
-          "
-        >
+        {/* SYSTEM MODAL HEADER HEADER */}
+        <div className="sticky top-0 z-30 flex items-center justify-between px-5 md:px-6 py-4 bg-[#111113]/95 backdrop-blur-md border-b border-zinc-900/60 shrink-0">
           <div className="space-y-1 min-w-0 pr-2">
-            <div className="flex items-center gap-1.5 text-[#991B1B]">
-              <Sparkles size={12} className="shrink-0 animate-pulse" />
+            <div className="flex items-center gap-1.5 text-[#C5A880]">
+              <Sparkles size={11} className="shrink-0 animate-pulse" />
               <span className="text-[8px] font-mono font-bold uppercase tracking-[0.3em] block truncate">
                 Fulfillment_Manifest
               </span>
             </div>
-
             <h2 className="text-lg font-mono font-bold uppercase tracking-wider text-white">
               Order Summary
             </h2>
-
             <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest truncate">
               ID: {order.orderNumber || order.id?.slice(-12).toUpperCase()}
             </p>
@@ -88,23 +69,23 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
 
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded bg-zinc-950 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-white transition-all duration-200 flex items-center justify-center active:scale-95 shrink-0"
+            className="h-8 w-8 rounded bg-zinc-950 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-white transition-all flex items-center justify-center active:scale-95 shrink-0"
           >
-            <X size={14} />
+            <X size={13} />
           </button>
         </div>
 
-        {/* INTERNAL VIEWPORT SCROLL CONTAINER */}
+        {/* MAIN VIEWPORT PORT */}
         <div className="flex-1 overflow-y-auto px-5 md:px-6 py-6 space-y-6 no-scrollbar">
           
-          {/* 2. ORIGIN & LOGISTICS TRACKING MATRIX */}
+          {/* VENDOR PROFILE & LINE CARRIER CODES */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <section className="bg-[#111113] p-4 rounded-lg border border-zinc-900 flex items-center gap-3.5">
               <div className="w-9 h-9 bg-zinc-950 border border-zinc-900 rounded flex items-center justify-center text-zinc-500 shrink-0">
-                <Store size={14} />
+                <Store size={13} />
               </div>
               <div className="min-w-0">
-                <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest leading-none mb-1.5">Vendor</p>
+                <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest leading-none mb-1.5">Origin_Store</p>
                 <p className="text-xs font-mono font-bold text-zinc-200 uppercase tracking-wide leading-tight truncate">
                   {order.vendor?.storeName || "AVIORÈ Registry"}
                 </p>
@@ -114,24 +95,24 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
 
             <section className="bg-[#111113] p-4 rounded-lg border border-zinc-900 flex items-center gap-3.5">
               <div className="w-9 h-9 bg-zinc-950 border border-zinc-900 rounded flex items-center justify-center text-zinc-500 shrink-0">
-                <Truck size={14} />
+                <Truck size={13} />
               </div>
               <div className="min-w-0">
                 <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-widest leading-none mb-1.5">Logistics_ID</p>
                 <p className="text-xs font-mono font-bold text-zinc-200 uppercase tracking-wide leading-tight truncate">
                   {order.trackingNumber || "PENDING_HANDOFF"}
                 </p>
-                <p className="text-[8px] font-mono font-bold text-[#991B1B] uppercase tracking-wider mt-0.5 truncate">
-                  {order.carrier || "Awaiting Carrier"}
+                <p className="text-[8px] font-mono font-bold text-[#C5A880] uppercase tracking-wider mt-0.5 truncate">
+                  {order.carrier || "Awaiting Assignment"}
                 </p>
               </div>
             </section>
           </div>
 
-          {/* 3. INVENTORY LINE-ITEM PIPELINE */}
+          {/* ACQUISITION PIPELINE METRICS */}
           <section className="space-y-4">
             <div className="flex items-center gap-3">
-              <Package size={13} className="text-zinc-600 shrink-0" />
+              <Package size={12} className="text-zinc-600 shrink-0" />
               <span className="text-[8px] font-mono font-bold uppercase tracking-[0.3em] text-zinc-500">Inventory_Manifest</span>
               <div className="h-[1px] flex-1 bg-zinc-900/60" />
             </div>
@@ -147,8 +128,8 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                       <div className="w-12 h-12 rounded border border-zinc-900 overflow-hidden bg-zinc-950 flex-shrink-0 relative">
                         <img 
                           src={item.product?.images?.[0]?.imageUrl || item.product?.image || '/api/placeholder/150/150'} 
-                          className="w-full h-full object-cover grayscale opacity-80" 
-                          alt="Artifact Source"
+                          className="w-full h-full object-cover grayscale opacity-65" 
+                          alt="Artifact Vector Asset"
                         />
                       </div>
                       <div className="flex-1 min-w-0 space-y-0.5">
@@ -166,11 +147,11 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                       </div>
                     </div>
 
-                    {/* VENDOR REPLY TIMELINE NODE */}
+                    {/* VENDOR ARCHIVE RESPONSE CORNER */}
                     {hasReply && (
-                      <div className="ml-4 p-4 bg-zinc-950 rounded-lg border border-zinc-900 border-l-[#991B1B] relative">
+                      <div className="ml-4 p-4 bg-zinc-950 rounded-lg border border-zinc-900 border-l-[#C5A880] relative">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <MessageSquareQuote size={12} className="text-[#991B1B] shrink-0" />
+                          <MessageSquareQuote size={11} className="text-[#C5A880] shrink-0" />
                           <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-500">
                             Store_Response
                           </span>
@@ -186,7 +167,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
             </div>
           </section>
 
-          {/* 4. DESTINATION METRICS & SETTLEMENT PARSING */}
+          {/* ROUTING DATA & PROTOCOL SYSTEMS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-500">
@@ -194,9 +175,9 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
               </div>
               <div className="text-[11px] font-sans text-zinc-500 leading-relaxed bg-[#111113] p-4 rounded-lg border border-zinc-900 min-h-[110px] flex flex-col justify-center">
                 <p className="text-zinc-300 font-mono font-bold uppercase text-xs tracking-wide mb-1 truncate">{order.address?.fullName || 'Registered Agent'}</p>
-                <p className="truncate">{order.address?.street}</p>
-                <p className="truncate">{order.address?.city}, {order.address?.state}</p>
-                <span className="text-[#991B1B] font-mono font-bold block mt-1 tracking-wider">{order.address?.phone || order.address?.phoneNumber}</span>
+                <p className="truncate text-zinc-400">{order.address?.street}</p>
+                <p className="truncate text-zinc-500">{order.address?.city}, {order.address?.state}</p>
+                <span className="text-[#C5A880] font-mono font-bold block mt-1 tracking-wider">{order.address?.phone || order.address?.phoneNumber}</span>
               </div>
             </div>
 
@@ -207,27 +188,27 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
               <div className="bg-[#111113] p-4 rounded-lg border border-zinc-900 min-h-[110px] flex flex-col justify-center space-y-2.5">
                 <div>
                   <span className="text-[8px] text-zinc-600 font-mono font-bold uppercase block tracking-wider">Gateway Protocol</span>
-                  <p className="text-[10px] font-mono font-bold text-[#991B1B] uppercase tracking-widest mt-0.5">
+                  <p className="text-[10px] font-mono font-bold text-[#C5A880] uppercase tracking-widest mt-0.5">
                     {order.payment?.provider || 'Paystack Channel'}
                   </p>
                 </div>
                 <div>
                   <span className="text-[8px] text-zinc-600 font-mono font-bold uppercase block tracking-wider">Reference Node</span>
-                  <p className="text-[9px] font-mono text-zinc-400 truncate tracking-wide">{order.payment?.reference || 'pending_sync'}</p>
+                  <p className="text-[9px] font-mono text-zinc-500 truncate tracking-wide">{order.payment?.reference || 'pending_sync'}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 5. METRIC FOOTER TOTAL PANEL */}
+        {/* METRIC BOTTOM BAR AGGREGATE */}
         <div className="p-4 bg-[#111113] border-t border-zinc-900/60 shrink-0 space-y-3.5">
           <section className="bg-zinc-950 p-4 border border-zinc-900 rounded-lg text-white relative overflow-hidden">
             <div className="flex justify-between items-center relative z-10">
               <div className="space-y-0.5">
                 <span className="text-[8px] font-mono font-bold uppercase tracking-[0.25em] text-zinc-600 block">Net_Aggregate</span>
                 <div className="flex items-center gap-1.5 text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-500">
-                  <ShieldCheck size={12} className="text-[#991B1B]" /> <span>Authorized_Settled</span>
+                  <ShieldCheck size={12} className="text-[#C5A880]" /> <span>Authorized_Settled</span>
                 </div>
               </div>
               <span className="text-xl font-mono font-bold tracking-wide text-white">

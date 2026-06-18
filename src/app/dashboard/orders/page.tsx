@@ -49,7 +49,7 @@ function OrdersContent() {
       const response = await api.get('/orders/my-history');
       setOrders(response.data);
     } catch (error) {
-      toast.error("Failed to sync your order history.");
+      toast.error("Failed to sync personal transaction registry lines.");
     } finally {
       setLoading(false);
     }
@@ -60,11 +60,11 @@ function OrdersContent() {
       setIsSettling(orderItemId);
       const response = await api.post(`/orders/fulfillment/${orderItemId}/confirm-receipt`);
       if (response.data.success) {
-        toast.success("Receipt Confirmed", { description: "Funds released to vendor protocol." });
+        toast.success("Receipt Confirmed", { description: "Funds successfully signed over to vendor wallet protocol." });
         await fetchOrders();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Confirmation failed.");
+      toast.error(error.response?.data?.message || "Protocol signature failed.");
     } finally {
       setIsSettling(null);
     }
@@ -88,28 +88,28 @@ function OrdersContent() {
   if (loading) return <LoadingRegistry />;
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 text-zinc-100">
+    <div className="w-full max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 text-zinc-100 selection:bg-[#C5A880]/20">
       
-      {/* 1. ARCHITECTURAL HEADER HUD */}
+      {/* ARCHITECTURAL HEADER HUD */}
       <div className="flex flex-col gap-6">
-        <div className="flex items-end justify-between border-b border-zinc-900/60 pb-6">
+        <div className="flex items-end justify-between border-b border-zinc-900 pb-6">
           <div className="space-y-1.5">
-            <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">Order History</h1>
+            <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">Order Registry</h1>
             <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-[0.25em]">Transaction_Archive // {filteredOrders.length}_Records</p>
           </div>
-          <div className="hidden md:flex items-center gap-2.5 px-4 py-2 bg-zinc-950 border border-zinc-900 rounded-lg text-[#991B1B]">
-            <Package size={14} className="animate-pulse" />
-            <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-white">Registry_Active</span>
+          <div className="hidden md:flex items-center gap-2.5 px-4 py-2 bg-zinc-950 border border-zinc-900 rounded-lg text-[#C5A880]">
+            <Package size={13} className="animate-pulse" />
+            <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-white">Ledger_Online</span>
           </div>
         </div>
 
-        {/* 2. INDUSTRIAL SEARCH & GRID CONTROL SWITCH */}
+        {/* SEARCH & DISPLAY TUNING GRID */}
         <div className="grid md:grid-cols-12 gap-4 items-center">
           <div className="md:col-span-9 relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-[#991B1B] transition-colors" size={14} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-[#C5A880] transition-colors" size={13} />
             <input 
               type="text"
-              placeholder="SEARCH BY ORDER REFERENCE OR ID..."
+              placeholder="Query Manifest ID Reference Key..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-5 py-3.5 bg-[#111113]/60 border border-zinc-900 rounded-lg text-[10px] font-mono font-bold outline-none focus:bg-zinc-950 focus:border-zinc-800 transition-all uppercase placeholder:text-zinc-700 tracking-wider text-white"
@@ -122,25 +122,25 @@ function OrdersContent() {
         </div>
       </div>
 
-      {/* 3. COHESIVE TAB TIMELINE */}
+      {/* SEGMENTED TAB MATRIX TIMELINE */}
       <div className="flex gap-8 border-b border-zinc-900/40 overflow-x-auto no-scrollbar scroll-smooth">
         {(['all', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'] as OrderStatus[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`pb-3.5 text-[9px] font-mono font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${
-              activeTab === tab ? 'text-[#991B1B]' : 'text-zinc-600 hover:text-zinc-400'
+              activeTab === tab ? 'text-[#C5A880]' : 'text-zinc-600 hover:text-zinc-400'
             }`}
           >
             {tab}
             {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#991B1B]" />
+              <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#C5A880]" />
             )}
           </button>
         ))}
       </div>
 
-      {/* 4. REALTIME ORDER GRID WORKSPACE */}
+      {/* LOGISTICS DATA FEED */}
       <div className="space-y-4">
         {filteredOrders.length > 0 ? (
           filteredOrders.map((order: any) => {
@@ -175,7 +175,7 @@ function OrdersContent() {
         )}
       </div>
 
-      {/* SECURE OVERLAY MODAL HUB */}
+      {/* PORTAL MODALS CONTROLLER */}
       {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrderId(null)} />}
       {selectedProductToRate && <ReviewModal product={selectedProductToRate} onClose={() => setSelectedProductToRate(null)} onSuccess={fetchOrders} />}
       {selectedReturnOrder && <ReturnRequestModal order={selectedReturnOrder} onClose={() => setSelectedReturnOrder(null)} onSuccess={fetchOrders} />}
@@ -186,21 +186,21 @@ function OrdersContent() {
 function LoadingRegistry() {
   return (
     <div className="h-[50vh] flex flex-col items-center justify-center gap-4 bg-[#0D0D0D]">
-      <Loader2 className="animate-spin text-[#991B1B]" size={26} />
-      <p className="text-[8px] font-mono font-bold uppercase tracking-[0.25em] text-zinc-600 uppercase">Synchronizing Ledger Streams...</p>
+      <Loader2 className="animate-spin text-[#C5A880]" size={22} />
+      <p className="text-[8px] font-mono font-bold uppercase tracking-[0.25em] text-zinc-600">Synchronizing Ledger Streams...</p>
     </div>
   );
 }
 
 function EmptyRegistry() {
   return (
-    <div className="py-24 flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-xl text-center bg-[#111113]/20">
+    <div className="py-24 flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-lg text-center bg-[#111113]/20">
       <div className="p-4 bg-zinc-950 border border-zinc-900 text-zinc-700 rounded-xl mb-4">
-        <Inbox size={20} strokeWidth={1.5} />
+        <Inbox size={18} strokeWidth={1.5} />
       </div>
       <div className="text-center space-y-1">
         <p className="text-zinc-400 text-[10px] font-mono font-bold uppercase tracking-wider">No Transactions Registered</p>
-        <p className="text-zinc-600 text-[11px] font-sans">Your personal ledger pipeline is currently empty.</p>
+        <p className="text-zinc-600 text-xs font-sans">Your personal ledger pipeline is empty.</p>
       </div>
     </div>
   );
