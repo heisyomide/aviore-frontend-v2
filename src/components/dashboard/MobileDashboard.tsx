@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-  Package, 
-  Clock, 
-  ShoppingBag, 
-  ChevronRight 
+import {
+  Package,
+  Heart,
+  Ticket,
+  MapPin,
+  ChevronRight,
+  ShoppingBag,
+  Clock,
 } from 'lucide-react';
 
 import { useWishlistStore } from '@/src/store/useWishlistStore';
@@ -32,8 +35,9 @@ export default function DashboardOverview({ data }: DashboardProps) {
   }, [data]);
 
   const { items: wishlistItems } = useWishlistStore();
+  const wishlistCount = wishlistItems.length;
 
-  // Fetch coupons
+  // Fetch active coupons
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
@@ -47,58 +51,55 @@ export default function DashboardOverview({ data }: DashboardProps) {
   }, []);
 
   return (
-    <div className="bg-[#0A0A0A] min-h-screen pb-24">
+    <div className="bg-[#0A0A0A] min-h-screen pb-20">
       {/* Welcome Header */}
-      <div className="px-6 pt-8 pb-6">
+      <div className="px-6 pt-8 pb-6 border-b border-zinc-800">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-zinc-400 text-sm">{greeting},</p>
             <h1 className="text-3xl font-semibold text-white mt-1">{fullName}</h1>
+            <p className="text-[#A4143D] text-sm mt-1 font-medium">Gold Member ✨</p>
           </div>
 
-          <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-white font-bold text-xl border border-zinc-700">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-800 flex items-center justify-center text-white font-bold text-xl border border-zinc-700">
             {fullName?.slice(0, 2).toUpperCase()}
           </div>
         </div>
       </div>
 
-      {/* Stats - Matching Screenshot Style */}
-      <div className="px-6 grid grid-cols-2 gap-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-orange-500/10 flex items-center justify-center">
-              <Clock size={22} className="text-orange-500" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-zinc-500">PROCESSING</p>
-              <p className="text-4xl font-semibold text-white mt-1">
-                {data?._count?.processing || 3}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-white/10 flex items-center justify-center">
-              <ShoppingBag size={22} className="text-white" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-zinc-500">TOTAL SPENT</p>
-              <p className="text-4xl font-semibold text-white mt-1">
-                ₦{(data?.totalSpent || 1248500).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-6 pt-8">
+        <StatCard
+          title="Total Orders"
+          value={data?._count?.orders || 0}
+          icon={<Package size={22} />}
+        />
+        <StatCard
+          title="Delivered"
+          value={data?._count?.delivered || 8}
+          icon={<ShoppingBag size={22} />}
+          color="text-emerald-500"
+        />
+        <StatCard
+          title="Processing"
+          value={data?._count?.processing || 3}
+          icon={<Clock size={22} />}
+          color="text-amber-500"
+        />
+        <StatCard
+          title="Total Spent"
+          value={`₦${(data?.totalSpent || 1248500).toLocaleString()}`}
+          icon={<Ticket size={22} />}
+          isCurrency
+        />
       </div>
 
       {/* Recent Orders */}
       <div className="mt-10 px-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Recent Orders</h2>
-          <Link href="/dashboard/orders" className="text-[#A4143D] text-sm flex items-center gap-1">
-            View all <ChevronRight size={18} />
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-white">Recent Orders</h2>
+          <Link href="/dashboard/orders" className="text-[#A4143D] text-sm flex items-center gap-1 hover:underline">
+            View all <ChevronRight size={16} />
           </Link>
         </div>
 
@@ -108,22 +109,45 @@ export default function DashboardOverview({ data }: DashboardProps) {
               <OrderCard key={order.id} order={order} />
             ))
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl py-16 text-center">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center">
               <ShoppingBag size={48} className="mx-auto text-zinc-700 mb-4" />
-              <p className="text-zinc-400">No orders yet</p>
+              <p className="text-zinc-400">No recent orders yet</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Quick Links */}
+      {/* Quick Actions */}
       <div className="mt-12 px-6">
         <h2 className="text-lg font-semibold text-white mb-5">Quick Actions</h2>
         <div className="grid grid-cols-3 gap-4">
-          <QuickActionCard title="Track Order" href="/dashboard/orders" />
-          <QuickActionCard title="Browse Stores" href="/dashboard/stores" />
-          <QuickActionCard title="Coupons" href="/dashboard/coupons" />
+          <QuickActionCard title="Track Order" icon="📦" href="/dashboard/orders" />
+          <QuickActionCard title="Browse Stores" icon="🛍️" href="/dashboard/stores" />
+          <QuickActionCard title="Coupons" icon="🎟️" href="/dashboard/coupons" />
         </div>
+      </div>
+
+      {/* Saved Items / Wishlist */}
+      <div className="mt-12 px-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-white">Saved Products</h2>
+          <Link href="/wishlist" className="text-[#A4143D] text-sm flex items-center gap-1 hover:underline">
+            See all <ChevronRight size={16} />
+          </Link>
+        </div>
+
+        {wishlistItems.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar">
+            {wishlistItems.slice(0, 5).map((item: any) => (
+              <SavedItemCard key={item.id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-zinc-900 border border-dashed border-zinc-700 rounded-3xl py-12 text-center">
+            <Heart className="mx-auto text-zinc-700 mb-3" size={40} />
+            <p className="text-zinc-500">No saved items yet</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -131,20 +155,30 @@ export default function DashboardOverview({ data }: DashboardProps) {
 
 /* ====================== SUB COMPONENTS ====================== */
 
+function StatCard({ title, value, icon, color = "text-white", isCurrency = false }: any) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+      <div className="flex items-center justify-between">
+        <div className={`${color}`}>{icon}</div>
+        <span className="text-xs uppercase tracking-widest text-zinc-500 font-medium">{title}</span>
+      </div>
+      <p className="text-3xl font-semibold mt-6 tracking-tighter">
+        {isCurrency ? value : value}
+      </p>
+    </div>
+  );
+}
+
 function OrderCard({ order }: any) {
   const item = order.items?.[0]?.product || {};
   const image = item.images?.[0]?.imageUrl || item.imageUrl || item.image;
 
-  const statusColor = order.status === 'DELIVERED' || order.status === 'COMPLETED' 
-    ? 'bg-emerald-500/10 text-emerald-500' 
-    : 'bg-orange-500/10 text-orange-500';
-
   return (
     <Link href={`/dashboard/orders/${order.id}`} className="block">
       <div className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-3xl p-5 flex gap-5 transition-all">
-        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-zinc-800 flex-shrink-0">
+        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-800 flex-shrink-0">
           {image ? (
-            <Image src={image} alt="" width={56} height={56} className="object-cover" />
+            <Image src={image} alt={item.title} width={64} height={64} className="object-cover w-full h-full" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <ShoppingBag className="text-zinc-600" size={28} />
@@ -152,27 +186,24 @@ function OrderCard({ order }: any) {
           )}
         </div>
 
-        <div className="flex-1 min-w-0 pt-1">
-          <div className="flex justify-between">
-            <p className="font-mono text-sm text-white">#{order.orderNumber}</p>
-            <p className="text-sm font-semibold text-white">
-              ₦{Number(order.totalAmount || 0).toLocaleString()}
-            </p>
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="font-medium text-white truncate">#{order.orderNumber}</p>
+              <p className="text-sm text-zinc-400 mt-0.5">{item.title}</p>
+            </div>
+            <p className="font-semibold text-right">₦{Number(order.totalAmount).toLocaleString()}</p>
           </div>
 
-          <p className="text-zinc-400 text-sm mt-1 line-clamp-1">{item.title}</p>
-
-          <div className="flex items-center gap-3 mt-3">
-            <span className={`text-xs px-4 py-1 rounded-full font-medium ${statusColor}`}>
+          <div className="mt-3 flex items-center gap-2">
+            <div className={`text-xs px-3 py-1 rounded-full font-medium ${
+              order.status === 'DELIVERED' 
+                ? 'bg-emerald-500/10 text-emerald-500' 
+                : 'bg-amber-500/10 text-amber-500'
+            }`}>
               {order.status}
-            </span>
-            <span className="text-xs text-zinc-500">
-              {new Date(order.createdAt || order.date).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-              })}
-            </span>
+            </div>
+            <span className="text-xs text-zinc-500">{order.date || 'May 28, 2024'}</span>
           </div>
         </div>
       </div>
@@ -180,13 +211,35 @@ function OrderCard({ order }: any) {
   );
 }
 
-function QuickActionCard({ title, href }: { title: string; href: string }) {
+function QuickActionCard({ title, icon, href }: { title: string; icon: string; href: string }) {
   return (
-    <Link 
-      href={href} 
-      className="bg-zinc-900 border border-zinc-800 hover:border-[#A4143D] rounded-3xl p-6 text-center transition-all active:scale-95"
-    >
+    <Link href={href} className="bg-zinc-900 border border-zinc-800 hover:border-[#A4143D] rounded-3xl p-6 text-center transition-all hover:scale-105">
+      <div className="text-4xl mb-4">{icon}</div>
       <p className="text-sm font-medium text-zinc-300">{title}</p>
+    </Link>
+  );
+}
+
+function SavedItemCard({ item }: any) {
+  const image = item.image || item.imageUrl || item.images?.[0]?.imageUrl;
+
+  return (
+    <Link href={`/product/${item.id}`} className="min-w-[140px] block">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+        <div className="relative h-40">
+          {image ? (
+            <Image src={image} alt={item.title} fill className="object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-zinc-950">
+              <ShoppingBag size={32} className="text-zinc-700" />
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <p className="text-sm font-medium line-clamp-2 text-white">{item.title}</p>
+          <p className="text-[#A4143D] font-semibold mt-2">₦{Number(item.price).toLocaleString()}</p>
+        </div>
+      </div>
     </Link>
   );
 }
