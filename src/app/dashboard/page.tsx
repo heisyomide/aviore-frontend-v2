@@ -51,8 +51,9 @@ export default function OverviewPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="animate-spin text-[#A4143D]" size={32} />
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-4 bg-[#0D0D0D]/10">
+        <Loader2 className="animate-spin text-[#991B1B]" size={28} />
+        <span className="text-[9px] font-mono font-bold tracking-[0.25em] text-zinc-600 uppercase">Synchronizing Node...</span>
       </div>
     );
   }
@@ -60,72 +61,91 @@ export default function OverviewPage() {
   return (
     <>
       {/* 🖥️ DESKTOP LOOK */}
-      <div className="hidden lg:block space-y-10">
-        <header className="flex justify-between items-end">
-          <div className="space-y-1">
-            <span className="text-[#A4143D] text-[10px] font-black uppercase tracking-[0.4em]">Secure_Terminal</span>
-            <h1 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900">
-              Registry <span className="text-zinc-300 font-medium">Overview</span>
+      <div className="hidden lg:block space-y-8 w-full">
+        <header className="flex justify-between items-end pb-2 border-b border-zinc-900/40">
+          <div className="space-y-1.5">
+            <span className="text-[#991B1B] text-[9px] font-mono font-bold uppercase tracking-[0.3em]">System_Overview</span>
+            <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">
+              Registry <span className="text-zinc-600 font-normal font-sans tracking-normal">Snapshot</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-zinc-50 border border-zinc-100 rounded-full">
-            <TrendingUp size={14} className="text-emerald-500" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Live_Registry_Sync</span>
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-zinc-950 border border-zinc-900 rounded-lg">
+            <TrendingUp size={12} className="text-emerald-500 animate-pulse" />
+            <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-500">Live_Registry_Sync</span>
           </div>
         </header>
 
         {/* ACCOUNT CLEARANCE TELEMETRY PIPELINE */}
         {completionData && (
-          <UserActivationCard 
-            percentage={completionData.completionPercentage}
-            tasks={completionData.tasks}
-            isFullyActive={completionData.isFullyActive}
-          />
+          <div className="bg-[#161619]/40 border border-zinc-900 rounded-xl overflow-hidden p-1">
+            <UserActivationCard 
+              percentage={completionData.completionPercentage}
+              tasks={completionData.tasks}
+              isFullyActive={completionData.isFullyActive}
+            />
+          </div>
         )}
 
+        {/* METRICS QUAD-MATRIX GRID */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total_Manifests" value={data?.totalOrders || 0} icon={ShoppingBag} color="text-zinc-900" />
-          <StatCard label="Pending_Acquisitions" value={data?.pendingOrders || 0} icon={Clock} color="text-amber-600" />
-          <StatCard label="Successful_Deliveries" value={data?.deliveredOrders || 0} icon={CheckCircle2} color="text-emerald-600" />
-          <StatCard label="Registry_Feedback" value={data?.totalReviews || 0} icon={Star} color="text-[#A4143D]" />
+          <StatCard label="Total_Manifests" value={data?.totalOrders || 0} icon={ShoppingBag} color="text-zinc-100" />
+          <StatCard label="Pending_Acquisitions" value={data?.pendingOrders || 0} icon={Clock} color="text-amber-500" />
+          <StatCard label="Successful_Deliveries" value={data?.deliveredOrders || 0} icon={CheckCircle2} color="text-emerald-500" />
+          <StatCard label="Registry_Feedback" value={data?.totalReviews || 0} icon={Star} color="text-[#991B1B]" />
         </div>
 
-        <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
-          <div className="px-8 py-6 border-b border-zinc-50 flex justify-between items-center">
-            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-900 flex items-center gap-3">Recent_Transactions</h2>
-            <button className="text-[9px] font-black uppercase tracking-widest text-[#A4143D] hover:underline">View_Full_Archive</button>
+        {/* TRANSACTION ARCHIVE DATA MATRIX */}
+        <div className="bg-[#111113] rounded-xl border border-zinc-900 shadow-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-900/60 flex justify-between items-center bg-zinc-950/40">
+            <h2 className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-3">
+              Recent_Transactions
+            </h2>
+            <button className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#991B1B] hover:text-red-500 transition-colors bg-zinc-950 px-3 py-1.5 border border-zinc-900 rounded-lg">
+              View_Full_Archive
+            </button>
           </div>
+          
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-zinc-50/50 text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-zinc-950/80 text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900/40">
                 <tr>
-                  <th className="px-8 py-4">Reference</th>
-                  <th className="px-8 py-4">Timeline</th>
-                  <th className="px-8 py-4">Logistics_Status</th>
-                  <th className="px-8 py-4 text-right">Valuation</th>
+                  <th className="px-6 py-3.5 tracking-[0.15em]">Reference Node</th>
+                  <th className="px-6 py-3.5 tracking-[0.15em]">Timeline</th>
+                  <th className="px-6 py-3.5 tracking-[0.15em]">Logistics_Status</th>
+                  <th className="px-6 py-3.5 text-right tracking-[0.15em]">Valuation</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-50">
-                {data?.recentOrders?.map((order: any) => (
-                  <tr key={order.id} className="group hover:bg-zinc-50/30 transition-colors">
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[13px] font-black italic text-zinc-900 uppercase">
+              <tbody className="divide-y divide-zinc-900/40 bg-[#0D0D0D]/10">
+                {data?.recentOrders && data.recentOrders.length > 0 ? (
+                  data.recentOrders.map((order: any) => (
+                    <tr key={order.id} className="group hover:bg-[#161619]/40 transition-colors duration-200">
+                      <td className="px-6 py-4.5">
+                        <span className="text-xs font-mono font-bold text-zinc-200 tracking-wide transition-colors group-hover:text-white">
                           #{order.orderNumber || order.id.slice(-6).toUpperCase()}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-[11px] font-bold text-zinc-500 uppercase">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-8 py-5">
-                      <StatusBadge status={order.status} />
-                    </td>
-                    <td className="px-8 py-5 text-right font-black italic">
-                      ₦{Number(order.totalAmount).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4.5 text-[11px] font-sans text-zinc-500 font-medium">
+                        {new Date(order.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </td>
+                      <td className="px-6 py-4.5">
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td className="px-6 py-4.5 text-right font-mono font-bold text-sm text-zinc-300 group-hover:text-white transition-colors">
+                        ₦{Number(order.totalAmount).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                      No matching records historical streams found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -133,10 +153,10 @@ export default function OverviewPage() {
       </div>
 
       {/* 📱 MOBILE LOOK */}
-      <div className="block lg:hidden space-y-6">
+      <div className="block lg:hidden space-y-6 w-full">
         {/* Render activation checklist on mobile stream if operations remain pending */}
         {completionData && !completionData.isFullyActive && (
-          <div className="px-4 pt-4">
+          <div className="bg-[#111113] border border-zinc-900 rounded-xl p-1 shadow-xl">
             <UserActivationCard 
               percentage={completionData.completionPercentage}
               tasks={completionData.tasks}
@@ -150,30 +170,42 @@ export default function OverviewPage() {
   );
 }
 
-/* --- ATOMS --- */
+/* --- ATOMS & STRUCTURAL MICRO-COMPONENTS --- */
 function StatCard({ label, value, icon: Icon, color }: any) {
   return (
-    <motion.div whileHover={{ y: -4 }} className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+    <motion.div 
+      whileHover={{ y: -3, borderColor: 'rgba(153, 27, 27, 0.4)' }} 
+      transition={{ duration: 0.2 }}
+      className="bg-[#111113] p-5 rounded-xl border border-zinc-900/80 shadow-xl space-y-4 flex flex-col justify-between"
+    >
       <div className="flex justify-between items-start">
-        <div className={`p-3 rounded-2xl bg-zinc-50 ${color}`}><Icon size={20} /></div>
-        <ArrowUpRight size={14} className="text-zinc-300" />
+        <div className={`p-2.5 rounded-lg bg-zinc-950 border border-zinc-900/60 ${color}`}>
+          <Icon size={15} />
+        </div>
+        <ArrowUpRight size={12} className="text-zinc-700 transition-colors group-hover:text-zinc-500" />
       </div>
-      <div>
-        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">{label}</p>
-        <h3 className="text-3xl font-black italic tracking-tighter text-zinc-900 mt-1">{value.toLocaleString()}</h3>
+      <div className="space-y-0.5">
+        <p className="text-[8px] font-mono font-bold text-zinc-600 uppercase tracking-[0.2em]">
+          {label}
+        </p>
+        <h3 className="text-xl font-mono font-bold text-white tracking-wide">
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </h3>
       </div>
     </motion.div>
   );
 }
 
-// Global Logistics Sync State Styling Keys
 function StatusBadge({ status }: { status: string }) {
   const styles: any = { 
-    DELIVERED: "bg-emerald-50 text-emerald-600 border-emerald-100", 
-    PENDING: "bg-amber-50 text-amber-600 border-amber-100" 
+    DELIVERED: "bg-emerald-950/30 text-emerald-500 border-emerald-900/50", 
+    PENDING: "bg-amber-950/20 text-amber-500 border-amber-900/40",
+    PROCESSING: "bg-blue-950/20 text-blue-400 border-blue-900/40",
+    CANCELLED: "bg-zinc-950 text-zinc-600 border-zinc-900"
   };
+  
   return (
-    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${styles[status] || "bg-zinc-50"}`}>
+    <span className={`inline-block px-2.5 py-1 rounded border text-[8px] font-mono font-bold uppercase tracking-widest transition-colors duration-200 ${styles[status] || "bg-zinc-950 text-zinc-400 border-zinc-900"}`}>
       {status}
     </span>
   );

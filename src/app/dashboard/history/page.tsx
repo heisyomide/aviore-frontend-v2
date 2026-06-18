@@ -1,17 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Trash2, Clock, Sparkles } from 'lucide-react';
+import { Trash2, Clock } from 'lucide-react';
 import { api } from '@/src/lib/axios';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ProductCard } from '../../../components/product/ProductCard';
 import { Container } from '../../../components/layout/Container';
-import { Navbar } from '@/src/components/navbar/Navbar';
 
 interface HistoryItem {
   id: string;
   viewedAt: string;
-  product: any; // We pass this directly to ProductCard
+  product: any; // Passed directly to ProductCard
 }
 
 export default function HistoryPage() {
@@ -35,7 +34,7 @@ export default function HistoryPage() {
   }, []);
 
   const clearHistory = async () => {
-    const confirmClear = window.confirm('Purge your browsing registry?');
+    const confirmClear = window.confirm('Purge your browsing registry cache?');
     if (!confirmClear) return;
 
     try {
@@ -68,62 +67,64 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FDFCFB]">
-        <Container className="pt-32 text-center">
-          <div className="w-10 h-10 border-2 border-[#A4143D] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Retrieving Registry...</p>
+      <div className="min-h-screen bg-[#0D0D0D]">
+        <Container className="pt-32 text-center flex flex-col items-center justify-center gap-4">
+          <div className="w-8 h-8 border-2 border-[#991B1B] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[8px] font-mono font-bold uppercase tracking-[0.25em] text-zinc-600">Syncing History Node...</p>
         </Container>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB]">
-      
-      <Container className="pt-12 pb-24">
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-100 pb-10 mb-12">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[#A4143D]">
-              <Clock size={14} />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Browsing Registry</span>
+    <div className="min-h-screen bg-[#0D0D0D]">
+      <Container className="pt-12 pb-24 w-full animate-in fade-in duration-500">
+        
+        {/* LUXURY REGISTRY HEADER */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-900/60 pb-6 mb-10">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-[#991B1B]">
+              <Clock size={13} className="animate-pulse" />
+              <span className="text-[9px] font-mono font-bold uppercase tracking-[0.3em]">Browsing_Registry</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-black text-gray-900 uppercase italic tracking-tighter leading-none">
-              Recent <span className="text-zinc-300">Views</span>
+            <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white">
+              Recent <span className="text-zinc-600 font-normal font-sans tracking-normal">Views</span>
             </h1>
           </div>
 
           {history.length > 0 && (
             <button
               onClick={clearHistory}
-              className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-black transition-colors"
+              className="group flex items-center gap-2.5 text-[9px] font-mono font-bold uppercase tracking-widest text-red-500 hover:text-white bg-zinc-950/60 hover:bg-zinc-950 px-4 py-2 border border-zinc-900 hover:border-zinc-800 rounded-lg transition-all active:scale-[0.98]"
             >
-              <Trash2 size={14} className="group-hover:rotate-12 transition-transform" />
+              <Trash2 size={12} className="group-hover:rotate-6 transition-transform text-[#991B1B]" />
               Purge History
             </button>
           )}
         </header>
 
+        {/* TIMELINE SECTION PIPELINES */}
         {history.length === 0 ? (
           <EmptyHistory />
         ) : (
-          <div className="space-y-20">
+          <div className="space-y-16">
             {Object.entries(groupedHistory).map(([group, items]) => (
               items.length > 0 && (
-                <section key={group}>
-                  <div className="flex items-center gap-4 mb-8">
-                    <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-zinc-400 whitespace-nowrap">
-                      {group}
+                <section key={group} className="space-y-8">
+                  <div className="flex items-center gap-4">
+                    <h3 className="font-mono font-bold text-[9px] uppercase tracking-[0.3em] text-zinc-500 whitespace-nowrap">
+                      {group}_Log
                     </h3>
-                    <div className="h-[1px] w-full bg-zinc-100" />
+                    <div className="h-[1px] w-full bg-zinc-900/60" />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
                     {items.map((item) => (
                       <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 8 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
+                        transition={{ duration: 0.3 }}
                         key={item.id}
                       >
                         <ProductCard product={item.product} />
@@ -142,12 +143,12 @@ export default function HistoryPage() {
 
 function EmptyHistory() {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="p-10 bg-zinc-50 rounded-full text-zinc-200 mb-6">
-        <Clock size={64} strokeWidth={1} />
+    <div className="py-24 flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-xl text-center bg-[#111113]/20">
+      <div className="p-4 bg-zinc-950 border border-zinc-900 text-zinc-700 rounded-xl mb-4">
+        <Clock size={22} strokeWidth={1.5} />
       </div>
-      <h2 className="text-3xl font-black text-gray-900 uppercase italic tracking-tighter mb-2">No History Found</h2>
-      <p className="text-sm font-medium text-zinc-400 max-w-xs italic">Your browsing registry is currently clear.</p>
+      <h2 className="text-sm font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">No Trace Matrix Found</h2>
+      <p className="text-[11px] font-sans text-zinc-600 max-w-xs">Your viewing history log stream is currently empty.</p>
     </div>
   );
 }

@@ -99,7 +99,7 @@ export default function AddressesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Terminate this address ?")) return;
+    if (!confirm("Terminate this address destination node?")) return;
     try {
       await api.delete(`/user/addresses/${id}`);
       setAddresses(prev => prev.filter(a => a.id !== id));
@@ -120,90 +120,114 @@ export default function AddressesPage() {
   };
 
   return (
-    <div className="space-y-12 pb-20 animate-in fade-in duration-500">
-      {/* 1. HEADER HUD */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-zinc-100 pb-8">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-[#A4143D]">
-            <Activity size={16} />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Logistics_Registry</span>
+    <div className="space-y-10 pb-16 animate-in fade-in duration-500 w-full">
+      {/* 1. LUXURY HEADER HUD PORTAL */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-zinc-900/60 pb-6">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-[#991B1B]">
+            <Activity size={13} className="animate-pulse" />
+            <span className="text-[9px] font-mono font-bold uppercase tracking-[0.3em]">Logistics_Registry</span>
           </div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
-            Drop <span className="text-zinc-200 font-medium">Points</span>
+          <h1 className="text-2xl font-mono font-bold uppercase tracking-wider text-white leading-none">
+            Drop <span className="text-zinc-600 font-normal font-sans tracking-normal">Points</span>
           </h1>
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic">
-            Binding: <span className="text-zinc-900">{profile.fullName || 'SYNC_PENDING'}</span>
+          <p className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-widest">
+            Identity Binding: <span className="text-zinc-300 font-sans tracking-normal capitalize">{profile.fullName || 'SYNC_PENDING'}</span>
           </p>
         </div>
 
         <button 
           onClick={() => handleOpenModal()}
-          className="group relative overflow-hidden bg-black px-8 py-4 rounded-xl transition-all active:scale-95 shadow-xl shadow-zinc-200"
+          className="group relative overflow-hidden bg-zinc-950 border border-zinc-800 hover:border-zinc-700 px-6 py-3.5 rounded-lg transition-all active:scale-[0.98] shadow-2xl"
         >
-          <span className="relative z-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-white">
-            Register New Address <Home size={14} />
+          <span className="relative z-10 flex items-center gap-3 text-[9px] font-mono font-bold uppercase tracking-widest text-white">
+            Register New Destination <Home size={12} className="text-zinc-400 group-hover:text-white transition-colors" />
           </span>
-          <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+          <div className="absolute inset-0 bg-[#991B1B]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </button>
       </header>
 
-      {/* 2. ADDRESS GRID */}
+      {/* 2. PREMIUM GRID ADDRESS MODULES */}
       {loading ? (
-        <div className="flex justify-center py-32"><Loader2 className="animate-spin text-[#A4143D]" size={32} /></div>
+        <div className="flex flex-col h-[40vh] items-center justify-center gap-4">
+          <Loader2 className="animate-spin text-[#991B1B]" size={24} />
+          <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-zinc-600 uppercase">Fetching Secure Records...</span>
+        </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-6">
           {addresses.map((addr) => (
             <div 
               key={addr.id} 
-              className={`group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 ${
+              className={`group relative p-6 rounded-xl border transition-all duration-300 flex flex-col justify-between ${
                 addr.isDefault 
-                ? 'border-[#A4143D]/20 bg-zinc-50/50 shadow-xl shadow-zinc-200/40' 
-                : 'border-zinc-50 bg-white hover:border-zinc-200'
+                  ? 'border-[#991B1B]/40 bg-[#111113] shadow-xl shadow-black/40' 
+                  : 'border-zinc-900 bg-[#111113]/40 hover:border-zinc-800'
               }`}
             >
-              <div className="flex gap-6">
-                <div className={`p-5 rounded-3xl transition-colors duration-500 ${
-                  addr.isDefault ? 'bg-[#A4143D] text-white' : 'bg-zinc-50 text-zinc-300 group-hover:text-zinc-900'
+              <div className="flex gap-5 items-start">
+                <div className={`p-3.5 rounded-lg border transition-colors duration-300 ${
+                  addr.isDefault 
+                    ? 'bg-zinc-950 text-white border-[#991B1B]/30' 
+                    : 'bg-zinc-950 text-zinc-600 border-zinc-900 group-hover:text-zinc-300 group-hover:border-zinc-800'
                 }`}>
-                  <MapPin size={24} />
+                  <MapPin size={18} />
                 </div>
-                <div className="flex-1 space-y-1">
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm font-black text-zinc-900 uppercase italic tracking-tight">{addr.fullName}</p>
+                <div className="flex-1 space-y-1.5 min-w-0">
+                  <div className="flex justify-between items-center gap-2">
+                    <p className="text-xs font-mono font-bold text-zinc-200 uppercase tracking-wide truncate">{addr.fullName}</p>
                     {addr.isDefault && (
-                      <span className="text-[8px] bg-emerald-500 text-white px-3 py-1 rounded-full font-black uppercase tracking-widest animate-pulse">Primary</span>
+                      <span className="shrink-0 text-[7px] font-mono font-bold bg-[#991B1B]/20 border border-[#991B1B]/40 text-red-400 px-2 py-0.5 rounded uppercase tracking-widest">Primary</span>
                     )}
                   </div>
-                  <p className="text-[11px] font-bold text-zinc-500 uppercase leading-relaxed">{addr.street}, {addr.city}, {addr.state}</p>
-                  <p className="text-[10px] font-black text-zinc-400 font-mono tracking-widest pt-2">{addr.phoneNumber}</p>
+                  <p className="text-[11px] font-sans text-zinc-500 font-medium leading-relaxed uppercase">{addr.street}, {addr.city}, {addr.state}</p>
+                  <p className="text-[9px] font-mono font-bold text-zinc-400 tracking-wider pt-1">{addr.phoneNumber}</p>
                 </div>
               </div>
 
-              <div className="mt-8 flex items-center justify-between pt-6 border-t border-zinc-50">
+              <div className="mt-6 flex items-center justify-between pt-4 border-t border-zinc-900/60">
                 {!addr.isDefault ? (
-                  <button onClick={() => handleSetDefault(addr.id)} className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#A4143D] transition-colors">Set as Primary Address</button>
+                  <button 
+                    onClick={() => handleSetDefault(addr.id)} 
+                    className="text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-600 hover:text-white transition-colors bg-zinc-950 px-2.5 py-1.5 border border-zinc-900 rounded"
+                  >
+                    Set Primary
+                  </button>
                 ) : (
-                  <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-600"><CheckCircle size={12} /> Sync_Active</span>
+                  <span className="flex items-center gap-1.5 text-[8px] font-mono font-bold uppercase tracking-widest text-emerald-500 bg-emerald-950/20 border border-emerald-900/40 px-2.5 py-1 rounded">
+                    <CheckCircle size={10} /> Sync_Active
+                  </span>
                 )}
                 
-                <div className="flex gap-2">
-                  <button onClick={() => handleOpenModal(addr)} className="p-3 bg-zinc-50 text-zinc-400 hover:text-zinc-900 rounded-xl transition-all"><Edit2 size={14} /></button>
-                  <button onClick={() => handleDelete(addr.id)} className="p-3 bg-zinc-50 text-zinc-400 hover:text-red-500 rounded-xl transition-all"><Trash2 size={14} /></button>
+                <div className="flex gap-1.5">
+                  <button 
+                    onClick={() => handleOpenModal(addr)} 
+                    className="p-2 bg-zinc-950 text-zinc-600 hover:text-white border border-zinc-900 hover:border-zinc-800 rounded transition-colors"
+                  >
+                    <Edit2 size={11} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(addr.id)} 
+                    className="p-2 bg-zinc-950 text-zinc-600 hover:text-red-400 border border-zinc-900 hover:border-zinc-800 rounded transition-colors"
+                  >
+                    <Trash2 size={11} />
+                  </button>
                 </div>
               </div>
             </div>
           ))}
 
           {addresses.length === 0 && (
-            <div className="col-span-full py-32 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 rounded-[4rem] text-center bg-zinc-50/20">
-              <MapPin size={48} className="text-zinc-100 mb-6" />
-              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-300">No saved addresses found.</p>
+            <div className="col-span-full py-24 flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-xl text-center bg-[#111113]/20">
+              <div className="p-4 bg-zinc-950 border border-zinc-900 text-zinc-700 rounded-xl mb-4">
+                <MapPin size={24} />
+              </div>
+              <p className="text-[9px] font-mono font-bold uppercase tracking-[0.25em] text-zinc-600">No Historical Drop Points Found.</p>
             </div>
           )}
         </div>
       )}
 
-      {/* 3. MODAL OVERLAY */}
+      {/* 3. MODAL TERMINAL OVERLAY */}
       <AddressModal
         isOpen={isModalOpen}
         editingId={editingId}
