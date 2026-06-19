@@ -333,16 +333,35 @@ function HeroBannerForm({ form, onChange, onSubmit, submitting }: any) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string>(form.imageUrl || "");
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPreview(base64String);
-        onChange("imageUrl", base64String); // Injects binary asset securely into object tree
-      };
-      reader.readAsDataURL(file);
+      // 1. Instantly display a local browser preview for snappy UX
+      const localPreviewUrl = URL.createObjectURL(file);
+      setPreview(localPreviewUrl);
+
+      try {
+        // 2. Wrap file payload into multi-part form data
+        const formData = new FormData();
+        formData.append("file", file);
+
+        toast.loading("Processing luxury banner asset...", { id: "upload-status" });
+        
+        // 3. Post directly to your Cloudinary upload gateway API route
+        const uploadRes = await api.post("/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        // 4. Inject the clean, short Cloudinary CDN url into your form data field!
+        const secureCloudinaryUrl = uploadRes.data.url; 
+        onChange("imageUrl", secureCloudinaryUrl);
+        
+        toast.success("Asset authenticated with Cloudinary", { id: "upload-status" });
+      } catch (error) {
+        console.error(error);
+        toast.error("Cloudinary deployment failed", { id: "upload-status" });
+        setPreview("");
+      }
     }
   };
 
