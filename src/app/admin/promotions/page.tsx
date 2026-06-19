@@ -56,7 +56,7 @@ interface HeroForm {
   subtitle: string;
   discount: string;
   tag: string;
-  imageUrl: string; // Will store the picked local file payload / base64
+  imageUrl: string; // Safely stores raw base64 payload data string
 }
 
 interface CampaignForm {
@@ -83,7 +83,6 @@ export default function AdminPromotionsPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>("HERO_BANNERS");
   const [loading, setLoading] = useState(true);
   
-  // Toggles for distinct orchestration elements
   const [creatingBanner, setCreatingBanner] = useState(false);
   const [creatingCampaign, setCreatingCampaign] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -119,7 +118,6 @@ export default function AdminPromotionsPage() {
     fetchData();
   }, [fetchData]);
 
-  // Actions for Banners
   const updateHeroField = (key: keyof HeroForm, value: string) => {
     setHeroForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -132,6 +130,7 @@ export default function AdminPromotionsPage() {
     }
     try {
       setSubmitting(true);
+      // Hits the core banner controller route, containing the base64 data string
       await api.post("/admin/banners", heroForm);
       toast.success("Hero banner initialized successfully");
       setHeroForm(initialHeroForm);
@@ -145,7 +144,6 @@ export default function AdminPromotionsPage() {
     }
   };
 
-  // Actions for Campaigns
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -175,7 +173,6 @@ export default function AdminPromotionsPage() {
           <p className="text-[10px] text-zinc-500 tracking-[0.3em] uppercase mt-2">AVIORÈ Global Orchestrator</p>
         </div>
 
-        {/* Dynamic Context Button Layer */}
         {activeTab === "HERO_BANNERS" && (
           <button
             onClick={() => setCreatingBanner(!creatingBanner)}
@@ -333,35 +330,18 @@ function HeroBannerForm({ form, onChange, onSubmit, submitting }: any) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string>(form.imageUrl || "");
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Rewired directly to convert local file system assets to Base64 
+  // and inject them instantly into the parent form configuration tree
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 1. Instantly display a local browser preview for snappy UX
-      const localPreviewUrl = URL.createObjectURL(file);
-      setPreview(localPreviewUrl);
-
-      try {
-        // 2. Wrap file payload into multi-part form data
-        const formData = new FormData();
-        formData.append("file", file);
-
-        toast.loading("Processing luxury banner asset...", { id: "upload-status" });
-        
-        // 3. Post directly to your Cloudinary upload gateway API route
-        const uploadRes = await api.post("/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        // 4. Inject the clean, short Cloudinary CDN url into your form data field!
-        const secureCloudinaryUrl = uploadRes.data.url; 
-        onChange("imageUrl", secureCloudinaryUrl);
-        
-        toast.success("Asset authenticated with Cloudinary", { id: "upload-status" });
-      } catch (error) {
-        console.error(error);
-        toast.error("Cloudinary deployment failed", { id: "upload-status" });
-        setPreview("");
-      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPreview(base64String);
+        onChange("imageUrl", base64String); 
+      };
+      reader.readAsDataURL(file);
     }
   };
 
