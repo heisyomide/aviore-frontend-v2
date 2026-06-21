@@ -140,22 +140,9 @@ export default function HomePage() {
     return availableDiscoveryPool.slice(startIndex, startIndex + itemsPerPage);
   }, [availableDiscoveryPool, currentPage, itemsPerPage]);
 
-  // Handles page translation update side-effects to snap view positions flawlessly 
+  // FIXED: Removed window scrolling completely. Viewport stays locked inline.
   const handlePageChange = useCallback((nextPage: number) => {
     setCurrentPage(nextPage);
-    
-    if (discoveryAnchorRef.current) {
-      const topOffset = discoveryAnchorRef.current.getBoundingClientRect().top + window.scrollY - 100;
-      window.scrollTo({
-        top: topOffset,
-        behavior: "smooth"
-      });
-    } else {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    }
   }, []);
 
   if (loading) return <HomeSkeleton />;
