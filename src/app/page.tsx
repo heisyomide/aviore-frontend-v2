@@ -134,13 +134,17 @@ export default function HomePage() {
     return Math.ceil(availableDiscoveryPool.length / itemsPerPage);
   }, [availableDiscoveryPool, itemsPerPage]);
 
-  // Extracts current contextual active matrix segment items
+  /**
+   * 🛠️ ACCUMULATIVE POOL SLICING
+   * Slices from index 0 directly to the deep boundary of the current page marker.
+   * Selecting higher page indices appends the layout data smoothly beneath current items.
+   */
   const paginatedDiscovery = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return availableDiscoveryPool.slice(startIndex, startIndex + itemsPerPage);
+    const endIndex = currentPage * itemsPerPage;
+    return availableDiscoveryPool.slice(0, endIndex);
   }, [availableDiscoveryPool, currentPage, itemsPerPage]);
 
-  // FIXED: Removed window scrolling completely. Viewport stays locked inline.
+  // Updates active state pool indices without causing structural viewport shifts
   const handlePageChange = useCallback((nextPage: number) => {
     setCurrentPage(nextPage);
   }, []);
@@ -162,69 +166,14 @@ export default function HomePage() {
 
         {/* DENSE APP DISCOVERY ENGINE (ALL RAILS) */}
         <Container className="py-12 space-y-6">
-          <HomepageRail 
-            title="TRENDING NOW"
-            subtitle="Hottest drops calculated across the network"
-            products={data.trending}
-            href="/discover/trending"
-            loading={loading}
-          />
-
-          <HomepageRail 
-            title="BEAUTY PICKS"
-            subtitle="Pristine formulations & curated skincare"
-            products={data.beauty}
-            href="/category/beauty-skincare"
-            loading={loading}
-          />
-
-          <HomepageRail 
-            title="UNDER ₦10,000"
-            subtitle="Elite styles at immediate price thresholds"
-            products={data.under10k}
-            href="/discover/under-10000"
-            loading={loading}
-          />
-
-          <HomepageRail 
-            title="RECENTLY ADDED"
-            subtitle="Live mint condition artifacts uploaded today"
-            products={data.recent}
-            href="/discover/new-arrival"
-            loading={loading}
-          />
-
-          <HomepageRail 
-            title="IMPORTED DEALS"
-            subtitle="Direct items sourced from overseas logistical nodes"
-            products={data.imported}
-            href="/discover/imported"
-            loading={loading}
-          />
-
-          <HomepageRail 
-            title="FAST LOCAL DELIVERY"
-            subtitle="Dispatched locally // Arrives within 48-72 hours max"
-            products={data.fastDelivery}
-            href="/discover/fast-delivery"
-            loading={loading}
-          />
-
-          <HomepageRail 
-            title="AVIORÈ FASHION"
-            subtitle="High garment cuts, statement archival denim & footwear"
-            products={data.fashion}
-            href="/category/fashion"
-            loading={loading}
-          />
-
-          <HomepageRail 
-            title="THE ACCESSORIES EDIT"
-            subtitle="Hardware accents, lifestyle accessories, and leather goods"
-            products={data.accessories}
-            href="/category/accessories"
-            loading={loading}
-          />
+          <HomepageRail title="TRENDING NOW" subtitle="Hottest drops calculated across the network" products={data.trending} href="/discover/trending" loading={loading} />
+          <HomepageRail title="BEAUTY PICKS" subtitle="Pristine formulations & curated skincare" products={data.beauty} href="/category/beauty-skincare" loading={loading} />
+          <HomepageRail title="UNDER ₦10,000" subtitle="Elite styles at immediate price thresholds" products={data.under10k} href="/discover/under-10000" loading={loading} />
+          <HomepageRail title="RECENTLY ADDED" subtitle="Live mint condition artifacts uploaded today" products={data.recent} href="/discover/new-arrival" loading={loading} />
+          <HomepageRail title="IMPORTED DEALS" subtitle="Direct items sourced from overseas logistical nodes" products={data.imported} href="/discover/imported" loading={loading} />
+          <HomepageRail title="FAST LOCAL DELIVERY" subtitle="Dispatched locally // Arrives within 48-72 hours max" products={data.fastDelivery} href="/discover/fast-delivery" loading={loading} />
+          <HomepageRail title="AVIORÈ FASHION" subtitle="High garment cuts, statement archival denim & footwear" products={data.fashion} href="/category/fashion" loading={loading} />
+          <HomepageRail title="THE ACCESSORIES EDIT" subtitle="Hardware accents, lifestyle accessories, and leather goods" products={data.accessories} href="/category/accessories" loading={loading} />
         </Container>
 
         <div className="py-12">
@@ -254,9 +203,9 @@ export default function HomePage() {
 
             {paginatedDiscovery.length > 0 ? (
               <>
+                {/* Dynamically expanding product layout pool */}
                 <ProductGrid products={paginatedDiscovery} />
                 
-                {/* REFACTORED SHARED DESIGN SYSTEM COMPONENT APPLICATION */}
                 <div className="mt-12">
                   <Pagination 
                     current={currentPage}
