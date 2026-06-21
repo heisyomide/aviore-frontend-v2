@@ -1,32 +1,115 @@
 // /components/shop/Pagination.tsx
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export function Pagination({ current, total, onPageChange }: any) {
+interface PaginationProps {
+  current: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}
+
+export function Pagination({ current, total, onPageChange }: PaginationProps) {
   if (total <= 1) return null;
 
+  const handlePageSelect = (pageNumber: number) => {
+    onPageChange(pageNumber);
+    // Automatically smooth-scrolls the browser back to the top viewport coordinates
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  // Logic to build a dynamic numbered sequence with smart ellipses
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (total <= maxVisible) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (current > 3) {
+        pages.push("...");
+      }
+
+      // Determine center block bounds
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) pages.push(i);
+      }
+
+      if (current < total - 2) {
+        pages.push("...");
+      }
+
+      // Always show last page
+      if (!pages.includes(total)) {
+        pages.push(total);
+      }
+    }
+    return pages;
+  };
+
   return (
-    <div className="flex items-center justify-center gap-8 pt-12 border-t border-zinc-900">
-      <button 
+    <div className="flex items-center justify-center gap-2 pt-10 border-t border-zinc-200/60">
+      
+      {/* PREVIOUS PAGE TRIGGER */}
+      <button
         disabled={current === 1}
-        onClick={() => onPageChange(current - 1)}
-        className="p-4 rounded-full border border-zinc-900 hover:border-white transition-all disabled:opacity-20"
+        onClick={() => handlePageSelect(current - 1)}
+        className="flex items-center justify-center w-10 h-10 rounded-xl border border-zinc-200 bg-white text-zinc-600 transition-all hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-zinc-400 cursor-pointer disabled:cursor-not-allowed shadow-sm"
+        aria-label="Go to previous page"
       >
-        <ChevronLeft size={20} />
+        <ChevronLeft size={16} />
       </button>
 
-      <div className="flex items-center gap-4">
-        <span className="text-xl font-black text-white italic tracking-tighter">0{current}</span>
-        <div className="w-12 h-px bg-zinc-800" />
-        <span className="text-xs font-bold text-zinc-600 tracking-widest uppercase">Registry_Limit: 0{total}</span>
+      {/* RENDERED NUMBER BLOCK MATRIX */}
+      <div className="flex items-center gap-1.5">
+        {getPageNumbers().map((page, idx) => {
+          if (page === "...") {
+            return (
+              <span
+                key={`ellipsis-${idx}`}
+                className="w-10 h-10 flex items-center justify-center text-xs text-zinc-400 select-none font-medium"
+              >
+                &bull;&bull;&bull;
+              </span>
+            );
+          }
+
+          const pageNum = page as number;
+          const isActive = pageNum === current;
+
+          return (
+            <button
+              key={`page-${pageNum}`}
+              onClick={() => handlePageSelect(pageNum)}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl text-xs font-semibold tracking-wide transition-all shadow-sm ${
+                isActive
+                  ? "bg-[#121316] text-white font-bold border border-[#121316]"
+                  : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 cursor-pointer"
+              }`}
+            >
+              {pageNum}
+            </button>
+          );
+        })}
       </div>
 
-      <button 
+      {/* NEXT PAGE TRIGGER */}
+      <button
         disabled={current === total}
-        onClick={() => onPageChange(current + 1)}
-        className="p-4 rounded-full border border-zinc-900 hover:border-white transition-all disabled:opacity-20"
+        onClick={() => handlePageSelect(current + 1)}
+        className="flex items-center justify-center w-10 h-10 rounded-xl border border-zinc-200 bg-white text-zinc-600 transition-all hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-zinc-400 cursor-pointer disabled:cursor-not-allowed shadow-sm"
+        aria-label="Go to next page"
       >
-        <ChevronRight size={20} />
+        <ChevronRight size={16} />
       </button>
+      
     </div>
   );
 }

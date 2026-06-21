@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container } from '../layout/Container';
 import { ArrowRight, Star } from 'lucide-react';
+import Link from 'next/link';
 
 type Slide = {
   id: string;
@@ -120,16 +121,28 @@ export function Hero() {
                 </p>
 
                 {/* Main Action Buttons */}
-                <div className="flex flex-wrap gap-3 pt-2">
-                  <button className="flex items-center justify-center gap-2 bg-[#121316] hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-widest px-7 py-4 rounded-xl transition-all shadow-md shadow-zinc-900/10">
-                    <span>Shop Now</span>
-                    <ArrowRight size={14} />
-                  </button>
-                  
-                  <button className="flex items-center justify-center bg-white hover:bg-zinc-50 text-zinc-800 text-xs font-bold uppercase tracking-widest px-7 py-4 rounded-xl border border-zinc-200 transition-all shadow-sm">
-                    Explore Collections
-                  </button>
-                </div>
+import Link from 'next/link';
+
+// ... inside your Hero / Content component:
+
+<div className="flex flex-wrap gap-3 pt-2">
+  {/* Primary Route: Redirects straight to your newly refactored edge-to-edge product showcase */}
+  <Link 
+    href="/shop" 
+    className="flex items-center justify-center gap-2 bg-[#121316] hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-widest px-7 py-4 rounded-xl transition-all shadow-md shadow-zinc-900/10 group"
+  >
+    <span>Shop Now</span>
+    <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+  </Link>
+  
+  {/* Secondary Route: Anchors directly down or forwards users to collections */}
+  <Link 
+    href="/shop?sort=newest" 
+    className="flex items-center justify-center bg-white hover:bg-zinc-50 text-zinc-800 text-xs font-bold uppercase tracking-widest px-7 py-4 rounded-xl border border-zinc-200 transition-all shadow-sm"
+  >
+    Explore Collections
+  </Link>
+</div>
 
                 {/* Customer Trust & Ratings Matrix */}
                 <div className="flex items-center gap-4 pt-4 border-t border-zinc-200/60 max-w-xs">
