@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Hero } from '../components/home/Hero';
 import { FlashDeals } from '../components/home/FlashDeals';
 import { ProductGrid } from '../components/product/ProductGrid';
@@ -13,10 +13,11 @@ import { ChevronRight, Sparkles, Zap, Loader2, PackageSearch } from 'lucide-reac
 import { Container } from '../components/layout/Container';
 import { Navbar } from '../components/navbar/Navbar';
 import { Footer } from '../components/Footer';
+import { Pagination } from '../components/shop/Pagination';
 
 import { VendorCTA } from '../components/home/VendorCTA';
 import { CategoryWorldSection } from '../components/home/CategoryWorldSection';
-import  { HomepageRail } from '../components/home/HomeRailSection';
+import { HomepageRail } from '../components/home/HomeRailSection';
 import axios from 'axios';
 import CategoryGrid from '../components/storefront/CategoryGrid';
 
@@ -33,8 +34,10 @@ export default function HomePage() {
   });
   const [loading, setLoading] = useState(true);
 
-  const [visibleCount, setVisibleCount] = useState(20);
-  const [isSyncing, setIsSyncing] = useState(false);
+  // Pagination Architecture Setup
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 16;
+  const discoveryAnchorRef = useRef<HTMLDivElement>(null);
   
   const [registry, setRegistry] = useState<{
     departments: any[];
@@ -48,13 +51,11 @@ export default function HomePage() {
     topSaver: []
   });
 
-
-useEffect(() => {
+  useEffect(() => {
     const fetchHomepageDiscoveryData = async () => {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL;
         
-        // Parallelized network operations for maximum response velocity
         const [
           trendingRes, 
           beautyRes, 
@@ -95,7 +96,6 @@ useEffect(() => {
     fetchHomepageDiscoveryData();
   }, []);
 
-  
   useEffect(() => {
     const syncAvioreRegistry = async () => {
       try {
@@ -121,55 +121,60 @@ useEffect(() => {
     syncAvioreRegistry();
   }, []);
 
-  /**
-   * 🛡️ SMART INVENTORY SLICING
-   * Logic: If total items > 10, we skip the first 6 (shown in Flash Deals) to avoid duplication.
-   * If total items are low, we show everything to prevent an empty Discovery Feed.
-   */
   const flashDealsInventory = useMemo(() => registry.feed.slice(0, 6), [registry.feed]);
   
-  const paginatedDiscovery = useMemo(() => {
+  // Clean filtering array computation without mutation side-effects
+  const availableDiscoveryPool = useMemo(() => {
     const skipCount = registry.feed.length > 10 ? 6 : 0;
-    return registry.feed.slice(skipCount, skipCount + visibleCount);
-  }, [registry.feed, visibleCount]);
+    return registry.feed.slice(skipCount);
+  }, [registry.feed]);
 
-  const hasMoreItems = (paginatedDiscovery.length + (registry.feed.length > 10 ? 6 : 0)) < registry.feed.length;
+  // Compute total visibility pages relative to slice bounds
+  const totalPages = useMemo(() => {
+    return Math.ceil(availableDiscoveryPool.length / itemsPerPage);
+  }, [availableDiscoveryPool, itemsPerPage]);
 
-  const handleRegistrySync = useCallback(() => {
-    if (isSyncing || !hasMoreItems) return;
-    setIsSyncing(true);
-    setTimeout(() => {
-      setVisibleCount(prev => prev + 12);
-      setIsSyncing(false);
-    }, 850);
-  }, [isSyncing, hasMoreItems]);
+  // Extracts current contextual active matrix segment items
+  const paginatedDiscovery = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return availableDiscoveryPool.slice(startIndex, startIndex + itemsPerPage);
+  }, [availableDiscoveryPool, currentPage, itemsPerPage]);
 
-
+  // Handles page translation update side-effects to snap view positions flawlessly 
+  const handlePageChange = useCallback((nextPage: number) => {
+    setCurrentPage(nextPage);
+    
+    if (discoveryAnchorRef.current) {
+      const topOffset = discoveryAnchorRef.current.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({
+        top: topOffset,
+        behavior: "smooth"
+      });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+  }, []);
 
   if (loading) return <HomeSkeleton />;
 
   return (
-    /* 🚀 THE FIX: flex flex-col min-h-screen ensures the main container 
-       fills the height of the phone, pushing the footer stack to the bottom. */
     <main className="bg-white min-h-screen flex flex-col selection:bg-[#A4143D] selection:text-white">
       <Navbar />
       
-      {/* WRAPPER: This div grows to fill all available space, 
-          ensuring the footer stack below it is always at the bottom. */}
       <div className="grow">
         <Hero />
+        <CategoryGrid />
 
-        {/* 2. Our New Hardcoded Category Grid */}
-      <CategoryGrid />
-
-        {/* 3. URGENCY ZONE */}
+        {/* URGENCY ZONE */}
         <div className="mt-6 md:mt-12 border-y border-zinc-100 bg-zinc-50/50 py-7">
           {flashDealsInventory.length > 0 && <FlashDeals products={flashDealsInventory} />}
         </div>
 
-{/* 3. DENSE APP DISCOVERY ENGINE (ALL RAILS) */}
+        {/* DENSE APP DISCOVERY ENGINE (ALL RAILS) */}
         <Container className="py-12 space-y-6">
-          
           <HomepageRail 
             title="TRENDING NOW"
             subtitle="Hottest drops calculated across the network"
@@ -233,23 +238,21 @@ useEffect(() => {
             href="/category/accessories"
             loading={loading}
           />
-
         </Container>
+
         <div className="py-12">
           <PopularVendorsSection initialVendors={registry.vendors} />
         </div>
-
-      
 
         <div className="mt-6 md:mt-12">
           <TopDealsSection initialDeals={registry.topSaver} />
         </div>
 
-          <VendorCTA />
+        <VendorCTA />
 
-        {/* 5. DISCOVERY ENGINE */}
-        <div id="discovery-feed">
-          <Container className="mt-22 md:mt-12">
+        {/* DISCOVERY CORE HOOK CONTAINER ANCHOR AREA */}
+        <div id="discovery-feed" ref={discoveryAnchorRef} className="scroll-mt-24">
+          <Container className="mt-22 md:mt-12 mb-20">
             <header className="mb-16 flex flex-col justify-between gap-6 border-b border-gray-100 pb-10 md:flex-row md:items-end">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[#A4143D]">
@@ -265,19 +268,15 @@ useEffect(() => {
             {paginatedDiscovery.length > 0 ? (
               <>
                 <ProductGrid products={paginatedDiscovery} />
-                {hasMoreItems && (
-                  <div className="mt-12 md:mt-12 flex flex-col items-center gap-8 text-center">
-                    <button 
-                      onClick={handleRegistrySync}
-                      className="group relative overflow-hidden rounded-full border-2 border-black bg-white px-20 py-6 transition-all active:scale-95"
-                    >
-                      <span className="relative z-10 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] group-hover:text-white transition-colors">
-                        {isSyncing ? "Syncing..." : "Load More Artifacts"}
-                      </span>
-                      <div className="absolute inset-0 translate-y-full bg-black transition-transform duration-300 group-hover:translate-y-0" />
-                    </button>
-                  </div>
-                )}
+                
+                {/* REFACTORED SHARED DESIGN SYSTEM COMPONENT APPLICATION */}
+                <div className="mt-12">
+                  <Pagination 
+                    current={currentPage}
+                    total={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
               </>
             ) : (
               <DiscoveryEmptyState />
@@ -286,7 +285,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* 🚀 THE FOOTER STACK: Pushed to bottom by flex-grow above */}
+      {/* FOOTER STACK */}
       <div className="mt-auto">
         <div className="mt-16 md:mt-12 w-full border-t border-slate-50 bg-white">
           <div className="max-w-7xl mx-auto">
@@ -298,17 +297,13 @@ useEffect(() => {
           <div className="max-w-7xl mx-auto">
             <Footer />
           </div>
-          {/* Navigation Buffer for Fixed Mobile Nav - Background matches footer black */}
           <div className="h-24 lg:hidden bg-[#0A0A0A]" />
         </footer>
       </div>
-
     </main>
   );
 }
 
-
-// 🦴 SKELETON BLUEPRINT - Fixed canonical classes
 function HomeSkeleton() {
   return (
     <Container className="space-y-16 py-20">
