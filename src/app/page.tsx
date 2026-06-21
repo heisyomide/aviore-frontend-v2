@@ -134,19 +134,29 @@ export default function HomePage() {
     return Math.ceil(availableDiscoveryPool.length / itemsPerPage);
   }, [availableDiscoveryPool, itemsPerPage]);
 
-  /**
-   * 🛠️ ACCUMULATIVE POOL SLICING
-   * Slices from index 0 directly to the deep boundary of the current page marker.
-   * Selecting higher page indices appends the layout data smoothly beneath current items.
-   */
+  // Standard standalone block page slice window calculation
   const paginatedDiscovery = useMemo(() => {
-    const endIndex = currentPage * itemsPerPage;
-    return availableDiscoveryPool.slice(0, endIndex);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return availableDiscoveryPool.slice(startIndex, startIndex + itemsPerPage);
   }, [availableDiscoveryPool, currentPage, itemsPerPage]);
 
-  // Updates active state pool indices without causing structural viewport shifts
+  /**
+   * 🎯 FIX: ANCHOR VIEWPORT POSITIONING
+   * Calculates the exact pixel distance from the top of the document to the 
+   * #discovery-feed container element, factoring in an exact 120px header clearance offset.
+   */
   const handlePageChange = useCallback((nextPage: number) => {
     setCurrentPage(nextPage);
+    
+    if (discoveryAnchorRef.current) {
+      const elementPosition = discoveryAnchorRef.current.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - 120; // Clears sticky navbar cleanly
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
   }, []);
 
   if (loading) return <HomeSkeleton />;
@@ -203,7 +213,6 @@ export default function HomePage() {
 
             {paginatedDiscovery.length > 0 ? (
               <>
-                {/* Dynamically expanding product layout pool */}
                 <ProductGrid products={paginatedDiscovery} />
                 
                 <div className="mt-12">
