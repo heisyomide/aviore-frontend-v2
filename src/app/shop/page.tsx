@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import { api } from "@/src/lib/axios";
 import { ShopHeader } from "@/src/components/shop/ShopHeader";
 import { ProductGrid } from "@/src/components/product/ProductGrid";
@@ -31,11 +31,14 @@ function ShopContent() {
   const [meta, setMeta] = useState({ total: 0, page: 1, lastPage: 1 });
   const [loading, setLoading] = useState(true);
   
+  // Ref anchor to clean viewport on filter resets
+  const topAnchorRef = useRef<HTMLDivElement>(null);
+
   const [filters, setFilters] = useState<ShopFilters>({
     search: "",
     sort: "newest",
     page: 1,
-    status: "APPROVED" // Keeps your marketplace pristine by only serving approved inventory
+    status: "APPROVED" 
   });
 
   const fetchProducts = async (currentFilters: ShopFilters) => {
@@ -45,7 +48,16 @@ function ShopContent() {
         Object.entries(currentFilters).filter(([_, v]) => v !== "" && v !== undefined)
       );
       const { data } = await api.get("/products", { params: activeParams });
-      setProducts(data.data || []);
+      
+      const incomingProducts = data.data || [];
+      
+      // 🛠️ ACCUMULATIVE STATE STORAGE MATRIX
+      setProducts(prev => 
+        currentFilters.page === 1 
+          ? incomingProducts 
+          : [...prev, ...incomingProducts]
+      );
+      
       setMeta(data.meta || { total: 0, page: 1, lastPage: 1 });
     } catch (error) {
       console.error("AVIORÈ_SHOP_FETCH_ERROR", error);
@@ -53,6 +65,36 @@ function ShopContent() {
       setLoading(false);
     }
   };
+
+  /**
+   * 🎯 TIERS SEARCH RELEVANCE ENGINE
+   * Re-orders the display list so exact title/category hits anchor the front rows.
+   * Description or fallback loose matches automatically sit directly below them.
+   */
+  const prioritizedProducts = useMemo(() => {
+    if (!filters.search.trim()) return products;
+
+    const query = filters.search.toLowerCase().trim();
+
+    const primaryMatches: any[] = [];
+    const secondaryMatches: any[] = [];
+
+    products.forEach((product) => {
+      const title = (product.title || "").toLowerCase();
+      // Safe fallback checks for category structure variants
+      const category = (product.category?.name || product.categoryName || product.categoryId || "").toLowerCase();
+
+      // Priority 1: Check if keyword is explicitly part of the title or category name
+      if (title.includes(query) || category.includes(query)) {
+        primaryMatches.push(product);
+      } else {
+        secondaryMatches.push(product);
+      }
+    });
+
+    // Merge: Exact identity items display first, followed seamlessly by the rest
+    return [...primaryMatches, ...secondaryMatches];
+  }, [products, filters.search]);
 
   const debouncedFetch = useCallback(
     debounce((f: ShopFilters) => fetchProducts(f), 400),
@@ -68,6 +110,18 @@ function ShopContent() {
     return () => debouncedFetch.cancel();
   }, [filters, debouncedFetch]);
 
+  // Handle explicit filter changes (Search inputs, Sort options)
+  const handleFilterReset = (updater: (prev: ShopFilters) => ShopFilters) => {
+    setFilters(prev => updater(prev));
+    
+    // Smoothly re-adjust focus context to top of the grid view when dataset shifts completely
+    if (topAnchorRef.current) {
+      const elementPosition = topAnchorRef.current.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - 140;
+      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FDFBF9] text-zinc-900 selection:bg-[#E4A07A] selection:text-white antialiased">
       <Navbar />
@@ -76,22 +130,22 @@ function ShopContent() {
       <div className="bg-white border-b border-zinc-200/50 sticky top-0 z-40 shadow-sm shadow-zinc-100/40">
         <ShopHeader 
           totalItems={meta.total}
-          onSearch={(val: string) => setFilters(prev => ({ ...prev, search: val, page: 1 }))} 
+          onSearch={(val: string) => handleFilterReset(prev => ({ ...prev, search: val, page: 1 }))} 
         />
       </div>
 
       {/* MAIN PRODUCTS SHOWCASE */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:py-16">
+      <main ref={topAnchorRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:py-16 scroll-mt-36">
         <div className="space-y-10">
           
           {/* HEADER ORDER MANAGEMENT CONTROLS */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-zinc-200/60 pb-5 gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-mono tracking-widest text-[#E4A07A] uppercase block">
-                {loading ? "Refreshing Catalog..." : "Curated Collection"}
+                {loading && products.length === 0 ? "Refreshing Catalog..." : "Curated Collection"}
               </span>
               <h2 className="text-2xl sm:text-3xl font-serif font-medium tracking-tight text-zinc-900">
-                All Products
+                {filters.search ? `Results for "${filters.search}"` : "All Products"}
               </h2>
             </div>
             
@@ -102,7 +156,7 @@ function ShopContent() {
                 value={filters.sort}
                 className="bg-transparent text-xs font-medium text-zinc-700 outline-none pr-2 cursor-pointer hover:text-zinc-900 transition-colors"
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
-                  setFilters(prev => ({ ...prev, sort: e.target.value, page: 1 }))
+                  handleFilterReset(prev => ({ ...prev, sort: e.target.value, page: 1 }))
                 }
               >
                 <option value="newest">Newest Arrivals</option>
@@ -131,14 +185,22 @@ function ShopContent() {
                 className="text-center py-24 bg-white rounded-2xl border border-zinc-200/40 p-8 shadow-sm max-w-sm mx-auto"
               >
                 <ShoppingBag size={28} className="mx-auto text-zinc-300 mb-3.5" />
-                <h3 className="font-serif text-base font-medium text-zinc-800">Boutique Empty</h3>
+                <h3 className="font-serif text-base font-medium text-zinc-800">No Matches Found</h3>
                 <p className="text-zinc-400 text-xs mt-1.5 font-light leading-relaxed">
-                  No verified products are currently active on the catalog. Check back shortly.
+                  We couldn't find items matching your search. Try checking your spelling or look for different keywords.
                 </p>
               </motion.div>
             ) : (
-              <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
-                <ProductGrid products={products} />
+              <div>
+                {/* 🛠️ GRID RENDERS THE RE-PRIORITIZED POOL */}
+                <ProductGrid products={prioritizedProducts} />
+                
+                {/* Embedded dynamic loading indicator for continuous page retrieval */}
+                {loading && (
+                  <div className="flex justify-center items-center pt-10">
+                    <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-800 rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -147,7 +209,7 @@ function ShopContent() {
           {meta.lastPage > 1 && (
             <div className="pt-8 border-t border-zinc-200/60">
               <Pagination 
-                current={meta.page} 
+                current={filters.page} 
                 total={meta.lastPage} 
                 onPageChange={(p: number) => setFilters(prev => ({ ...prev, page: p }))} 
               />

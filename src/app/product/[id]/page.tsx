@@ -637,13 +637,19 @@ onSelectVariant={(v) => {
     seeMoreHref={`/category/${product.categoryId || 'discover'}`}
   />
 
-  {/* 2. More From Vendor - Route to Vendor's Storefront profile */}
+  {/* 2. More From Vendor - Dynamically looks inside the vendor array to grab the slug */}
   <RecommendedProducts
     products={vendorProducts}
     currentProductId={product.id}
     title="More From This Vendor"
     subtitle="More inventory from this storefront."
-    seeMoreHref={`/vendors/${product.vendorId}`}
+    seeMoreHref={
+      vendorProducts?.[0]?.vendor?.slug
+        ? `/vendors/${vendorProducts[0].vendor.slug}`
+        : vendorProducts?.[0]?.vendorId || product.vendorId
+        ? `/vendors/${vendorProducts?.[0]?.vendorId || product.vendorId}`
+        : undefined
+    }
   />
 
   {/* 3. Explore Marketplace - Shows accumulative Pagination downward */}
@@ -652,8 +658,8 @@ onSelectVariant={(v) => {
     currentProductId={product.id}
     title="Explore Marketplace"
     subtitle="Discover more across Aviorè."
-    limit={12} // Shows groups of 12 items per append
-    showPagination={true} // Extends infinite rows cleanly down the layout
+    limit={12} 
+    showPagination={true} 
   />
 
 </div>
