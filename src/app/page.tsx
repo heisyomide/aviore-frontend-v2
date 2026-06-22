@@ -123,40 +123,29 @@ export default function HomePage() {
 
   const flashDealsInventory = useMemo(() => registry.feed.slice(0, 6), [registry.feed]);
   
-  // Clean filtering array computation without mutation side-effects
   const availableDiscoveryPool = useMemo(() => {
     const skipCount = registry.feed.length > 10 ? 6 : 0;
     return registry.feed.slice(skipCount);
   }, [registry.feed]);
 
-  // Compute total visibility pages relative to slice bounds
   const totalPages = useMemo(() => {
     return Math.ceil(availableDiscoveryPool.length / itemsPerPage);
   }, [availableDiscoveryPool, itemsPerPage]);
 
-  // Standard standalone block page slice window calculation
+  /**
+   * 🛠️ ACCUMULATIVE DISCOVERY SLICE
+   * Instead of starting from an offset index (which swaps out products), we 
+   * slice from 0 to the current threshold. Interacting with pagination grows 
+   * the array downwards, appending new cards under the existing ones.
+   */
   const paginatedDiscovery = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return availableDiscoveryPool.slice(startIndex, startIndex + itemsPerPage);
+    const endIndex = currentPage * itemsPerPage;
+    return availableDiscoveryPool.slice(0, endIndex);
   }, [availableDiscoveryPool, currentPage, itemsPerPage]);
 
-  /**
-   * 🎯 FIX: ANCHOR VIEWPORT POSITIONING
-   * Calculates the exact pixel distance from the top of the document to the 
-   * #discovery-feed container element, factoring in an exact 120px header clearance offset.
-   */
+  // Clean updates to data visibility bounds without resetting window layout scroll positions
   const handlePageChange = useCallback((nextPage: number) => {
     setCurrentPage(nextPage);
-    
-    if (discoveryAnchorRef.current) {
-      const elementPosition = discoveryAnchorRef.current.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.scrollY - 120; // Clears sticky navbar cleanly
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-    }
   }, []);
 
   if (loading) return <HomeSkeleton />;

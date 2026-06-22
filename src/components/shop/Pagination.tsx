@@ -1,8 +1,6 @@
-// /components/shop/Pagination.tsx
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
-  // Support both your new layout naming and the search page properties
   current?: number;
   currentPage?: number;
   total?: number;
@@ -18,16 +16,13 @@ export function Pagination({
   onPageChange 
 }: PaginationProps) {
   
-  // Consolidate the naming internally so the component logic stays completely clean
   const activePage = current ?? currentPage ?? 1;
   const maxPages = total ?? totalPages ?? 1;
 
   if (maxPages <= 1) return null;
 
   const handlePageSelect = (pageNumber: number) => {
-    // 🎯 FIX: Remove global window.scrollTo({ top: 0 }) from here.
-    // Let the parent layout's onPageChange control precise scroll positions 
-    // so it doesn't fight against custom component anchors or feed offsets.
+    // 🎯 Handled cleanly through the parent callback with no hardcoded global scroll jumping
     onPageChange(pageNumber);
   };
 
