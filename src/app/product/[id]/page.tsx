@@ -622,36 +622,42 @@ onSelectVariant={(v) => {
             </div>
           </aside>
         </div>
-
-        {/* ================================================= */}
-        {/* RECOMMENDED */}
-        {/* ================================================= */}
+{/* ================================================= */}
+{/* RECOMMENDED SYSTEM ENTRY MATRIX                 */}
+{/* ================================================= */}
 
 <div className="mt-20 lg:mt-28 border-t border-zinc-100 pt-16">
 
+  {/* 1. Related Categories - Route to Category Filter view */}
   <RecommendedProducts
     products={recommended}
     currentProductId={product.id}
     title="You May Also Like"
     subtitle="Related products based on this artifact."
+    seeMoreHref={`/category/${product.categoryId || 'discover'}`}
   />
 
+  {/* 2. More From Vendor - Route to Vendor's Storefront profile */}
   <RecommendedProducts
     products={vendorProducts}
     currentProductId={product.id}
     title="More From This Vendor"
     subtitle="More inventory from this storefront."
+    seeMoreHref={`/vendors/${product.vendorId}`}
   />
 
+  {/* 3. Explore Marketplace - Shows accumulative Pagination downward */}
   <RecommendedProducts
     products={explore}
     currentProductId={product.id}
     title="Explore Marketplace"
     subtitle="Discover more across Aviorè."
+    limit={12} // Shows groups of 12 items per append
+    showPagination={true} // Extends infinite rows cleanly down the layout
   />
 
 </div>
-         
+          
       </Container>
     </div>
   );

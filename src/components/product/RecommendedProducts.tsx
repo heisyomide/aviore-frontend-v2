@@ -1,13 +1,15 @@
+// /components/product/RecommendedProducts.tsx
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { ProductCard } from './ProductCard';
+import { Pagination } from '../shop/Pagination';
+import Link from 'next/link';
 
 // =====================================================
 // STRONGLY TYPED INTERFACES
 // =====================================================
-
 export interface ProductVariant {
   id: string;
   productId: string;
@@ -50,7 +52,7 @@ export interface Product {
   reviewCount: number;
   images: ProductImage[];
   variants: ProductVariant[];
-  [key: string]: any; // Allows catch-all flexibility for other properties passed down
+  [key: string]: any;
 }
 
 interface RecommendationHookReturn {
@@ -66,12 +68,13 @@ interface RecommendedProductsProps {
   subtitle: string;
   currentProductId?: string;
   limit?: number;
+  seeMoreHref?: string;       // 🌐 Optional link for navigation
+  showPagination?: boolean;   // 📊 Toggle pagination on/off
 }
 
 // =====================================================
-// CUSTOM HOOK (Unchanged API Architecture)
+// CUSTOM HOOK
 // =====================================================
-
 export function useRecommendations(
   productId?: string,
   vendorId?: string,
@@ -91,7 +94,7 @@ export function useRecommendations(
 
         const results = await Promise.allSettled([
           axios.get<Product[]>(`${API}/storefront/products/${productId}/recommendations`),
-          axios.get<Product[]>(`${API}/storefront/products/explore?limit=20`),
+          axios.get<Product[]>(`${API}/storefront/products/explore?limit=40`), // Expanded default pool limit for pagination
           vendorId
             ? axios.get<Product[]>(`${API}/storefront/vendors/${vendorId}/products`)
             : Promise.resolve({ data: [] as Product[] }),
@@ -133,91 +136,114 @@ export function useRecommendations(
 }
 
 // =====================================================
-// COMPONENT (Fixed Price, Stock Flattening & Native Grid Layout)
+// COMPONENT
 // =====================================================
-
 export function RecommendedProducts({
   products = [],
   title,
   subtitle,
   currentProductId,
   limit = 8,
+  seeMoreHref,
+  showPagination = false,
 }: RecommendedProductsProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = limit;
 
-  // ====================================
-  // CLEAN, FILTER, DEDUPLICATE & OVERRIDE DUMMY DATA
-  // ====================================
-  const cleanedProducts = useMemo(() => {
+  // Cleanup pool
+  const baseCleanedPool = useMemo(() => {
     return products
       .filter(Boolean)
-      // 1. Remove details page native product reference
       .filter((p) => p.id !== currentProductId)
-      // 2. Remove duplicate payload items
       .filter((product, index, self) =>
         index === self.findIndex((p) => p.id === product.id)
       )
-      // 3. Mutate product root fields so ProductCard renders accurate metadata
       .map((product) => {
         const variants = product.variants || [];
-
-        // Check for variant specific configurations
         const hasVariants = variants.length > 0;
-
-        // Extract and clean valid prices from array of variants
         const prices = variants
           .map((v) => (typeof v.price === 'string' ? parseFloat(v.price) : v.price))
           .filter((p) => !isNaN(p) && p > 0);
 
-        // Calculate minimum valid variant price, fall back to product base price
         const resolvedPrice = prices.length > 0
           ? Math.min(...prices)
           : typeof product.price === 'string'
           ? parseFloat(product.price) || 0
           : product.price || 0;
 
-        // Sum up stocks across all variants if variants exist, otherwise use base stock
         const totalStock = hasVariants
           ? variants.reduce((sum, v) => sum + (v.stock || 0), 0)
           : product.stock || 0;
 
         return {
           ...product,
-          price: resolvedPrice, // Updates '0' string with variant price (e.g., 17450)
-          stock: totalStock,    // Updates '0' integer with calculated sum (e.g., 7)
+          price: resolvedPrice,
+          stock: totalStock,
         };
-      })
-      .slice(0, limit);
-  }, [products, currentProductId, limit]);
+      });
+  }, [products, currentProductId]);
 
-  // Prevent UI compilation or flashing if output list evaluates to empty array
-  if (cleanedProducts.length === 0) {
+  // Compute pages total
+  const totalPages = useMemo(() => {
+    return Math.ceil(baseCleanedPool.length / itemsPerPage);
+  }, [baseCleanedPool, itemsPerPage]);
+
+  // 🛠️ ACCUMULATIVE DISPLAY SLICE LOGIC
+  const visibleProducts = useMemo(() => {
+    if (!showPagination) {
+      return baseCleanedPool.slice(0, limit);
+    }
+    // Grabs from index 0 all the way down to grow rows cleanly
+    return baseCleanedPool.slice(0, currentPage * itemsPerPage);
+  }, [baseCleanedPool, showPagination, currentPage, itemsPerPage, limit]);
+
+  if (baseCleanedPool.length === 0) {
     return null;
   }
 
-  // ====================================
-  // UI RENDER GRID MATCHING YOUR DESIGN
-  // ====================================
   return (
     <section className="mt-20">
-      {/* HEADER */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
-          {title}
-        </h2>
-        <p className="text-sm text-zinc-500 mt-1">
-          {subtitle}
-        </p>
+      {/* HEADER ROW WITH SEE MORE ROUTING ANCHOR */}
+      <div className="mb-8 flex items-end justify-between border-b border-zinc-100 pb-5">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
+            {title}
+          </h2>
+          <p className="text-sm text-zinc-500 mt-1">
+            {subtitle}
+          </p>
+        </div>
+        
+        {seeMoreHref && (
+          <Link 
+            href={seeMoreHref}
+            className="text-xs font-bold tracking-wider uppercase text-[#A4143D] hover:opacity-80 transition-all border-b-2 border-transparent hover:border-[#A4143D] pb-1"
+          >
+            See More &rarr;
+          </Link>
+        )}
       </div>
 
       {/* PRODUCTS DISPLAY GRID */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
-        {cleanedProducts.map((product) => (
+        {visibleProducts.map((product) => (
           <ProductCard
             key={product.id}
             product={product}
           />
         ))}
       </div>
+
+      {/* PAGINATION ZONE - MOUNTED ONLY ON SPECIFIED EXPLORE CONTAINER */}
+      {showPagination && totalPages > 1 && (
+        <div className="mt-14">
+          <Pagination 
+            current={currentPage}
+            total={totalPages}
+            onPageChange={(nextPage) => setCurrentPage(nextPage)}
+          />
+        </div>
+      )}
     </section>
   );
 }
