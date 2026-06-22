@@ -25,11 +25,10 @@ export function Pagination({
   if (maxPages <= 1) return null;
 
   const handlePageSelect = (pageNumber: number) => {
+    // 🎯 FIX: Remove global window.scrollTo({ top: 0 }) from here.
+    // Let the parent layout's onPageChange control precise scroll positions 
+    // so it doesn't fight against custom component anchors or feed offsets.
     onPageChange(pageNumber);
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
   };
 
   const getPageNumbers = () => {
