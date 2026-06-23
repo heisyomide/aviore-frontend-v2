@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search, Loader2, X, ArrowUpRight, Clock, Store, Layers, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -49,6 +49,7 @@ const TRENDING_SEARCHES = [
 
 const LOCAL_STORAGE_KEY = 'aviore_recent_searches';
 const DEBOUNCE_DELAY_MS = 300;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 export function SearchBar() {
   const router = useRouter();
@@ -66,13 +67,13 @@ export function SearchBar() {
     vendors: [],
   });
 
-  // Hydrate local cache
+  // Hydrate local cache safely after mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) setRecentSearches(JSON.parse(stored));
     } catch (err) {
-      console.error(err);
+      console.error('Failed to parse recent inquiries:', err);
     }
   }, []);
 
@@ -85,6 +86,15 @@ export function SearchBar() {
     }
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
+
+  // Handle global keyboard escape interaction
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Debounced API Request pipeline
   useEffect(() => {
@@ -136,14 +146,20 @@ export function SearchBar() {
     inputRef.current?.focus();
   };
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
-
   return (
     <>
-      {/* ─── STICKY MINI EMBED TRUNCATED ROOT TRIGGER ─── */}
+      {/* ─── RESPONSIVE ROOT TRIGGERS ─── */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="flex md:hidden items-center justify-center w-10 h-10 rounded-full border border-zinc-200 bg-zinc-50/50 active:bg-white text-zinc-500 shrink-0 select-none"
+        aria-label="Open search menu"
+      >
+        <Search size={16} />
+      </button>
+
       <div 
         onClick={() => setIsOpen(true)}
-        className="flex items-center w-full max-w-md h-11 rounded-full border border-zinc-200 bg-zinc-50/50 hover:bg-white hover:border-zinc-400 px-4 cursor-pointer transition-all duration-300 group"
+        className="hidden md:flex items-center w-full max-w-md h-11 rounded-full border border-zinc-200 bg-zinc-50/50 hover:bg-white hover:border-zinc-400 px-4 cursor-pointer transition-all duration-300 group"
       >
         <Search size={15} className="text-zinc-400 group-hover:text-zinc-900 transition-colors shrink-0" />
         <span className="px-3 text-xs font-medium text-zinc-400 group-hover:text-zinc-500 transition-colors flex-1 select-none">
@@ -162,8 +178,9 @@ export function SearchBar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md z-[100] flex flex-col justify-start pt-16 px-6"
+            role="dialog"
+            aria-modal="true"
           >
-            {/* Absolute close canvas touch barrier */}
             <div className="absolute inset-0 -z-10" onClick={() => setIsOpen(false)} />
 
             <motion.div
@@ -181,6 +198,7 @@ export function SearchBar() {
                   type="text"
                   value={query}
                   autoFocus
+                  aria-label="Search items"
                   placeholder="What artifact are you looking for?"
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
@@ -192,6 +210,7 @@ export function SearchBar() {
                     <button 
                       onClick={clearSearchInput} 
                       className="p-2 rounded-full hover:bg-zinc-50 text-zinc-400 hover:text-zinc-900 transition-colors"
+                      aria-label="Clear context"
                     >
                       <X size={16} />
                     </button>
@@ -207,13 +226,12 @@ export function SearchBar() {
               </div>
 
               {/* 🏛️ EDITORIAL MULTI-COLUMN CONTEXT WORKSPACE */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-zinc-100 bg-zinc-50/30">
+              <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-zinc-100 bg-zinc-50/30">
                 
-                {/* LEFT WORKSPACE FLANK: METRICS, SUGGESTIONS & FILTERS (5 Columns) */}
+                {/* LEFT WORKSPACE FLANK */}
                 <div className="md:col-span-5 p-8 space-y-8 bg-white">
                   {query.trim().length < 2 ? (
                     <>
-                      {/* Sub-block: Recent Searches */}
                       {recentSearches.length > 0 && (
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-zinc-400">
@@ -235,7 +253,6 @@ export function SearchBar() {
                         </div>
                       )}
 
-                      {/* Sub-block: Trending Curations */}
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-zinc-400">
                           <Sparkles size={12} />
@@ -256,7 +273,6 @@ export function SearchBar() {
                     </>
                   ) : (
                     <>
-                      {/* Context Query Suggestions Matrix Output */}
                       {results.suggestions.length > 0 && (
                         <div className="space-y-3">
                           <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Index Matches</h4>
@@ -275,7 +291,6 @@ export function SearchBar() {
                         </div>
                       )}
 
-                      {/* Context Category Node Direct Jumps */}
                       {results.categories.length > 0 && (
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-zinc-400">
@@ -299,7 +314,6 @@ export function SearchBar() {
                         </div>
                       )}
 
-                      {/* Context Brand Hub Direct Jumps */}
                       {results.vendors && results.vendors.length > 0 && (
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-zinc-400">
@@ -308,7 +322,7 @@ export function SearchBar() {
                           </div>
                           <div className="grid grid-cols-1 gap-2">
                             {results.vendors.slice(0, 3).map((v) => {
-                              const logo = v.imageUrl ? (v.imageUrl.startsWith('http') ? v.imageUrl : `${apiBase}/uploads/${v.imageUrl}`) : null;
+                              const logo = v.imageUrl ? (v.imageUrl.startsWith('http') ? v.imageUrl : `${API_BASE}/uploads/${v.imageUrl}`) : null;
                               return (
                                 <button
                                   key={v.id}
@@ -318,7 +332,7 @@ export function SearchBar() {
                                   }}
                                   className="flex items-center gap-3 p-2 rounded-xl border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all text-left bg-zinc-50/50 group"
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-white relative overflow-hidden shrink-0 border border-zinc-100 flex items-center justify-center">
+                                  <div className="w-8 h-8 rounded-lg bg-zinc-100 relative overflow-hidden shrink-0 border border-zinc-100 flex items-center justify-center">
                                     {logo ? <Image src={logo} alt={v.storeName} fill className="object-cover grayscale group-hover:grayscale-0 transition-all" /> : <Store size={14} className="text-zinc-300" />}
                                   </div>
                                   <span className="text-xs font-bold text-zinc-800 uppercase tracking-tight">{v.storeName}</span>
@@ -332,24 +346,24 @@ export function SearchBar() {
                   )}
                 </div>
 
-                {/* RIGHT WORKSPACE FLANK: ARTIFACT IMAGERY GRID LISTING VIEW (7 Columns) */}
+                {/* RIGHT WORKSPACE FLANK */}
                 <div className="md:col-span-7 p-8 flex flex-col justify-between">
                   <div className="space-y-4">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Curated Inventory Previews</h4>
                     
                     {query.trim().length < 2 ? (
                       <div className="h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
-                        <p className="text-xs font-black tracking-widest text-zinc-300 uppercase italic">Awaiting_Input_Parameters</p>
+                        <p className="text-[10px] font-black tracking-widest text-zinc-300 uppercase italic">Awaiting_Input_Parameters</p>
                       </div>
                     ) : results.products.length === 0 ? (
                       <div className="h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
-                        <p className="text-xs font-black tracking-widest text-[#A4143D] uppercase italic">No_Matching_Artifacts</p>
+                        <p className="text-[10px] font-black tracking-widest text-[#A4143D] uppercase italic">No_Matching_Artifacts</p>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2">
                         {results.products.slice(0, 4).map((product) => {
                           const src = product.imageUrl?.trim() || '/placeholder.jpg';
-                          const fineSrc = src.startsWith('http') || src.startsWith('/') ? src : `${apiBase}/uploads/${src}`;
+                          const fineSrc = src.startsWith('http') || src.startsWith('/') ? src : `${API_BASE}/uploads/${src}`;
                           
                           return (
                             <button
@@ -392,7 +406,6 @@ export function SearchBar() {
                     )}
                   </div>
 
-                  {/* Dynamic absolute view details panel link trigger */}
                   {query.trim().length >= 2 && results.products.length > 0 && (
                     <button 
                       onClick={() => handleSearchSubmit()}
@@ -405,7 +418,6 @@ export function SearchBar() {
                 </div>
 
               </div>
-
             </motion.div>
           </motion.div>
         )}
