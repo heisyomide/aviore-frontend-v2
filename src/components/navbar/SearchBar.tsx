@@ -131,7 +131,6 @@ export function SearchBar() {
     const finalQuery = (targetValue ?? query).trim();
     if (!finalQuery) return;
 
-    // Cache search update
     const updated = [finalQuery, ...recentSearches.filter((r) => r !== finalQuery)].slice(0, 5);
     setRecentSearches(updated);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
@@ -177,22 +176,23 @@ export function SearchBar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md z-[100] flex flex-col justify-start pt-16 px-6"
+            className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md z-[100] flex flex-col justify-start md:pt-16 md:px-6"
             role="dialog"
             aria-modal="true"
           >
-            <div className="absolute inset-0 -z-10" onClick={() => setIsOpen(false)} />
+            {/* Click-outside background trigger (hidden completely on full screen mobile screens) */}
+            <div className="absolute inset-0 -z-10 hidden md:block" onClick={() => setIsOpen(false)} />
 
             <motion.div
-              initial={{ y: -20, scale: 0.98 }}
+              initial={{ y: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : -20, scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.98 }}
               animate={{ y: 0, scale: 1 }}
-              exit={{ y: -20, scale: 0.98 }}
+              exit={{ y: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : -20, scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.98 }}
               transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
-              className="w-full max-w-[1100px] mx-auto bg-white rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-zinc-100 overflow-hidden flex flex-col max-h-[85vh]"
+              className="w-full max-w-[1100px] mx-auto bg-white md:rounded-[2.5rem] rounded-none shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-zinc-100 overflow-hidden flex flex-col h-full md:h-auto md:max-h-[85vh]"
             >
               {/* 🎯 MAIN INPUT PANEL ROW */}
-              <div className="flex items-center h-20 px-8 border-b border-zinc-100 bg-white sticky top-0 z-10">
-                <Search size={20} className="text-zinc-400 shrink-0" />
+              <div className="flex items-center h-20 px-4 md:px-8 border-b border-zinc-100 bg-white sticky top-0 z-10 gap-2">
+                <Search size={20} className="text-zinc-400 shrink-0 ml-2 md:ml-0" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -202,9 +202,9 @@ export function SearchBar() {
                   placeholder="What artifact are you looking for?"
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
-                  className="flex-1 bg-transparent px-5 text-lg font-medium text-zinc-900 placeholder:text-zinc-300 outline-none"
+                  className="flex-1 bg-transparent px-2 md:px-5 text-base md:text-lg font-medium text-zinc-900 placeholder:text-zinc-300 outline-none min-w-0"
                 />
-                <div className="flex items-center gap-4 shrink-0">
+                <div className="flex items-center gap-2 md:gap-4 shrink-0">
                   {loading && <Loader2 size={18} className="animate-spin text-zinc-400" />}
                   {query && !loading && (
                     <button 
@@ -215,21 +215,21 @@ export function SearchBar() {
                       <X size={16} />
                     </button>
                   )}
-                  <div className="w-px h-6 bg-zinc-100" />
+                  <div className="w-px h-6 bg-zinc-100 hidden md:block" />
                   <button 
                     onClick={() => setIsOpen(false)}
-                    className="px-4 py-2 text-[10px] tracking-[0.2em] uppercase font-black bg-zinc-950 text-white rounded-full hover:bg-[#A4143D] transition-colors"
+                    className="px-3 md:px-4 py-2 text-[10px] tracking-[0.15em] md:tracking-[0.2em] uppercase font-black bg-zinc-950 text-white rounded-full hover:bg-[#A4143D] transition-colors"
                   >
                     Close
                   </button>
                 </div>
               </div>
 
-              {/* 🏛️ EDITORIAL MULTI-COLUMN CONTEXT WORKSPACE */}
+              {/* 🏛️ EDITORIAL RESPONSIVE CONTEXT WORKSPACE */}
               <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-zinc-100 bg-zinc-50/30">
                 
-                {/* LEFT WORKSPACE FLANK */}
-                <div className="md:col-span-5 p-8 space-y-8 bg-white">
+                {/* LEFT WORKSPACE FLANK (Recent Searches, Categories, Vendors) */}
+                <div className="md:col-span-5 p-6 md:p-8 space-y-8 bg-white order-2 md:order-1">
                   {query.trim().length < 2 ? (
                     <>
                       {recentSearches.length > 0 && (
@@ -246,7 +246,7 @@ export function SearchBar() {
                                 className="flex items-center justify-between text-left text-sm font-medium text-zinc-600 hover:text-zinc-950 py-1.5 px-2 rounded-xl hover:bg-zinc-50 transition-colors group"
                               >
                                 <span>{item}</span>
-                                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 text-zinc-400 group-hover:text-zinc-950 transition-all -translate-x-1 group-hover:translate-x-0" />
+                                <ArrowUpRight size={14} className="opacity-100 md:opacity-0 group-hover:opacity-100 text-zinc-400 group-hover:text-zinc-950 transition-all" />
                               </button>
                             ))}
                           </div>
@@ -263,7 +263,7 @@ export function SearchBar() {
                             <button
                               key={item}
                               onClick={() => handleSearchSubmit(item)}
-                              className="rounded-xl bg-zinc-50 border border-zinc-100/80 px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:border-zinc-900 hover:bg-zinc-950 hover:text-white transition-all duration-300"
+                              className="rounded-xl bg-zinc-50 border border-zinc-100/80 px-3.5 py-2 text-xs font-semibold text-zinc-700 hover:border-zinc-900 hover:bg-zinc-950 hover:text-white transition-all duration-300"
                             >
                               {item}
                             </button>
@@ -346,17 +346,17 @@ export function SearchBar() {
                   )}
                 </div>
 
-                {/* RIGHT WORKSPACE FLANK */}
-                <div className="md:col-span-7 p-8 flex flex-col justify-between">
+                {/* RIGHT WORKSPACE FLANK (Curated Previews) */}
+                <div className="md:col-span-7 p-6 md:p-8 flex flex-col justify-between order-1 md:order-2">
                   <div className="space-y-4">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Curated Inventory Previews</h4>
                     
                     {query.trim().length < 2 ? (
-                      <div className="h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
+                      <div className="h-36 md:h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
                         <p className="text-[10px] font-black tracking-widest text-zinc-300 uppercase italic">Awaiting_Input_Parameters</p>
                       </div>
                     ) : results.products.length === 0 ? (
-                      <div className="h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
+                      <div className="h-36 md:h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
                         <p className="text-[10px] font-black tracking-widest text-[#A4143D] uppercase italic">No_Matching_Artifacts</p>
                       </div>
                     ) : (
@@ -372,21 +372,21 @@ export function SearchBar() {
                                 setIsOpen(false);
                                 router.push(`/product/${product.id}`);
                               }}
-                              className="flex w-full items-center gap-4 rounded-2xl p-2.5 hover:bg-white border border-transparent hover:border-zinc-100 hover:shadow-md shadow-zinc-100/50 group transition-all duration-300"
+                              className="flex w-full items-center gap-3 md:gap-4 rounded-2xl p-2 hover:bg-white border border-transparent hover:border-zinc-100 hover:shadow-md transition-all duration-300 group"
                             >
-                              <div className="h-14 w-14 rounded-xl bg-zinc-100 overflow-hidden shrink-0 relative border border-zinc-100/20">
+                              <div className="h-12 w-12 md:h-14 md:w-14 rounded-xl bg-zinc-100 overflow-hidden shrink-0 relative border border-zinc-100/20">
                                 <Image
                                   src={fineSrc}
                                   alt={product.title}
                                   fill
-                                  sizes="56px"
+                                  sizes="(max-width: 768px) 48px, 56px"
                                   className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                                 />
                               </div>
 
                               <div className="flex-1 text-left min-w-0">
                                 <span className="text-[8px] font-black tracking-widest uppercase text-zinc-400 block mb-0.5">{product.category || 'Collection'}</span>
-                                <p className="truncate text-sm font-bold text-zinc-800 group-hover:text-zinc-950 transition-colors leading-tight">
+                                <p className="truncate text-xs md:text-sm font-bold text-zinc-800 group-hover:text-zinc-950 transition-colors leading-tight">
                                   {product.title}
                                 </p>
                                 <span className="text-[10px] text-zinc-400 block mt-0.5 font-medium truncate">
@@ -411,7 +411,7 @@ export function SearchBar() {
                       onClick={() => handleSearchSubmit()}
                       className="w-full mt-6 h-12 bg-zinc-950 text-white hover:bg-[#A4143D] transition-colors rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest"
                     >
-                      <span>View All Result Metrics ({results.products.length})</span>
+                      <span>View All Results ({results.products.length})</span>
                       <ArrowUpRight size={14} />
                     </button>
                   )}
