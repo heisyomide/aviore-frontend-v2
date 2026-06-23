@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Container } from '../../components/layout/Container';
 import { Section } from '../../components/layout/Section';
-import { ArrowRight, ShieldCheck, Zap, Globe, Sparkles } from 'lucide-react';
+import { Gift, ArrowRight, ShieldCheck, Zap, Globe, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 const AMOUNTS = [50000, 100000, 250000, 500000, 1000000];
@@ -12,75 +12,81 @@ export default function GiftCardPage() {
   const [selectedAmount, setSelectedAmount] = useState(AMOUNTS[1]);
 
   return (
-    <div className="bg-[#050505] text-white min-h-screen selection:bg-[#A4143D] overflow-x-hidden">
+    <div className="bg-[#050505] text-white min-h-screen selection:bg-[#A4143D]">
       
       {/* 🚀 HERO SECTION */}
-      <Section className="pt-32 md:pt-44 pb-24 relative">
+      <Section className="pt-40 pb-20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#A4143D]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+        
         <Container className="relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
             
-            {/* LEFT: CRISP, HIGH-CONTRAST TYPOGRAPHY */}
-            <div className="space-y-8 order-2 lg:order-1">
-              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/20 bg-white/10 w-fit">
+            {/* LEFT: TEXT CONTENT */}
+            <div className="space-y-10">
+              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/5">
                 <Sparkles size={14} className="text-[#A4143D]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">The Registry Access</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">The Registry Access</span>
               </div>
               
-              <div className="space-y-6">
-                <h1 className="text-5xl sm:text-7xl md:text-8xl font-black uppercase tracking-tighter leading-none text-white">
-                  Digital <br /> 
-                  <span className="text-white/60">Sovereignty</span>
-                </h1>
-                
-                <p className="text-base md:text-lg text-zinc-200 font-medium max-w-lg leading-relaxed">
-                  Gift the ultimate standard. The AVIORÈ Gift Card grants access to our entire 
-                  curated registry of high-end assets and premium vendors.
-                </p>
-              </div>
+              <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.8] text-white">
+                Digital <br /> <span className="text-transparent text-outline-white">Sovereignty</span>
+              </h1>
+              
+              <p className="text-lg text-zinc-300 font-medium max-w-lg leading-relaxed">
+                Gift the ultimate standard. The AVIORÈ Gift Card grants access to our entire 
+                curated registry of high-end assets and premium vendors.
+              </p>
 
-              {/* Solid, Readable Amount Selector Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-wrap gap-3">
+              <div className="flex flex-wrap gap-4">
                 {AMOUNTS.map((amt) => (
                   <button
                     key={amt}
                     onClick={() => setSelectedAmount(amt)}
-                    className={`px-6 py-4 rounded-xl border-2 transition-all duration-200 font-black text-sm tracking-tight select-none
+                    className={`px-8 py-4 rounded-2xl border-2 transition-all font-black text-sm tracking-tighter
                       ${selectedAmount === amt 
                         ? 'border-[#A4143D] bg-[#A4143D] text-white scale-105' 
-                        : 'border-white/20 bg-white/5 text-white hover:border-white hover:bg-white/10'}`}
+                        : 'border-white/10 bg-white/5 text-zinc-400 hover:border-white/30'}`}
                   >
                     ₦{amt.toLocaleString()}
                   </button>
                 ))}
               </div>
 
-              <button className="w-full sm:w-auto px-10 py-5 rounded-xl bg-white text-black font-black uppercase tracking-[0.2em] text-xs md:text-sm hover:bg-[#A4143D] hover:text-white transition-all duration-300 flex items-center justify-center gap-4 group">
-                <span>Issue Gift Asset</span> 
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              <button className="w-full md:w-auto px-12 py-6 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] text-sm hover:bg-[#A4143D] hover:text-white transition-all shadow-2xl shadow-white/5 flex items-center justify-center gap-4">
+                Issue Gift Asset <ArrowRight size={20} />
               </button>
             </div>
 
-            {/* RIGHT: RENDERED CARD METRICS */}
-            <div className="relative order-1 lg:order-2 w-full max-w-md mx-auto lg:max-w-none">
-              <div className="relative aspect-[1.58/1] w-full bg-gradient-to-br from-zinc-900 to-black rounded-2xl border-2 border-white/20 p-8 md:p-10 shadow-2xl flex flex-col justify-between">
+            {/* RIGHT: THE CARD VISUAL (NEUMORPHIC/GLASS) */}
+            <div className="relative group perspective-1000">
+              <motion.div 
+                whileHover={{ rotateY: -10, rotateX: 5 }}
+                className="relative aspect-[1.6/1] w-full bg-linear-to-br from-zinc-800 to-black rounded-[2.5rem] border-2 border-white/10 p-12 shadow-[0_40px_100px_-20px_rgba(164,20,61,0.3)] overflow-hidden"
+              >
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10 [background-image:radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]" />
                 
-                <div className="flex justify-between items-start">
-                  {/* Clean Solid Gold/Metallic Chip Representation */}
-                  <div className="w-14 h-9 bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 rounded-md shadow-inner" />
-                  <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter italic text-white">AVIORÈ</h2>
+                <div className="h-full flex flex-col justify-between relative z-10">
+                  <div className="flex justify-between items-start">
+                    <div className="w-16 h-10 bg-linear-to-r from-zinc-700 to-zinc-500 rounded-lg opacity-50" /> {/* Chip */}
+                    <h2 className="text-3xl font-black uppercase tracking-tighter italic text-white/90">AVIORÈ</h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#A4143D]">Registry Value</p>
+                    <p className="text-5xl md:text-6xl font-black tracking-tighter text-white">
+                      ₦{selectedAmount.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#A4143D]">Registry Value</p>
-                  <p className="text-4xl md:text-5xl font-black tracking-tighter text-white">
-                    ₦{selectedAmount.toLocaleString()}
-                  </p>
-                </div>
-              </div>
+                {/* Grainy Texture Overlay */}
+                <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay [background-image:url('https://grainy-gradients.vercel.app/noise.svg')]" />
+              </motion.div>
               
-              {/* Crisp Badge Anchor */}
-              <div className="absolute -bottom-4 -right-4 bg-white text-black p-4 rounded-xl border-4 border-[#050505] shadow-2xl">
-                 <ShieldCheck size={24} className="text-black" />
+              {/* Card Badge */}
+              <div className="absolute -bottom-6 -right-6 bg-white text-black p-6 rounded-3xl border-4 border-[#050505] shadow-2xl">
+                 <ShieldCheck size={32} />
               </div>
             </div>
 
@@ -88,48 +94,49 @@ export default function GiftCardPage() {
         </Container>
       </Section>
 
-      {/* 🛡️ FEATURES GRID: CLEAR & SOLID */}
-      <Section className="py-20 bg-[#0c0c0c] border-t border-white/10">
+      {/* 🛡️ FEATURES: THE ASSURANCE */}
+      <Section className="py-24 bg-[#080808] border-y border-white/5">
         <Container>
           <div className="grid md:grid-cols-3 gap-12">
             <Feature 
-              icon={<Zap className="text-white" size={24} />}
+              icon={<Zap className="text-[#A4143D]" />}
               title="Instant Delivery"
               desc="Asset keys are delivered via secure encrypted email protocol immediately upon confirmation."
             />
             <Feature 
-              icon={<Globe className="text-white" size={24} />}
+              icon={<Globe className="text-[#A4143D]" />}
               title="Registry-Wide"
               desc="Usable across all categories, from high-end fashion to tech assets and registry services."
             />
             <Feature 
-              icon={<ShieldCheck className="text-white" size={24} />}
+              icon={<ShieldCheck className="text-[#A4143D]" />}
               title="No Expiry"
               desc="Your balance is stored on the AVIORÈ ledger permanently until redeemed by the holder."
             />
           </div>
         </Container>
       </Section>
+
+      <style jsx>{`
+        .text-outline-white {
+          -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.4);
+        }
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+      `}</style>
     </div>
   );
 }
 
-interface FeatureProps {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}
-
-function Feature({ icon, title, desc }: FeatureProps) {
+function Feature({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
   return (
-    <div className="space-y-4">
-      <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+    <div className="space-y-6 group">
+      <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-[#A4143D] transition-colors">
         {icon}
       </div>
-      <div className="space-y-1">
-        <h3 className="text-lg font-black uppercase tracking-tight text-white">{title}</h3>
-        <p className="text-zinc-300 text-sm font-medium leading-relaxed">{desc}</p>
-      </div>
+      <h3 className="text-xl font-black uppercase tracking-tight text-white">{title}</h3>
+      <p className="text-zinc-400 font-medium leading-relaxed">{desc}</p>
     </div>
   );
 }
