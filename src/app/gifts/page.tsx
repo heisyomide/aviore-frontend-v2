@@ -33,8 +33,11 @@ export default function GiftCardPage() {
                 <h1 className="text-5xl sm:text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9] text-white">
                   Digital <br /> 
                   <span 
-                    className="text-transparent"
-                    style={{ WebkitTextStroke: '1.5px rgba(255, 255, 255, 0.4)' }}
+                    className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-400 to-zinc-600 tracking-tighter"
+                    style={{ 
+                      WebkitTextStroke: '2px rgba(255, 255, 255, 0.95)',
+                      WebkitBackgroundClip: 'text'
+                    }}
                   >
                     Sovereignty
                   </span>
