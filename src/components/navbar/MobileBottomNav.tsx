@@ -8,7 +8,8 @@ import {
   Megaphone, Star, BarChart, UserCircle, 
   ShieldCheck, X, Zap, BarChart3, Users, 
   ShoppingCart,
-  LifeBuoy
+  LifeBuoy,
+  Bell
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -36,7 +37,7 @@ const VENDOR_EXTENDED: NavLink[] = [
   { label: 'Customers', href: '/vendor/customers', icon: Users },
   { label: 'Support', href: '/vendor/support', icon: LifeBuoy },
   { label: 'Inventorty', href: '/vendor/inventory', icon: Boxes },
-  
+  { label: 'Notifications', href: '/vendor/notifications', icon: Bell },
   { label: 'Settings', href: '/vendor/settings', icon: Settings },
 ];
 

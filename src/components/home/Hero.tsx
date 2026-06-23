@@ -121,9 +121,6 @@ export function Hero() {
                 </p>
 
                 {/* Main Action Buttons */}
-import Link from 'next/link';
-
-// ... inside your Hero / Content component:
 
 <div className="flex flex-wrap gap-3 pt-2">
   {/* Primary Route: Redirects straight to your newly refactored edge-to-edge product showcase */}
