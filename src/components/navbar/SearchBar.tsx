@@ -1,32 +1,19 @@
 'use client';
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-
-import {
-  Search,
-  Loader2,
-  X,
-  TrendingUp,
-  ArrowRight,
-} from 'lucide-react';
-
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Search, Loader2, X, ArrowUpRight, Clock, Store, Layers, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
 import { api } from '@/src/lib/axios';
 
 // ======================================================
-// TYPES & INTERFACES
+// CONFIGURATION & TYPES
 // ======================================================
-
 interface SearchProduct {
   id: string;
   title: string;
-  imageUrl: string | null; // ⚡ Aligned with NestJS flat field mapper
+  imageUrl: string | null;
   displayPrice: number;
   category: string;
   vendor: string;
@@ -35,11 +22,13 @@ interface SearchProduct {
 interface SearchCategory {
   id: string;
   name: string;
+  slug?: string;
 }
 
 interface SearchVendor {
   id: string;
   storeName: string;
+  slug: string;
   imageUrl: string | null;
 }
 
@@ -50,29 +39,20 @@ interface SearchPreviewResponse {
   vendors?: SearchVendor[];
 }
 
-// ======================================================
-// CONSTANTS
-// ======================================================
-
 const TRENDING_SEARCHES = [
   'Luxury Watches',
   'Vintage Artifacts',
   'Minimal Decor',
   'Designer Bags',
   'Silk Shirts',
-  'Premium Sneakers',
 ];
 
 const LOCAL_STORAGE_KEY = 'aviore_recent_searches';
-const DEBOUNCE_DELAY_MS = 350;
-
-// ======================================================
-// MAIN COMPONENT
-// ======================================================
+const DEBOUNCE_DELAY_MS = 300;
 
 export function SearchBar() {
   const router = useRouter();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -86,37 +66,27 @@ export function SearchBar() {
     vendors: [],
   });
 
-  // 1. Sync & Hydrate Recent Searches from LocalStorage safely
+  // Hydrate local cache
   useEffect(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        setRecentSearches(JSON.parse(stored));
-      }
+      if (stored) setRecentSearches(JSON.parse(stored));
     } catch (err) {
-      console.error('Failed to parse recent searches cache:', err);
+      console.error(err);
     }
   }, []);
 
-  // 2. Commit a unique query string cleanly to LocalStorage
-  const saveRecentSearch = (search: string) => {
-    const cleaned = search.trim();
-    if (!cleaned) return;
-
-    const updated = [
-      cleaned,
-      ...recentSearches.filter((r) => r !== cleaned),
-    ].slice(0, 6);
-
-    setRecentSearches(updated);
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-    } catch (err) {
-      console.error('Failed to update recent searches cache:', err);
+  // Trap background scroll when immersive search layout is pulled up
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
-  };
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
 
-  // 3. Debounced API Search Preview Execution Pipe
+  // Debounced API Request pipeline
   useEffect(() => {
     if (query.trim().length < 2) {
       setResults({ products: [], suggestions: [], categories: [], vendors: [] });
@@ -129,7 +99,6 @@ export function SearchBar() {
         const res = await api.get<SearchPreviewResponse>(
           `/products/search/preview?q=${encodeURIComponent(query)}`
         );
-
         if (res.data) {
           setResults({
             products: res.data.products || [],
@@ -139,7 +108,6 @@ export function SearchBar() {
           });
         }
       } catch (err) {
-        console.error('[AVIORÈ SEARCH ERROR]: Preview pipeline failed:', err);
         setResults({ products: [], suggestions: [], categories: [], vendors: [] });
       } finally {
         setLoading(false);
@@ -149,185 +117,299 @@ export function SearchBar() {
     return () => clearTimeout(delayHandler);
   }, [query]);
 
-  // 4. Close Dropdown instantly on outside click interactions
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // 5. Fire full router redirection routing parameters
   const handleSearchSubmit = (targetValue?: string) => {
     const finalQuery = (targetValue ?? query).trim();
     if (!finalQuery) return;
 
-    saveRecentSearch(finalQuery);
+    // Cache search update
+    const updated = [finalQuery, ...recentSearches.filter((r) => r !== finalQuery)].slice(0, 5);
+    setRecentSearches(updated);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+
     setIsOpen(false);
     router.push(`/search?q=${encodeURIComponent(finalQuery)}`);
   };
 
-  // 6. Enforce hard-max slice limit of elements for cleaner view layouts
-  const displayProducts = useMemo(() => {
-    return (results.products || []).slice(0, 5);
-  }, [results.products]);
+  const clearSearchInput = () => {
+    setQuery('');
+    setResults({ products: [], suggestions: [], categories: [], vendors: [] });
+    inputRef.current?.focus();
+  };
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-xl text-zinc-900">
-      
-      {/* --- INPUT WRAPPER MTRX --- */}
-      <div
-        className={`
-          flex items-center h-12 rounded-2xl border bg-white px-4 
-          transition-all duration-300 ease-out
-          ${isOpen ? 'border-zinc-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)]' : 'border-zinc-200'}
-        `}
+    <>
+      {/* ─── STICKY MINI EMBED TRUNCATED ROOT TRIGGER ─── */}
+      <div 
+        onClick={() => setIsOpen(true)}
+        className="flex items-center w-full max-w-md h-11 rounded-full border border-zinc-200 bg-zinc-50/50 hover:bg-white hover:border-zinc-400 px-4 cursor-pointer transition-all duration-300 group"
       >
-        <Search size={18} className="text-zinc-400 shrink-0" />
-
-        <input
-          type="text"
-          value={query}
-          placeholder="Search products, brands, luxury items..."
-          onFocus={() => setIsOpen(true)}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setIsOpen(true);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSearchSubmit();
-          }}
-          className="flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-zinc-400"
-        />
-
-        {loading ? (
-          <Loader2 size={16} className="animate-spin text-zinc-400 shrink-0" />
-        ) : (
-          query && (
-            <button
-              onClick={() => {
-                setQuery('');
-                setResults({ products: [], suggestions: [], categories: [], vendors: [] });
-              }}
-              className="text-zinc-400 hover:text-zinc-900 transition-colors p-0.5"
-              aria-label="Clear query input content field"
-            >
-              <X size={16} />
-            </button>
-          )
-        )}
+        <Search size={15} className="text-zinc-400 group-hover:text-zinc-900 transition-colors shrink-0" />
+        <span className="px-3 text-xs font-medium text-zinc-400 group-hover:text-zinc-500 transition-colors flex-1 select-none">
+          Search products, curated collections...
+        </span>
+        <span className="text-[10px] tracking-widest font-bold text-zinc-300 uppercase shrink-0">
+          Open_
+        </span>
       </div>
 
-      {/* --- RESULTS PANEL DROPDOWN LAYER --- */}
+      {/* ─── IMMERSIVE FULLSCREEN OVERLAY PORTAL ─── */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-[0_30px_60px_rgba(0,0,0,0.12)]"
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md z-[100] flex flex-col justify-start pt-16 px-6"
           >
-            <div className="p-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
-              
-              {/* STATE A: BLANK BAR QUERY STATE -> DISPLAY TRENDING SEARCH METRICS */}
-              {query.trim().length < 2 && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp size={14} className="text-zinc-400" />
-                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                      Trending Searches
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {TRENDING_SEARCHES.map((item) => (
-                      <button
-                        key={item}
-                        onClick={() => handleSearchSubmit(item)}
-                        className="rounded-full bg-zinc-50 border border-zinc-100 px-4 py-2 text-xs font-medium hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200"
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
+            {/* Absolute close canvas touch barrier */}
+            <div className="absolute inset-0 -z-10" onClick={() => setIsOpen(false)} />
+
+            <motion.div
+              initial={{ y: -20, scale: 0.98 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: -20, scale: 0.98 }}
+              transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
+              className="w-full max-w-[1100px] mx-auto bg-white rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-zinc-100 overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              {/* 🎯 MAIN INPUT PANEL ROW */}
+              <div className="flex items-center h-20 px-8 border-b border-zinc-100 bg-white sticky top-0 z-10">
+                <Search size={20} className="text-zinc-400 shrink-0" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  autoFocus
+                  placeholder="What artifact are you looking for?"
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                  className="flex-1 bg-transparent px-5 text-lg font-medium text-zinc-900 placeholder:text-zinc-300 outline-none"
+                />
+                <div className="flex items-center gap-4 shrink-0">
+                  {loading && <Loader2 size={18} className="animate-spin text-zinc-400" />}
+                  {query && !loading && (
+                    <button 
+                      onClick={clearSearchInput} 
+                      className="p-2 rounded-full hover:bg-zinc-50 text-zinc-400 hover:text-zinc-900 transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                  <div className="w-px h-6 bg-zinc-100" />
+                  <button 
+                    onClick={() => setIsOpen(false)}
+                    className="px-4 py-2 text-[10px] tracking-[0.2em] uppercase font-black bg-zinc-950 text-white rounded-full hover:bg-[#A4143D] transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
-              )}
+              </div>
 
-              {/* STATE B: EVALUATED DATA SET RESULTS PRESENT */}
-              {query.trim().length >= 2 && (
-                <div className="space-y-1">
-                  
-                  {displayProducts.map((product) => {
-                    // 🛡️ Safe fallback to standard placeholder string asset
-                    const safeImageSrc = product.imageUrl?.trim() || '/placeholder.jpg';
-
-                    return (
-                      <button
-                        key={product.id}
-                        onClick={() => {
-                          router.push(`/product/${product.id}`);
-                          setIsOpen(false);
-                        }}
-                        className="flex w-full items-center gap-3.5 rounded-xl p-2 hover:bg-zinc-50 group transition-all duration-200"
-                      >
-                        <div className="h-12 w-12 rounded-xl bg-zinc-50 overflow-hidden shrink-0 relative border border-zinc-100/50">
-                          <img
-                            src={safeImageSrc}
-                            alt={product.title}
-                            onError={(e) => {
-                              // Dynamic run-time break handler to swap invalid storage target objects
-                              (e.target as HTMLImageElement).src = '/placeholder.jpg';
-                            }}
-                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
-                          />
-                        </div>
-
-                        <div className="flex-1 text-left min-w-0">
-                          <p className="truncate text-sm font-medium text-zinc-800 group-hover:text-zinc-950 transition-colors">
-                            {product.title}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <p className="text-xs font-semibold text-zinc-900">
-                              ₦{Number(product.displayPrice || 0).toLocaleString('en-NG')}
-                            </p>
-                            {product.vendor && (
-                              <span className="text-[10px] text-zinc-400 truncate max-w-[120px]">
-                                • {product.vendor}
-                              </span>
-                            )}
+              {/* 🏛️ EDITORIAL MULTI-COLUMN CONTEXT WORKSPACE */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-zinc-100 bg-zinc-50/30">
+                
+                {/* LEFT WORKSPACE FLANK: METRICS, SUGGESTIONS & FILTERS (5 Columns) */}
+                <div className="md:col-span-5 p-8 space-y-8 bg-white">
+                  {query.trim().length < 2 ? (
+                    <>
+                      {/* Sub-block: Recent Searches */}
+                      {recentSearches.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-zinc-400">
+                            <Clock size={12} />
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em]">Recent Inquiries</h4>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {recentSearches.map((item) => (
+                              <button
+                                key={item}
+                                onClick={() => handleSearchSubmit(item)}
+                                className="flex items-center justify-between text-left text-sm font-medium text-zinc-600 hover:text-zinc-950 py-1.5 px-2 rounded-xl hover:bg-zinc-50 transition-colors group"
+                              >
+                                <span>{item}</span>
+                                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 text-zinc-400 group-hover:text-zinc-950 transition-all -translate-x-1 group-hover:translate-x-0" />
+                              </button>
+                            ))}
                           </div>
                         </div>
+                      )}
 
-                        <ArrowRight
-                          size={15}
-                          className="text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-0.5 transition-all duration-200 shrink-0"
-                        />
-                      </button>
-                    );
-                  })}
+                      {/* Sub-block: Trending Curations */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-zinc-400">
+                          <Sparkles size={12} />
+                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em]">Trending Curations</h4>
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {TRENDING_SEARCHES.map((item) => (
+                            <button
+                              key={item}
+                              onClick={() => handleSearchSubmit(item)}
+                              className="rounded-xl bg-zinc-50 border border-zinc-100/80 px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:border-zinc-900 hover:bg-zinc-950 hover:text-white transition-all duration-300"
+                            >
+                              {item}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Context Query Suggestions Matrix Output */}
+                      {results.suggestions.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Index Matches</h4>
+                          <div className="flex flex-col gap-1">
+                            {results.suggestions.map((item) => (
+                              <button
+                                key={item}
+                                onClick={() => handleSearchSubmit(item)}
+                                className="flex items-center justify-between text-left text-sm font-semibold text-zinc-800 hover:text-[#A4143D] py-2 px-2 rounded-xl hover:bg-[#A4143D]/5 transition-all"
+                              >
+                                <span>{item}</span>
+                                <ArrowUpRight size={14} className="text-zinc-300" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-                  {/* Empty Result Boundary Notification Wrapper */}
-                  {displayProducts.length === 0 && !loading && (
-                    <div className="py-8 text-center">
-                      <p className="text-sm text-zinc-400">
-                        No product results match <span className="font-semibold text-zinc-600">"{query}"</span>
-                      </p>
-                    </div>
+                      {/* Context Category Node Direct Jumps */}
+                      {results.categories.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-zinc-400">
+                            <Layers size={11} />
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em]">Filter Realms</h4>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {results.categories.map((cat) => (
+                              <button
+                                key={cat.id}
+                                onClick={() => {
+                                  setIsOpen(false);
+                                  router.push(`/category/${cat.slug || cat.name.toLowerCase()}`);
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 text-xs font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 transition-colors"
+                              >
+                                {cat.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Context Brand Hub Direct Jumps */}
+                      {results.vendors && results.vendors.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-zinc-400">
+                            <Store size={11} />
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em]">Verified Boutiques</h4>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {results.vendors.slice(0, 3).map((v) => {
+                              const logo = v.imageUrl ? (v.imageUrl.startsWith('http') ? v.imageUrl : `${apiBase}/uploads/${v.imageUrl}`) : null;
+                              return (
+                                <button
+                                  key={v.id}
+                                  onClick={() => {
+                                    setIsOpen(false);
+                                    router.push(`/vendors/${v.slug}`);
+                                  }}
+                                  className="flex items-center gap-3 p-2 rounded-xl border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all text-left bg-zinc-50/50 group"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-white relative overflow-hidden shrink-0 border border-zinc-100 flex items-center justify-center">
+                                    {logo ? <Image src={logo} alt={v.storeName} fill className="object-cover grayscale group-hover:grayscale-0 transition-all" /> : <Store size={14} className="text-zinc-300" />}
+                                  </div>
+                                  <span className="text-xs font-bold text-zinc-800 uppercase tracking-tight">{v.storeName}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
-
                 </div>
-              )}
 
-            </div>
+                {/* RIGHT WORKSPACE FLANK: ARTIFACT IMAGERY GRID LISTING VIEW (7 Columns) */}
+                <div className="md:col-span-7 p-8 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Curated Inventory Previews</h4>
+                    
+                    {query.trim().length < 2 ? (
+                      <div className="h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
+                        <p className="text-xs font-black tracking-widest text-zinc-300 uppercase italic">Awaiting_Input_Parameters</p>
+                      </div>
+                    ) : results.products.length === 0 ? (
+                      <div className="h-48 border border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center bg-white p-6 text-center">
+                        <p className="text-xs font-black tracking-widest text-[#A4143D] uppercase italic">No_Matching_Artifacts</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {results.products.slice(0, 4).map((product) => {
+                          const src = product.imageUrl?.trim() || '/placeholder.jpg';
+                          const fineSrc = src.startsWith('http') || src.startsWith('/') ? src : `${apiBase}/uploads/${src}`;
+                          
+                          return (
+                            <button
+                              key={product.id}
+                              onClick={() => {
+                                setIsOpen(false);
+                                router.push(`/product/${product.id}`);
+                              }}
+                              className="flex w-full items-center gap-4 rounded-2xl p-2.5 hover:bg-white border border-transparent hover:border-zinc-100 hover:shadow-md shadow-zinc-100/50 group transition-all duration-300"
+                            >
+                              <div className="h-14 w-14 rounded-xl bg-zinc-100 overflow-hidden shrink-0 relative border border-zinc-100/20">
+                                <Image
+                                  src={fineSrc}
+                                  alt={product.title}
+                                  fill
+                                  sizes="56px"
+                                  className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                                />
+                              </div>
+
+                              <div className="flex-1 text-left min-w-0">
+                                <span className="text-[8px] font-black tracking-widest uppercase text-zinc-400 block mb-0.5">{product.category || 'Collection'}</span>
+                                <p className="truncate text-sm font-bold text-zinc-800 group-hover:text-zinc-950 transition-colors leading-tight">
+                                  {product.title}
+                                </p>
+                                <span className="text-[10px] text-zinc-400 block mt-0.5 font-medium truncate">
+                                  by {product.vendor || "Aviorè Maison"}
+                                </span>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <p className="text-xs font-black text-zinc-950">
+                                  ₦{Number(product.displayPrice || 0).toLocaleString('en-NG')}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dynamic absolute view details panel link trigger */}
+                  {query.trim().length >= 2 && results.products.length > 0 && (
+                    <button 
+                      onClick={() => handleSearchSubmit()}
+                      className="w-full mt-6 h-12 bg-zinc-950 text-white hover:bg-[#A4143D] transition-colors rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest"
+                    >
+                      <span>View All Result Metrics ({results.products.length})</span>
+                      <ArrowUpRight size={14} />
+                    </button>
+                  )}
+                </div>
+
+              </div>
+
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
