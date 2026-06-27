@@ -13,8 +13,8 @@ import {
   ShoppingBag,
   Shield,
   Star,
-  Activity,
-  ArrowUpRight,
+  Compass,
+  ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -66,223 +66,203 @@ export function MobileDashboard({ data }: MobileDashboardProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#070708] text-white pb-32 selection:bg-[#A4143D]">
+    <div className="min-h-screen bg-white text-zinc-900 pb-32 antialiased selection:bg-[#A4143D] selection:text-white">
       
-      {/* 👑 PREMIUM EXECUTIVE HEADER */}
-      <header className="bg-[#0D0D11]/60 backdrop-blur-md px-5 pt-14 pb-8 border-b border-white/5 sticky top-0 z-50">
-        <div className="flex items-center justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">{greeting}</span>
-            <h1 className="text-2xl font-black uppercase tracking-tight text-white leading-none">
+      {/* 👑 PREMIUM EDITORIAL HERO SECTION */}
+      <header className="px-6 pt-16 pb-8 border-b border-zinc-100 bg-zinc-50/50">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 block">{greeting}</span>
+            <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-950 leading-none">
               {fullName || 'Elite Member'}
             </h1>
+            <p className="text-[11px] font-bold text-[#A4143D] tracking-wide uppercase pt-1">Registry Account Secured</p>
           </div>
 
-          {/* Luxury Monogram Badge */}
-          <div className="relative group">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-950 flex items-center justify-center text-white font-black text-base border border-white/10 shadow-xl tracking-tighter">
-              {userInitials || 'AV'}
-            </div>
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#A4143D] rounded-full ring-4 ring-[#070708]" />
+          <div className="w-14 h-14 rounded-full bg-zinc-950 text-white flex items-center justify-center font-bold text-base tracking-tighter shadow-xl shadow-zinc-950/10 shrink-0 border border-zinc-800">
+            {userInitials || 'AV'}
           </div>
         </div>
 
-        {/* HIGH-CONTRAST METRIC STREAM */}
-        <div className="grid grid-cols-2 gap-3 mt-8">
-          <QuickCard
-            icon={<Package size={15} className="text-white" />}
-            title="Active Orders"
-            value={data?._count?.orders || 0}
-            href="/dashboard/orders"
-          />
-          <QuickCard
-            icon={<Activity size={15} className="text-[#A4143D]" />}
-            title="Vault History"
-            value={wishlistCount}
-            href="/history"
-          />
-          <QuickCard
-            icon={<Ticket size={15} className="text-white" />}
-            title="Active Passes"
-            value={couponCount}
-            href="/dashboard/coupons"
-          />
-          <QuickCard
-            icon={<Star size={15} className="text-amber-400" />}
-            title="Reviews Given"
-            value={data?._count?.reviews || 0}
-            href="/dashboard/reviews"
-          />
+        {/* 🚀 HIGH-IMPACT FULFILLMENT TRACKER ROW (REPLACED DULL GRID) */}
+        <div className="mt-8 bg-zinc-950 rounded-2xl p-5 text-white shadow-xl shadow-zinc-950/10 relative overflow-hidden flex items-center justify-between">
+          <div className="space-y-1 z-10">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Current Order Status</p>
+            <h3 className="text-lg font-extrabold tracking-tight">
+              {data?._count?.orders ? `${data._count.orders} Active Manifests` : 'No Active Shipments'}
+            </h3>
+          </div>
+          <Link href="/dashboard/orders" className="h-10 px-4 rounded-xl bg-white text-zinc-950 text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-zinc-100 transition-all active:scale-95 z-10">
+            <span>Track</span>
+            <ArrowRight size={14} />
+          </Link>
+          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
+        </div>
+
+        {/* METRIC HORIZONTAL HUB */}
+        <div className="grid grid-cols-3 gap-3 mt-4">
+          <MetricBar label="Vault History" value={wishlistCount} href="/history" />
+          <MetricBar label="Active Passes" value={couponCount} href="/dashboard/coupons" />
+          <MetricBar label="My Reviews" value={data?._count?.reviews || 0} href="/dashboard/reviews" />
         </div>
       </header>
 
-      {/* 🔄 RECENT INTERACTION HISTORY */}
-      <section className="mt-4 bg-[#0D0D11] py-8 border-y border-white/5">
-        <div className="flex items-center justify-between px-5 mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-4 bg-[#A4143D] rounded-full" />
-            <h2 className="font-black uppercase tracking-widest text-white text-xs">
-              Interaction <span className="text-zinc-500">History</span>
-            </h2>
-          </div>
-          <Link href="/history" className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
-            View Vault <ChevronRight size={10} />
+      {/* 🔄 STRUCTURAL OVERHAUL: VAULT INTERACTION HISTORY (VERTICAL DISPLAY FOR PREMIUM PRESENCE) */}
+      <section className="px-6 py-10 border-b border-zinc-100">
+        <div className="flex items-baseline justify-between mb-6">
+          <h2 className="font-black text-xl uppercase tracking-tighter text-zinc-950">
+            Vault <span className="text-zinc-300 font-light italic">History</span>
+          </h2>
+          <Link href="/history" className="text-[10px] font-black uppercase tracking-widest text-[#A4143D] border-b-2 border-[#A4143D]/20 pb-0.5">
+            See Entire Feed
           </Link>
         </div>
 
         {wishlistItems.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto px-5 pb-2 no-scrollbar scroll-smooth">
-            {wishlistItems.map((item: any) => (
-              <HistoryItemCard key={item.id} item={item} />
+          <div className="grid grid-cols-2 gap-4">
+            {wishlistItems.slice(0, 4).map((item: any) => (
+              <HistoryGridCard key={item.id} item={item} />
             ))}
           </div>
         ) : (
-          <div className="px-5">
-            <div className="py-8 bg-black/40 border border-dashed border-white/10 rounded-2xl text-center">
-              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">No Recent View History</p>
-            </div>
+          <div className="py-12 border-2 border-dashed border-zinc-100 rounded-2xl text-center bg-zinc-50/50">
+            <Compass className="mx-auto text-zinc-300 mb-3" size={24} />
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">No Recent Interactions In Archive</p>
           </div>
         )}
       </section>
 
-      {/* 📦 TRANSACTION LEDGER (RECENT ORDERS) */}
-      <section className="mt-4 bg-[#0D0D11] px-5 py-8 border-b border-white/5">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-4 bg-white rounded-full" />
-            <h2 className="font-black uppercase tracking-widest text-white text-xs">
-              Recent <span className="text-zinc-500">Manifests</span>
-            </h2>
-          </div>
-          <Link href="/dashboard/orders" className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
-            All Orders <ChevronRight size={10} />
+      {/* 📦 TRANSACTION LEDGER: LOGISTICS TRACKER LOG */}
+      <section className="px-6 py-10 bg-zinc-50/50">
+        <div className="flex items-baseline justify-between mb-8">
+          <h2 className="font-black text-xl uppercase tracking-tighter text-zinc-950">
+            Recent <span className="text-zinc-300 font-light italic">Manifests</span>
+          </h2>
+          <Link href="/dashboard/orders" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors">
+            View Ledger
           </Link>
         </div>
 
-        <div className="divide-y divide-white/5 bg-black/40 rounded-2xl border border-white/5 px-4 overflow-hidden">
+        <div className="space-y-4">
           {data?.recentOrders?.length > 0 ? (
-            data.recentOrders.slice(0, 3).map((order: any) => (
-              <OrderRow key={order.id} order={order} />
+            data.recentOrders.slice(0, 3).map((order: any, idx: number) => (
+              <LogisticsFeedRow key={order.id} order={order} isFirst={idx === 0} />
             ))
           ) : (
-            <div className="text-center py-10">
-              <ShoppingBag className="mx-auto text-zinc-700 mb-3" size={28} strokeWidth={1.5} />
-              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Zero Active Orders Issued</p>
+            <div className="text-center py-12 border border-zinc-100 rounded-2xl bg-white">
+              <ShoppingBag className="mx-auto text-zinc-200 mb-3" size={28} strokeWidth={1.5} />
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest italic">Zero Outstanding Shipments</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* 🛠️ CORE ADMINISTRATIVE STRUCTURE */}
-      <section className="mt-4 bg-[#0D0D11] px-3 py-2 border-t border-white/5 divide-y divide-white/5">
-        <MenuItem label="Account Profile" icon={<User size={16} />} href="/dashboard/profile" />
-        <MenuItem label="Fulfillment Addresses" icon={<MapPin size={16} />} href="/dashboard/addresses" />
-        <MenuItem label="Private Concierge / Support" icon={<MessageSquare size={16} />} href="/dashboard/support" />
-        <MenuItem label="Cryptographic Security" icon={<Shield size={16} />} href="/dashboard/security" />
+      {/* 🛠️ CORE SETTINGS ARCHITECTURE CONTAINER */}
+      <section className="mt-4 px-4 py-2 divide-y divide-zinc-100 border-t border-zinc-100">
+        <MenuRow label="Personal Information Profile" icon={<User size={16} />} href="/dashboard/profile" />
+        <MenuRow label="Fulfillment Destinations" icon={<MapPin size={16} />} href="/dashboard/addresses" />
+        <MenuRow label="Private Concierge / Support Desk" icon={<MessageSquare size={16} />} href="/dashboard/support" />
+        <MenuRow label="Cryptographic Security Matrix" icon={<Shield size={16} />} href="/dashboard/security" />
 
         <button
           onClick={() => {
             localStorage.removeItem('token');
             window.location.href = '/login';
           }}
-          className="w-full flex items-center justify-between py-5 px-3 group active:bg-red-950/20 transition-colors rounded-xl"
+          className="w-full flex items-center justify-between py-5 px-3 group active:bg-red-50 transition-colors rounded-xl text-left"
         >
-          <div className="flex items-center gap-4 text-red-400">
-            <div className="p-2 rounded-lg bg-red-950/30 border border-red-900/40">
-              <LogOut size={16} />
-            </div>
-            <span className="text-[11px] font-black uppercase tracking-widest">Terminate Session</span>
+          <div className="flex items-center gap-4 text-red-600">
+            <LogOut size={16} className="shrink-0" />
+            <span className="text-[11px] font-black uppercase tracking-[0.15em]">Terminate Client Session</span>
           </div>
-          <ChevronRight size={14} className="text-red-900/60" />
+          <ChevronRight size={14} className="text-red-300 group-hover:translate-x-0.5 transition-transform" />
         </button>
       </section>
     </div>
   );
 }
 
-/* --- RE-ENGINEERED ATOMS --- */
+/* --- RE-ENGINEERED STRUCTURAL COMPONENTS --- */
 
-function QuickCard({ icon, title, value, href }: any) {
+function MetricBar({ label, value, href }: any) {
   return (
-    <Link href={href} className="border border-white/5 rounded-xl p-4 bg-black/40 hover:bg-black/60 transition-all flex flex-col justify-between h-24 relative overflow-hidden group active:scale-98">
-      <div className="flex items-center justify-between w-full">
-        <div className="p-2 rounded-lg bg-white/5 border border-white/5 text-zinc-400 group-hover:text-white transition-colors">
-          {icon}
-        </div>
-        <ArrowUpRight size={14} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-      <div>
-        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">{title}</p>
-        <p className="text-xl font-black text-white tracking-tight">{value}</p>
-      </div>
+    <Link href={href} className="bg-white border border-zinc-200/80 rounded-xl p-3.5 flex flex-col justify-between h-20 shadow-sm active:scale-95 transition-all">
+      <span className="text-[8px] font-black uppercase tracking-wider text-zinc-400 block line-clamp-1">{label}</span>
+      <span className="text-xl font-black text-zinc-950 tracking-tight leading-none mt-1">{value}</span>
     </Link>
   );
 }
 
-function HistoryItemCard({ item }: any) {
+function HistoryGridCard({ item }: any) {
   const displayImage = item.image || item.imageUrl || (item.images && item.images[0]?.imageUrl);
   return (
-    <Link href={`/product/${item.id}`} className="min-w-[140px] max-w-[140px] group shrink-0">
-      <div className="aspect-[1/1.1] rounded-xl bg-zinc-900 overflow-hidden relative border border-white/10 shadow-2xl transition-transform duration-200 group-active:scale-95">
+    <Link href={`/product/${item.id}`} className="group block">
+      <div className="aspect-[1/1.2] rounded-xl bg-zinc-100 overflow-hidden relative border border-zinc-200/60 shadow-xs group-active:scale-98 transition-all">
         {displayImage ? (
-          <Image src={displayImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+          <Image src={displayImage} alt={item.title} fill className="object-cover group-hover:scale-102 transition-transform duration-300" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-            <ShoppingBag size={20} className="text-zinc-700" />
+          <div className="w-full h-full flex items-center justify-center bg-zinc-50">
+            <ShoppingBag size={20} className="text-zinc-300" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
-        
-        <div className="absolute bottom-3 left-3 right-3">
-          <p className="text-[10px] font-black uppercase tracking-tight text-white line-clamp-1">{item.title}</p>
-          <p className="text-[11px] font-black text-[#A4143D] mt-0.5">₦{Number(item.price || 0).toLocaleString()}</p>
-        </div>
+      </div>
+      <div className="mt-2.5 px-0.5 space-y-0.5">
+        <h4 className="text-[10px] font-black uppercase tracking-tight text-zinc-900 line-clamp-1 leading-none">{item.title}</h4>
+        <p className="text-[11px] font-black text-[#A4143D] tracking-tighter">₦{Number(item.price || 0).toLocaleString()}</p>
       </div>
     </Link>
   );
 }
 
-function OrderRow({ order }: any) {
+function LogisticsFeedRow({ order, isFirst }: any) {
   const orderImage = order.items?.[0]?.product?.images?.[0]?.imageUrl || order.items?.[0]?.product?.image;
   const isDelivered = order.status === 'DELIVERED';
   
   return (
-    <div className="flex items-center justify-between py-4 group">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center overflow-hidden shrink-0 relative">
-          {orderImage ? (
-            <Image src={orderImage} alt="manifest" width={48} height={48} className="object-cover h-full w-full" />
-          ) : (
-            <ShoppingBag size={16} className="text-zinc-600" />
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="font-black text-xs uppercase tracking-tight text-white">
+    <div className="flex items-start gap-4 bg-white p-4 rounded-xl border border-zinc-200/80 shadow-xs relative">
+      {isFirst && (
+        <span className="absolute -top-2 -left-2 bg-[#A4143D] text-white font-black uppercase tracking-widest text-[7px] px-2 py-0.5 rounded-md shadow-md">
+          Latest
+        </span>
+      )}
+      
+      <div className="w-12 h-12 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center overflow-hidden shrink-0 relative">
+        {orderImage ? (
+          <Image src={orderImage} alt="manifest" width={48} height={48} className="object-cover h-full w-full" />
+        ) : (
+          <ShoppingBag size={16} className="text-zinc-400" />
+        )}
+      </div>
+      
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex items-center justify-between w-full">
+          <p className="font-black text-xs uppercase tracking-tight text-zinc-950">
             #{order.orderNumber || order.id.slice(-6).toUpperCase()}
           </p>
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
-            <span className={`w-1.5 h-1.5 rounded-full ${isDelivered ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-            <span className="text-[8px] font-black uppercase text-zinc-400 tracking-wider">{order.status}</span>
-          </div>
+          <p className="font-black text-xs text-zinc-950 tracking-tighter">
+            ₦{Number(order.totalAmount || 0).toLocaleString()}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isDelivered ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+          <p className="text-[9px] font-black uppercase text-zinc-500 tracking-widest">{order.status}</p>
         </div>
       </div>
-      <p className="font-black text-sm text-white tracking-tight">
-        ₦{Number(order.totalAmount || 0).toLocaleString()}
-      </p>
     </div>
   );
 }
 
-function MenuItem({ label, icon, href }: any) {
+function MenuRow({ label, icon, href }: any) {
   return (
-    <Link href={href} className="flex items-center justify-between py-4 px-3 group active:bg-white/5 transition-colors rounded-xl">
+    <Link href={href} className="flex items-center justify-between py-4.5 px-3 group active:bg-zinc-50 transition-colors rounded-xl">
       <div className="flex items-center gap-4">
-        <div className="p-2 rounded-lg bg-white/5 border border-white/5 text-zinc-400 group-active:text-[#A4143D] group-hover:text-white transition-colors">
+        <div className="text-zinc-400 group-active:text-[#A4143D] group-hover:text-zinc-950 transition-colors">
           {icon}
         </div>
-        <span className="text-[11px] font-black uppercase tracking-widest text-zinc-300 group-hover:text-white transition-colors">{label}</span>
+        <span className="text-[11px] font-bold uppercase tracking-wide text-zinc-800 group-hover:text-zinc-950 transition-colors">{label}</span>
       </div>
-      <ChevronRight size={14} className="text-zinc-600 group-hover:text-white transition-colors" />
+      <ChevronRight size={14} className="text-zinc-300 group-hover:text-zinc-950 group-hover:translate-x-0.5 transition-all" />
     </Link>
   );
 }
