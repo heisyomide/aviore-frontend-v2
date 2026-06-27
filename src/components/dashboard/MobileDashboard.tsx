@@ -13,6 +13,8 @@ import {
   ShoppingBag,
   Shield,
   Star,
+  Activity,
+  ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -24,48 +26,31 @@ interface MobileDashboardProps {
 }
 
 export function MobileDashboard({ data }: MobileDashboardProps) {
-const [couponCount, setCouponCount] = useState(0);
+  const [couponCount, setCouponCount] = useState(0);
 
-const greeting = useMemo(() => {
-  const hour = new Date().getHours();
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
 
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}, []);
+  const fullName = useMemo(() => {
+    return data?.name || `${data?.firstName || ''} ${data?.lastName || ''}`.trim();
+  }, [data]);
 
-/**
- * FULL NAME
- * Uses backend `name` first
- */
-const fullName = useMemo(() => {
-  return (
-    data?.name ||
-    `${data?.firstName || ''} ${data?.lastName || ''}`.trim()
-  );
-}, [data]);
+  const userInitials = useMemo(() => {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return fullName.slice(0, 2).toUpperCase();
+  }, [fullName]);
 
-/**
- * USER INITIALS
- * Example: adedayo yomide => AY
- */
-const userInitials = useMemo(() => {
-  if (!fullName) return '';
-
-  const parts = fullName.trim().split(' ');
-
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-
-  return fullName.slice(0, 2).toUpperCase();
-}, [fullName]);
-
-  // 3. DATA SYNC: WISHLIST (Zustand Store)
   const { items: wishlistItems } = useWishlistStore();
   const wishlistCount = wishlistItems.length;
 
-  // 4. DATA SYNC: COUPONS (Fetch from /vendor/marketing/active)
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
@@ -81,164 +66,177 @@ const userInitials = useMemo(() => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header Section */}
-    <header className="bg-white px-4 pt-12 pb-6 border-b border-gray-100">
-  <div className="flex items-center justify-between gap-4">
-    <div className="flex-1">
-      <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-        {greeting},
-      </h1>
+    <div className="min-h-screen bg-[#070708] text-white pb-32 selection:bg-[#A4143D]">
+      
+      {/* 👑 PREMIUM EXECUTIVE HEADER */}
+      <header className="bg-[#0D0D11]/60 backdrop-blur-md px-5 pt-14 pb-8 border-b border-white/5 sticky top-0 z-50">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">{greeting}</span>
+            <h1 className="text-2xl font-black uppercase tracking-tight text-white leading-none">
+              {fullName || 'Elite Member'}
+            </h1>
+          </div>
 
-      <p className="text-xl font-semibold text-[#A4143D] capitalize mt-1">
-        {fullName}
-      </p>
+          {/* Luxury Monogram Badge */}
+          <div className="relative group">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-950 flex items-center justify-center text-white font-black text-base border border-white/10 shadow-xl tracking-tighter">
+              {userInitials || 'AV'}
+            </div>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#A4143D] rounded-full ring-4 ring-[#070708]" />
+          </div>
+        </div>
 
-      <p className="text-xs text-gray-400 mt-2 uppercase tracking-wider">
-        Manage your account
-      </p>
-    </div>
+        {/* HIGH-CONTRAST METRIC STREAM */}
+        <div className="grid grid-cols-2 gap-3 mt-8">
+          <QuickCard
+            icon={<Package size={15} className="text-white" />}
+            title="Active Orders"
+            value={data?._count?.orders || 0}
+            href="/dashboard/orders"
+          />
+          <QuickCard
+            icon={<Activity size={15} className="text-[#A4143D]" />}
+            title="Vault History"
+            value={wishlistCount}
+            href="/history"
+          />
+          <QuickCard
+            icon={<Ticket size={15} className="text-white" />}
+            title="Active Passes"
+            value={couponCount}
+            href="/dashboard/coupons"
+          />
+          <QuickCard
+            icon={<Star size={15} className="text-amber-400" />}
+            title="Reviews Given"
+            value={data?._count?.reviews || 0}
+            href="/dashboard/reviews"
+          />
+        </div>
+      </header>
 
-    <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
-      {userInitials}
-    </div>
-  </div>
-
-  <div className="grid grid-cols-2 gap-3 mt-8">
-    <QuickCard
-      icon={<Package size={18} />}
-      title="Orders"
-      value={data?._count?.orders || 0}
-      href="/dashboard/orders"
-    />
-
-    <QuickCard
-      icon={<Heart size={18} />}
-      title="History"
-      value={wishlistCount}
-      href="/history"
-    />
-
-    <QuickCard
-      icon={<Ticket size={18} />}
-      title="Coupons"
-      value={couponCount}
-      href="/dashboard/coupons"
-    />
-
-    <QuickCard
-      icon={<Star size={18} />}
-      title="Reviews"
-      value={data?._count?.reviews || 0}
-      href="/dashboard/reviews"
-    />
-  </div>
-</header>
-
-      {/* Saved Items Section */}
-      <section className="mt-4 bg-white py-6">
-        <div className="flex items-center justify-between px-4 mb-5">
-          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
-            Saved <span className="text-zinc-300">Products</span>
-          </h2>
-          <Link href="/wishlist" className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1">
-            See all <ChevronRight size={12} />
+      {/* 🔄 RECENT INTERACTION HISTORY */}
+      <section className="mt-4 bg-[#0D0D11] py-8 border-y border-white/5">
+        <div className="flex items-center justify-between px-5 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 bg-[#A4143D] rounded-full" />
+            <h2 className="font-black uppercase tracking-widest text-white text-xs">
+              Interaction <span className="text-zinc-500">History</span>
+            </h2>
+          </div>
+          <Link href="/history" className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
+            View Vault <ChevronRight size={10} />
           </Link>
         </div>
 
         {wishlistItems.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
+          <div className="flex gap-4 overflow-x-auto px-5 pb-2 no-scrollbar scroll-smooth">
             {wishlistItems.map((item: any) => (
-              <SavedItemCard key={item.id} item={item} />
+              <HistoryItemCard key={item.id} item={item} />
             ))}
           </div>
         ) : (
-          <div className="px-4">
-             <div className="py-6 border-2 border-dashed border-gray-100 rounded-2xl text-center">
-                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">No Saved Items</p>
-             </div>
+          <div className="px-5">
+            <div className="py-8 bg-black/40 border border-dashed border-white/10 rounded-2xl text-center">
+              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">No Recent View History</p>
+            </div>
           </div>
         )}
       </section>
 
-      {/* Recent Manifests Section */}
-      <section className="mt-4 bg-white px-4 py-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-black uppercase italic tracking-tighter text-zinc-900 text-sm">
-            Recent <span className="text-zinc-300">Orders</span>
-          </h2>
-          <Link href="/dashboard/orders" className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1">
-            View all <ChevronRight size={12} />
+      {/* 📦 TRANSACTION LEDGER (RECENT ORDERS) */}
+      <section className="mt-4 bg-[#0D0D11] px-5 py-8 border-b border-white/5">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 bg-white rounded-full" />
+            <h2 className="font-black uppercase tracking-widest text-white text-xs">
+              Recent <span className="text-zinc-500">Manifests</span>
+            </h2>
+          </div>
+          <Link href="/dashboard/orders" className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
+            All Orders <ChevronRight size={10} />
           </Link>
         </div>
 
-        <div className="space-y-4">
+        <div className="divide-y divide-white/5 bg-black/40 rounded-2xl border border-white/5 px-4 overflow-hidden">
           {data?.recentOrders?.length > 0 ? (
             data.recentOrders.slice(0, 3).map((order: any) => (
               <OrderRow key={order.id} order={order} />
             ))
           ) : (
-            <div className="text-center py-6 border-t border-gray-50">
-               <ShoppingBag className="mx-auto text-gray-200 mb-2" size={32} strokeWidth={1} />
-               <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">Zero_Active_Orders</p>
+            <div className="text-center py-10">
+              <ShoppingBag className="mx-auto text-zinc-700 mb-3" size={28} strokeWidth={1.5} />
+              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Zero Active Orders Issued</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Nav Menu */}
-      <section className="mt-4 bg-white px-4 py-2 mb-10 divide-y divide-gray-50">
-        <MenuItem label="Profile" icon={<User size={18} />} href="/dashboard/profile" />
-        <MenuItem label="Address" icon={<MapPin size={18} />} href="/dashboard/addresses" />
-        <MenuItem label="Support" icon={<MessageSquare size={18} />} href="/dashboard/support" />
-        <MenuItem label="Security" icon={<Shield size={18} />} href="/dashboard/security" />
+      {/* 🛠️ CORE ADMINISTRATIVE STRUCTURE */}
+      <section className="mt-4 bg-[#0D0D11] px-3 py-2 border-t border-white/5 divide-y divide-white/5">
+        <MenuItem label="Account Profile" icon={<User size={16} />} href="/dashboard/profile" />
+        <MenuItem label="Fulfillment Addresses" icon={<MapPin size={16} />} href="/dashboard/addresses" />
+        <MenuItem label="Private Concierge / Support" icon={<MessageSquare size={16} />} href="/dashboard/support" />
+        <MenuItem label="Cryptographic Security" icon={<Shield size={16} />} href="/dashboard/security" />
 
         <button
           onClick={() => {
             localStorage.removeItem('token');
             window.location.href = '/login';
           }}
-          className="w-full flex items-center justify-between py-5 active:bg-red-50 transition-colors px-2"
+          className="w-full flex items-center justify-between py-5 px-3 group active:bg-red-950/20 transition-colors rounded-xl"
         >
-          <div className="flex items-center gap-3 text-red-500">
-            <LogOut size={18} />
-            <span className="text-[11px] font-black uppercase tracking-widest">Logout</span>
+          <div className="flex items-center gap-4 text-red-400">
+            <div className="p-2 rounded-lg bg-red-950/30 border border-red-900/40">
+              <LogOut size={16} />
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-widest">Terminate Session</span>
           </div>
-          <ChevronRight size={16} className="text-gray-300" />
+          <ChevronRight size={14} className="text-red-900/60" />
         </button>
       </section>
     </div>
   );
 }
 
-/* --- ATOMS --- */
+/* --- RE-ENGINEERED ATOMS --- */
 
 function QuickCard({ icon, title, value, href }: any) {
   return (
-    <Link href={href} className="border border-gray-100 rounded-[1.5rem] p-5 bg-white shadow-sm active:scale-95 transition-all">
-      <div className="flex items-center gap-2 text-zinc-400 mb-3">
-        {icon}
-        <span className="text-[9px] font-black uppercase tracking-widest">{title}</span>
+    <Link href={href} className="border border-white/5 rounded-xl p-4 bg-black/40 hover:bg-black/60 transition-all flex flex-col justify-between h-24 relative overflow-hidden group active:scale-98">
+      <div className="flex items-center justify-between w-full">
+        <div className="p-2 rounded-lg bg-white/5 border border-white/5 text-zinc-400 group-hover:text-white transition-colors">
+          {icon}
+        </div>
+        <ArrowUpRight size={14} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-      <p className="text-xl font-black italic text-zinc-900 tracking-tighter">{value}</p>
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">{title}</p>
+        <p className="text-xl font-black text-white tracking-tight">{value}</p>
+      </div>
     </Link>
   );
 }
 
-function SavedItemCard({ item }: any) {
+function HistoryItemCard({ item }: any) {
   const displayImage = item.image || item.imageUrl || (item.images && item.images[0]?.imageUrl);
   return (
-    <Link href={`/product/${item.id}`} className="min-w-[150px] max-w-[150px] group shrink-0">
-      <div className="h-40 rounded-[1.8rem] bg-gray-50 overflow-hidden relative border border-gray-100 shadow-sm group-active:scale-95 transition-all">
+    <Link href={`/product/${item.id}`} className="min-w-[140px] max-w-[140px] group shrink-0">
+      <div className="aspect-[1/1.1] rounded-xl bg-zinc-900 overflow-hidden relative border border-white/10 shadow-2xl transition-transform duration-200 group-active:scale-95">
         {displayImage ? (
-          <Image src={displayImage} alt={item.title} fill className="object-cover" />
+          <Image src={displayImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center"><ShoppingBag size={24} className="text-gray-200" /></div>
+          <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+            <ShoppingBag size={20} className="text-zinc-700" />
+          </div>
         )}
-      </div>
-      <div className="mt-3 px-1">
-        <p className="text-[10px] font-black uppercase italic text-zinc-900 line-clamp-1 leading-none">{item.title}</p>
-        <p className="text-[11px] font-black text-[#A4143D] mt-1 tracking-tighter">₦{Number(item.price || 0).toLocaleString()}</p>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+        
+        <div className="absolute bottom-3 left-3 right-3">
+          <p className="text-[10px] font-black uppercase tracking-tight text-white line-clamp-1">{item.title}</p>
+          <p className="text-[11px] font-black text-[#A4143D] mt-0.5">₦{Number(item.price || 0).toLocaleString()}</p>
+        </div>
       </div>
     </Link>
   );
@@ -246,27 +244,29 @@ function SavedItemCard({ item }: any) {
 
 function OrderRow({ order }: any) {
   const orderImage = order.items?.[0]?.product?.images?.[0]?.imageUrl || order.items?.[0]?.product?.image;
+  const isDelivered = order.status === 'DELIVERED';
+  
   return (
-    <div className="flex items-center justify-between py-2 group">
+    <div className="flex items-center justify-between py-4 group">
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center overflow-hidden shrink-0 relative">
           {orderImage ? (
-            <Image src={orderImage} alt="manifest" width={56} height={56} className="object-cover h-full w-full" />
+            <Image src={orderImage} alt="manifest" width={48} height={48} className="object-cover h-full w-full" />
           ) : (
-            <ShoppingBag size={20} className="text-gray-300" />
+            <ShoppingBag size={16} className="text-zinc-600" />
           )}
         </div>
         <div className="space-y-1">
-          <p className="font-black text-[11px] uppercase italic text-zinc-900">
+          <p className="font-black text-xs uppercase tracking-tight text-white">
             #{order.orderNumber || order.id.slice(-6).toUpperCase()}
           </p>
-          <div className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${order.status === 'DELIVERED' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`} />
-            <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">{order.status}</p>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
+            <span className={`w-1.5 h-1.5 rounded-full ${isDelivered ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+            <span className="text-[8px] font-black uppercase text-zinc-400 tracking-wider">{order.status}</span>
           </div>
         </div>
       </div>
-      <p className="font-black italic text-sm text-zinc-900 tracking-tighter">
+      <p className="font-black text-sm text-white tracking-tight">
         ₦{Number(order.totalAmount || 0).toLocaleString()}
       </p>
     </div>
@@ -275,12 +275,14 @@ function OrderRow({ order }: any) {
 
 function MenuItem({ label, icon, href }: any) {
   return (
-    <Link href={href} className="flex items-center justify-between py-5 group active:bg-gray-50 transition-colors px-2">
+    <Link href={href} className="flex items-center justify-between py-4 px-3 group active:bg-white/5 transition-colors rounded-xl">
       <div className="flex items-center gap-4">
-        <div className="text-zinc-400 group-active:text-[#A4143D] transition-colors">{icon}</div>
-        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-900">{label}</span>
+        <div className="p-2 rounded-lg bg-white/5 border border-white/5 text-zinc-400 group-active:text-[#A4143D] group-hover:text-white transition-colors">
+          {icon}
+        </div>
+        <span className="text-[11px] font-black uppercase tracking-widest text-zinc-300 group-hover:text-white transition-colors">{label}</span>
       </div>
-      <ChevronRight size={16} className="text-gray-300 group-hover:text-zinc-900 transition-colors" />
+      <ChevronRight size={14} className="text-zinc-600 group-hover:text-white transition-colors" />
     </Link>
   );
 }
