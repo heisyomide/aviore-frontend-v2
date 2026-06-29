@@ -109,7 +109,7 @@ function LoginFormContent() {
         return;
       }
 
-      router.replace('/dashboard');
+      router.replace('/');
 
     } catch (err: any) {
       setError(
