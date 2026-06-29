@@ -161,11 +161,11 @@ export function AccountMenu() {
                   <div className="space-y-0.5 pb-1.5">
                     <MenuRowLink icon={<LayoutDashboard size={15} />} label="Customer Center" href={isLoggedIn ? basePath : '/login'} onClick={() => setIsOpen(false)} highlight />
                     <MenuRowLink icon={<Star size={15} />} label="Your Reviews" href={isLoggedIn ? `${basePath}/reviews` : '/login'} onClick={() => setIsOpen(false)} />
-                    <MenuRowLink icon={<History size={15} />} label="Browsing Vault" href="/history" onClick={() => setIsOpen(false)} />
+                    <MenuRowLink icon={<History size={15} />} label="Browsing History" href="/history" onClick={() => setIsOpen(false)} />
                   </div>
                   <div className="space-y-0.5 pt-1.5">
                     <MenuRowLink icon={<MapPin size={15} />} label="Addresses" href={isLoggedIn ? `${basePath}/addresses` : '/login'} onClick={() => setIsOpen(false)} />
-                    <MenuRowLink icon={<Settings size={15} />} label="Account Settings" href={isLoggedIn ? `${basePath}/settings` : '/login'} onClick={() => setIsOpen(false)} />
+                    <MenuRowLink icon={<Settings size={15} />} label="Account Settings" href={isLoggedIn ? `${basePath}/security` : '/login'} onClick={() => setIsOpen(false)} />
                     <MenuRowLink icon={<ShieldAlert size={15} />} label="Support Line" href={isLoggedIn ? `${basePath}/support` : '/login'} onClick={() => setIsOpen(false)} />
                   </div>
                 </div>

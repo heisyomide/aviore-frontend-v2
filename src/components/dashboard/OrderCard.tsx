@@ -38,14 +38,15 @@ export default function OrderCard({
 }: OrderCardProps) {
   const router = useRouter();
 
+  // Modern, clean typography-based badge styles (No heavy colored backgrounds)
   const statusStyles: Record<OrderStatus, string> = {
-    paid: 'bg-orange-50 text-orange-600 border-orange-100',
-    processing: 'bg-orange-50 text-orange-600 border-orange-100',
-    shipped: 'bg-blue-50 text-blue-600 border-blue-100',
-    delivered: 'bg-[#A4143D]/5 text-[#A4143D] border-[#A4143D]/10',
-    completed: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    returned: 'bg-red-50 text-red-600 border-red-100',
-    cancelled: 'bg-slate-50 text-slate-400 border-slate-100',
+    paid: 'text-orange-600 font-extrabold',
+    processing: 'text-orange-500 font-extrabold',
+    shipped: 'text-blue-600 font-extrabold',
+    delivered: 'text-[#A4143D] font-extrabold',
+    completed: 'text-emerald-600 font-extrabold',
+    returned: 'text-red-600 font-extrabold',
+    cancelled: 'text-zinc-400 font-medium',
   };
 
   const navigateToChat = () => {
@@ -54,104 +55,99 @@ export default function OrderCard({
 
   return (
     <div 
-      className={`bg-white p-5 md:p-7 rounded-3xl border transition-all duration-300 group hover:shadow-xl hover:border-[#A4143D]/20 ${
-        intent === 'chat' 
-          ? 'border-[#A4143D] shadow-lg shadow-[#A4143D]/5 ring-1 ring-[#A4143D]/20' 
-          : 'border-gray-100 shadow-sm'
+      className={`w-full bg-white transition-colors duration-200 ${
+        intent === 'chat' ? 'bg-zinc-50/60 px-4 rounded-xl' : ''
       }`}
     >
-      
-      {/* HEADER */}
-      <div className="flex justify-between items-start gap-4">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">#{id}</p>
-            <span className="text-[8px] text-slate-300">•</span>
-            <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">{date}</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 py-2">
+        
+        {/* ─── LEFT: PRIMARY INDEX & DETAILS METADATA ─── */}
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-black uppercase tracking-wider text-zinc-400">
+            <span className="text-zinc-900 font-black">REF::{id}</span>
+            <span className="text-zinc-300">•</span>
+            <span>{date}</span>
+            <span className="text-zinc-300">•</span>
+            <span className={`tracking-widest ${statusStyles[status]}`}>{status}</span>
           </div>
-          <div className="flex items-center gap-2">
-             <h3 className="font-black italic text-slate-900 text-lg md:text-xl uppercase tracking-tight">
-               Purchase Product
-             </h3>
-          </div>
-        </div>
-        <span className={`text-[8px] px-3 py-1.5 rounded-lg font-black border uppercase tracking-widest ${statusStyles[status]}`}>
-          {status}
-        </span>
-      </div>
-
-      {/* TRACKING (IF SHIPPED) */}
-      {(trackingNumber || carrier) && (status === 'shipped' || status === 'delivered') && (
-        <div className="mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-white p-2.5 rounded-xl shadow-sm text-slate-400">
-              <Truck size={16} />
-            </div>
-            <div>
-              <p className="text-[8px] font-bold uppercase text-slate-400 leading-none mb-1">Via {carrier}</p>
-              <p className="text-[10px] font-bold text-slate-700 font-mono tracking-tight">{trackingNumber}</p>
-            </div>
-          </div>
-          <ExternalLink size={14} className="text-slate-300" />
-        </div>
-      )}
-
-      {/* FOOTER: PRICE & ACTIONS */}
-      <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-6">
-        <div className="w-full sm:w-auto text-center sm:text-left">
-          <p className="text-[8px] font-black uppercase text-slate-300 tracking-[0.2em] mb-0.5">Settlement_Total</p>
-          <p className="font-black italic text-2xl text-slate-900 tracking-tighter">₦{amount.toLocaleString()}</p>
-        </div>
-
-        <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2 w-full sm:w-auto">
           
-          {/* Direct Vendor Communication Gateway */}
-          <button 
-            onClick={navigateToChat}
-            className="p-3.5 bg-zinc-50 text-zinc-900 rounded-xl hover:bg-[#A4143D]/10 hover:text-[#A4143D] transition-all flex items-center justify-center"
-            title="Open Vendor Chat"
-          >
-            <MessageCircle size={16} />
-          </button>
+          <h3 className="font-extrabold text-base text-zinc-950 uppercase tracking-tight truncate">
+            Purchase Manifest Product
+          </h3>
 
-          {/* Action: Release Escrow Funds */}
-          {(status === 'shipped' || status === 'delivered') && (
-            <button 
-              onClick={onConfirmReceipt}
-              disabled={isSettling}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest px-6 py-3.5 bg-[#A4143D] text-white rounded-xl shadow-md hover:bg-black transition-all active:scale-95 disabled:opacity-50"
-            >
-              {isSettling ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-              Confirm_Receipt
-            </button>
+          {/* Inline Micro Tracking View */}
+          {(trackingNumber || carrier) && (status === 'shipped' || status === 'delivered') && (
+            <div className="inline-flex items-center gap-2 mt-1 text-[10px] bg-zinc-50 border border-zinc-200 px-2.5 py-1 rounded-md text-zinc-600 font-mono">
+              <Truck size={12} className="text-zinc-400" />
+              <span>{carrier}</span>
+              <span className="text-zinc-300">|</span>
+              <span className="font-bold tracking-tight text-zinc-900">{trackingNumber}</span>
+              <ExternalLink size={10} className="text-zinc-400 ml-0.5" />
+            </div>
           )}
+        </div>
 
-          {/* Contextual Options */}
+        {/* ─── RIGHT: PRICE INDEX & OPERATIONAL ACTION DOCK ─── */}
+        <div className="flex flex-row items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-zinc-100 pt-4 md:pt-0 shrink-0">
+          
+          {/* Flat Monetary Unit Layout */}
+          <div className="text-left md:text-right">
+            <p className="text-[8px] font-black uppercase text-zinc-400 tracking-widest leading-none mb-0.5">Value</p>
+            <p className="font-black text-lg text-zinc-950 tracking-tight">₦{amount.toLocaleString()}</p>
+          </div>
+
           <div className="flex items-center gap-2">
+            {/* Action Group 1: Comm Gateway */}
+            <button 
+              onClick={navigateToChat}
+              className="p-3 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-100 active:scale-95 transition-all"
+              title="Open Vendor Workspace Communication"
+            >
+              <MessageCircle size={15} />
+            </button>
+
+            {/* Action Group 2: Escrow Dispatch Operations */}
+            {(status === 'shipped' || status === 'delivered') && (
+              <button 
+                onClick={onConfirmReceipt}
+                disabled={isSettling}
+                className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-4 py-3 bg-[#A4143D] text-white rounded-xl hover:bg-black transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isSettling ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+                <span>Disburse</span>
+              </button>
+            )}
+
+            {/* Action Group 3: Contextual Worksheets */}
             {status === 'completed' && (
               <button 
                 onClick={onRateProduct}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-[9px] font-black uppercase px-6 py-3.5 border border-[#A4143D] text-[#A4143D] rounded-xl hover:bg-[#A4143D] hover:text-white transition-all"
+                className="flex items-center justify-center gap-1 text-[10px] font-black uppercase px-4 py-3 border border-zinc-200 text-zinc-800 rounded-xl hover:bg-zinc-50 transition-all"
               >
-                <Star size={14} /> Rate
+                <Star size={12} /> <span>Rate</span>
               </button>
             )}
             
+            {/* Master Details Trigger */}
             <button 
-               onClick={() => onOpenDetails(fullId)}
-               className="flex-1 sm:flex-nowrap flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest px-6 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-black transition-all"
+              onClick={() => onOpenDetails(fullId)}
+              className="flex items-center justify-center gap-1 text-[10px] font-black uppercase tracking-wider px-4 py-3 bg-zinc-950 text-white rounded-xl hover:bg-zinc-900 transition-all active:scale-95"
             >
-              Details <ChevronRight size={14} />
+              <span>Review</span>
+              <ChevronRight size={12} strokeWidth={2.5} />
+            </button>
+
+            {/* Documentation Export Link */}
+            <button 
+              className="p-3 bg-zinc-50 border border-zinc-200 text-zinc-400 rounded-xl hover:text-zinc-900 transition-all hidden sm:inline-block"
+              aria-label="Export invoice statement"
+            >
+              <FileText size={15} />
             </button>
           </div>
 
-          {/* Invoice Clipboard Anchor */}
-          <button 
-            className="p-3.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#A4143D]/10 hover:text-[#A4143D] transition-all"
-          >
-            <FileText size={18} />
-          </button>
         </div>
+
       </div>
     </div>
   );
