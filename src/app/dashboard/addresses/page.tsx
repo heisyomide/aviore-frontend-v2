@@ -34,12 +34,11 @@ export default function AddressesPage() {
         api.get('/user/addresses')
       ]);
 
-      // Normalize user data (handles nested .user or flat response)
       const userData = profileRes.data?.user || profileRes.data;
       
       setProfile({
-        fullName: userData.name || userData.fullName || '',
-        phoneNumber: userData.phone || userData.phoneNumber || ''
+        fullName: userData?.name || userData?.fullName || '',
+        phoneNumber: userData?.phone || userData?.phoneNumber || ''
       });
       
       setAddresses(Array.isArray(addressRes.data) ? addressRes.data : []);
@@ -51,7 +50,9 @@ export default function AddressesPage() {
     }
   }, []);
 
-  useEffect(() => { loadPageData(); }, [loadPageData]);
+  useEffect(() => { 
+    loadPageData(); 
+  }, [loadPageData]);
 
   // --- MODAL CONTROL ---
   const handleOpenModal = (address?: Address) => {
@@ -79,15 +80,15 @@ export default function AddressesPage() {
         ...formData,
         fullName: profile.fullName, 
         phoneNumber: profile.phoneNumber,
-        postalCode: "" // Keeping backend requirement firm
+        postalCode: "" 
       };
 
       if (editingId) {
         await api.patch(`/user/addresses/${editingId}`, payload);
-        toast.success("Drop_Point_Modified");
+        toast.success("Drop point modified successfully");
       } else {
         await api.post('/user/addresses', payload);
-        toast.success("Drop_Point_Registered");
+        toast.success("Drop point registered successfully");
       }
 
       await loadPageData();
@@ -99,13 +100,13 @@ export default function AddressesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Terminate this address ?")) return;
+    if (!confirm("Are you sure you want to delete this address?")) return;
     try {
       await api.delete(`/user/addresses/${id}`);
       setAddresses(prev => prev.filter(a => a.id !== id));
-      toast.success("Node_Terminated");
+      toast.success("Address removed successfully");
     } catch (err) {
-      toast.error("Termination failed.");
+      toast.error("Failed to remove address.");
     }
   };
 
@@ -113,9 +114,9 @@ export default function AddressesPage() {
     try {
       await api.patch(`/user/addresses/${id}/default`);
       await loadPageData();
-      toast.success("Primary_Address_Updated");
+      toast.success("Primary address updated");
     } catch (err) {
-      toast.error("Sync failed.");
+      toast.error("Failed to update default address.");
     }
   };
 
@@ -131,9 +132,11 @@ export default function AddressesPage() {
           <h1 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
             Drop <span className="text-zinc-200 font-medium">Points</span>
           </h1>
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic">
-            Binding: <span className="text-zinc-900">{profile.fullName || 'SYNC_PENDING'}</span>
-          </p>
+          {profile.fullName && (
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic">
+              Binding: <span className="text-zinc-900">{profile.fullName}</span>
+            </p>
+          )}
         </div>
 
         <button 
@@ -149,7 +152,9 @@ export default function AddressesPage() {
 
       {/* 2. ADDRESS GRID */}
       {loading ? (
-        <div className="flex justify-center py-32"><Loader2 className="animate-spin text-[#A4143D]" size={32} /></div>
+        <div className="flex justify-center py-32">
+          <Loader2 className="animate-spin text-[#A4143D]" size={32} />
+        </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-8">
           {addresses.map((addr) => (
@@ -171,24 +176,47 @@ export default function AddressesPage() {
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-black text-zinc-900 uppercase italic tracking-tight">{addr.fullName}</p>
                     {addr.isDefault && (
-                      <span className="text-[8px] bg-emerald-500 text-white px-3 py-1 rounded-full font-black uppercase tracking-widest animate-pulse">Primary</span>
+                      <span className="text-[8px] bg-emerald-500 text-white px-3 py-1 rounded-full font-black uppercase tracking-widest animate-pulse">
+                        Primary
+                      </span>
                     )}
                   </div>
-                  <p className="text-[11px] font-bold text-zinc-500 uppercase leading-relaxed">{addr.street}, {addr.city}, {addr.state}</p>
-                  <p className="text-[10px] font-black text-zinc-400 font-mono tracking-widest pt-2">{addr.phoneNumber}</p>
+                  <p className="text-[11px] font-bold text-zinc-500 uppercase leading-relaxed">
+                    {addr.street}, {addr.city}, {addr.state}
+                  </p>
+                  <p className="text-[10px] font-black text-zinc-400 font-mono tracking-widest pt-2">
+                    {addr.phoneNumber}
+                  </p>
                 </div>
               </div>
 
               <div className="mt-8 flex items-center justify-between pt-6 border-t border-zinc-50">
                 {!addr.isDefault ? (
-                  <button onClick={() => handleSetDefault(addr.id)} className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#A4143D] transition-colors">Set as Primary Address</button>
+                  <button 
+                    onClick={() => handleSetDefault(addr.id)} 
+                    className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#A4143D] transition-colors"
+                  >
+                    Set as Primary Address
+                  </button>
                 ) : (
-                  <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-600"><CheckCircle size={12} /> Sync_Active</span>
+                  <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-600">
+                    <CheckCircle size={12} /> Sync_Active
+                  </span>
                 )}
                 
                 <div className="flex gap-2">
-                  <button onClick={() => handleOpenModal(addr)} className="p-3 bg-zinc-50 text-zinc-400 hover:text-zinc-900 rounded-xl transition-all"><Edit2 size={14} /></button>
-                  <button onClick={() => handleDelete(addr.id)} className="p-3 bg-zinc-50 text-zinc-400 hover:text-red-500 rounded-xl transition-all"><Trash2 size={14} /></button>
+                  <button 
+                    onClick={() => handleOpenModal(addr)} 
+                    className="p-3 bg-zinc-50 text-zinc-400 hover:text-zinc-900 rounded-xl transition-all"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(addr.id)} 
+                    className="p-3 bg-zinc-50 text-zinc-400 hover:text-red-500 rounded-xl transition-all"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -197,7 +225,9 @@ export default function AddressesPage() {
           {addresses.length === 0 && (
             <div className="col-span-full py-32 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 rounded-[4rem] text-center bg-zinc-50/20">
               <MapPin size={48} className="text-zinc-100 mb-6" />
-              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-300">No saved addresses found.</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-300">
+                No saved addresses found.
+              </p>
             </div>
           )}
         </div>
