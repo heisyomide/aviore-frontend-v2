@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/src/lib/axios';
-import { Loader2, MessageSquare, Star, Activity, Plus } from 'lucide-react';
+import { Loader2, MessageSquare, Star, Activity, ThumbsUp, Inbox } from 'lucide-react';
 import ReviewCard from '../../../components/dashboard/ReviewCard';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export default function ReviewsPage() {
   const [data, setData] = useState<any>(null);
@@ -17,7 +17,7 @@ export default function ReviewsPage() {
       setData(response.data);
     } catch (error) {
       console.error("Error fetching reviews", error);
-      toast.error("Failed to load reviews");
+      toast.error("Error", { description: "Failed to load product reviews." });
     } finally {
       setLoading(false);
     }
@@ -28,70 +28,75 @@ export default function ReviewsPage() {
   }, []);
 
   const handleDelete = async (reviewId: string) => {
-    if (!confirm("Are you sure you want to delete this review?")) return;
+    const confirmDelete = window.confirm("Are you sure you want to remove this review?");
+    if (!confirmDelete) return;
+
     try {
       await api.delete(`/user/reviews/${reviewId}`);
-      toast.success("Review deleted successfully");
+      toast.success("Success", { description: "Review has been removed." });
       fetchReviews();
     } catch (error) {
-      toast.error("Could not delete review");
+      toast.error("Error", { description: "Could not delete your review." });
     }
   };
 
   const handleEdit = async (reviewId: string) => {
-    const newComment = prompt("Edit your review comment:", "");
-    if (newComment === null) return;
+    const currentReview = data?.reviews?.find((r: any) => r.id === reviewId);
+    const newComment = window.prompt("Edit your review comment:", currentReview?.comment || "");
+    if (newComment === null || newComment.trim() === "") return;
+
     try {
       await api.patch(`/user/reviews/${reviewId}`, { comment: newComment });
-      toast.success("Review updated");
+      toast.success("Success", { description: "Review updated successfully." });
       fetchReviews();
     } catch (error) {
-      toast.error("Failed to update review");
+      toast.error("Error", { description: "Failed to update review text." });
     }
   };
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="animate-spin text-[#A4143D]" size={32} />
+      <div className="flex h-96 items-center justify-center animate-in fade-in duration-300">
+        <Loader2 className="animate-spin text-[#A4143D]" size={28} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-12">
-      {/* 1. HEADER SECTION */}
-      <header className="flex flex-col gap-2 border-b border-zinc-100 pb-8">
+    <div className="min-h-screen bg-white space-y-12 pb-20 animate-in fade-in duration-500">
+      
+      {/* 1. PREMIUM HEADER */}
+      <header className="flex flex-col gap-1.5 border-b border-zinc-100 pb-8">
         <div className="flex items-center gap-2 text-[#A4143D]">
-          <MessageSquare size={16} />
-          <span className="text-[10px] font-black uppercase tracking-[0.4em]">User_Feedback</span>
+          <MessageSquare size={14} />
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Customer Feedback</span>
         </div>
-        <h1 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900">
-          My <span className="text-zinc-200">Reviews</span>
+        <h1 className="text-3xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
+          My <span className="text-zinc-300 font-medium">Reviews</span>
         </h1>
       </header>
 
-      {/* 2. STATS HUD: Rule 2 (Monospace/Bold Metrics) */}
-      <div className="grid sm:grid-cols-3 gap-6">
+      {/* 2. STATS OVERVIEW CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <StatCard 
-          label="Total Reviews" 
+          label="Total Feedback" 
           value={data?.stats?.totalReviews?.toString().padStart(2, '0') || "00"} 
           icon={<Activity size={14} />}
         />
         <StatCard 
-          label="Average Rating Given" 
-          value={`${data?.stats?.averageRating || "0"}.0`} 
+          label="Average Rating" 
+          value={data?.stats?.averageRating ? `${Number(data.stats.averageRating).toFixed(1)}` : "0.0"} 
           icon={<Star size={14} />}
         />
         <StatCard 
-          label="Helpful Votes" 
+          label="Helpful Actions" 
           value={data?.stats?.helpfulVotes?.toString().padStart(2, '0') || "00"} 
-          icon={<Plus size={14} />}
+          icon={<ThumbsUp size={14} />}
         />
       </div>
 
-      {/* 3. REVIEWS LIST */}
-      <div className="space-y-4">
+      {/* 3. REVIEWS LOG GRID */}
+      <div className="space-y-4 pt-4">
         {data?.reviews?.length > 0 ? (
           data.reviews.map((review: any) => (
             <ReviewCard
@@ -109,11 +114,10 @@ export default function ReviewsPage() {
             />
           ))
         ) : (
-          <div className="py-20 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 rounded-[2rem] text-center">
-            <MessageSquare size={48} className="text-zinc-100 mb-4" />
-            <p className="text-[11px] font-black uppercase tracking-widest text-zinc-400">
-              You haven't left any reviews yet.
-            </p>
+          <div className="py-32 flex flex-col items-center justify-center border border-dashed border-zinc-200 rounded-2xl text-center bg-zinc-50/30">
+            <Inbox size={36} className="text-zinc-300 mb-4" />
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">No Reviews Found</p>
+            <p className="text-[10px] text-zinc-400 mt-1 italic">You haven't left any feedback entries yet.</p>
           </div>
         )}
       </div>
@@ -121,17 +125,17 @@ export default function ReviewsPage() {
   );
 }
 
-/** 📊 STAT HUD MOLECULE */
+/** 📊 STAT WIDGET CELL */
 function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="bg-zinc-50 border border-zinc-100 p-6 rounded-3xl group hover:border-[#A4143D]/20 transition-all duration-500">
+    <div className="bg-white border border-zinc-200 p-6 rounded-2xl group hover:border-zinc-400 transition-all duration-300">
       <div className="flex justify-between items-start mb-4">
-        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">{label}</span>
-        <div className="text-zinc-300 group-hover:text-[#A4143D] transition-colors">
+        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{label}</span>
+        <div className="text-zinc-400 group-hover:text-[#A4143D] transition-colors">
           {icon}
         </div>
       </div>
-      <p className="text-4xl font-black text-zinc-900 tracking-tighter font-mono">
+      <p className="text-3xl font-black text-zinc-900 tracking-tight">
         {value}
       </p>
     </div>

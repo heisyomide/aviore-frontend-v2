@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Store, Star, Loader2, ArrowUpRight, Unlink, Heart } from 'lucide-react';
+import { Store, Star, Loader2, ArrowUpRight, UserMinus, Heart, Inbox } from 'lucide-react';
 import { api } from '@/src/lib/axios';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function FollowedVendorsPage() {
@@ -13,118 +14,122 @@ export default function FollowedVendorsPage() {
     try {
       setLoading(true);
       const res = await api.get('/user/following');
-      // Ensure we are working with an array
       setVendors(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Registry Sync Error:", err);
+      toast.error("Error", { description: "Failed to align your merchant following records." });
     } finally {
       setLoading(false);
     }
   };
 
   const handleUnfollow = async (vendorId: string) => {
-    if (!confirm("Terminate connection with this vendor?")) return;
+    const confirmAction = window.confirm("Disconnect your updates from this vendor profile?");
+    if (!confirmAction) return;
+    
     try {
       await api.delete(`/vendors/${vendorId}/unfollow`);
       setVendors(prev => prev.filter(v => (v.vendor?.id || v.id) !== vendorId));
+      toast.success("Connection Removed", { description: "You are no longer following this store account." });
     } catch (err) {
       console.error("Action Error:", err);
+      toast.error("Action Error", { description: "Could not alter store following parameters." });
     }
   };
 
-  useEffect(() => { fetchFollowedVendors(); }, []);
+  useEffect(() => { 
+    fetchFollowedVendors(); 
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="animate-spin text-[#A4143D]" size={32} />
+      <div className="flex h-96 items-center justify-center animate-in fade-in duration-300">
+        <Loader2 className="animate-spin text-[#A4143D]" size={28} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-10 pb-20">
-      {/* 1. Header Section */}
-      <header className="flex flex-col gap-1 border-b border-zinc-100 pb-8">
+    <div className="min-h-screen bg-white space-y-12 pb-20 animate-in fade-in duration-500">
+      
+      {/* 1. PREMIUM HEADER */}
+      <header className="flex flex-col gap-1.5 border-b border-zinc-100 pb-8">
         <div className="flex items-center gap-2 text-[#A4143D]">
-          <Heart size={14} fill="#A4143D" />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em]">Registry_Followed</span>
+          <Heart size={14} className="text-[#A4143D]" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Saved Partnerships</span>
         </div>
-        <h1 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
-          Favorite <span className="text-zinc-200">Vendors</span>
+        <h1 className="text-3xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
+          Favorite <span className="text-zinc-300 font-medium">Vendors</span>
         </h1>
       </header>
 
-      {/* 2. Vendor Grid */}
+      {/* 2. VENDOR SHOWCASE GRID */}
       {vendors.length === 0 ? (
-        <div className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 rounded-[3rem] text-center bg-zinc-50/30">
-          <Store size={48} className="text-zinc-200 mb-4" />
-          <p className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Registry empty. No vendors followed.</p>
+        <div className="py-32 flex flex-col items-center justify-center border border-dashed border-zinc-200 rounded-2xl text-center bg-zinc-50/30">
+          <Inbox size={36} className="text-zinc-300 mb-4" />
+          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Registry Empty</p>
+          <p className="text-[10px] text-zinc-400 mt-1 italic">You haven't added any favorite vendors to your catalog feeds yet.</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {vendors.map((item) => {
-            // FIX: Normalize data structure (item might be a 'Following' record or a 'Vendor' record)
             const vendorData = item.vendor || item;
             const vendorId = vendorData.id;
-            const storeName = vendorData.storeName || "Unknown Vendor";
+            const storeName = vendorData.storeName || "Premium Storefront";
 
             return (
               <div 
                 key={item.id || vendorId} 
-                className="group relative bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-zinc-200/50 hover:border-[#A4143D]/20"
+                className="group relative bg-white p-6 sm:p-8 rounded-2xl border border-zinc-200 transition-all duration-300 hover:border-zinc-400"
               >
-                {/* Status Badge */}
-                <div className="absolute top-8 right-8 flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                {/* Micro Online Pulse Identifier */}
+                <div className="absolute top-6 right-6 sm:top-8 sm:right-8 flex items-center gap-1.5 px-2.5 py-1 bg-zinc-50 rounded-md border border-zinc-200">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest font-mono">Online</span>
+                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Active</span>
                 </div>
 
-                <div className="flex items-start gap-6">
-                  {/* Icon HUD */}
-                  <div className="bg-zinc-50 p-5 rounded-3xl text-zinc-300 transition-colors group-hover:text-[#A4143D] group-hover:bg-[#A4143D]/5 shrink-0">
-                    <Store size={32} />
+                <div className="flex items-start gap-5">
+                  {/* Clean Square Minimal Icon Container */}
+                  <div className="bg-zinc-50 p-4 rounded-xl text-zinc-400 border border-zinc-200 group-hover:text-[#A4143D] transition-colors shrink-0">
+                    <Store size={24} />
                   </div>
 
                   <div className="space-y-4 flex-1 min-w-0">
-                    <div>
-                      {/* FIX: Use normalized store name and handle truncation */}
-                      <h3 className="text-xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none truncate pr-16">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-black uppercase text-zinc-900 leading-none truncate pr-16">
                         {storeName}
                       </h3>
                       
-                      <div className="flex items-center gap-4 mt-3">
-                        <div className="flex items-center gap-1.5">
-                          <Star size={10} className="text-[#A4143D]" fill="#A4143D" />
-                          <span className="text-[11px] font-black text-zinc-900 font-mono tracking-tighter">
-                            {vendorData.rating || '0.0'}
+                      <div className="flex items-center gap-3 pt-1">
+                        <div className="flex items-center gap-1">
+                          <Star size={11} className="text-[#A4143D] fill-[#A4143D]" />
+                          <span className="text-xs font-bold text-zinc-900 tracking-tight">
+                            {vendorData.rating ? Number(vendorData.rating).toFixed(1) : '0.0'}
                           </span>
                         </div>
-                        <div className="h-3 w-px bg-zinc-100" />
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                          {vendorData.followersCount?.toLocaleString().padStart(4, '0') || '0000'} Followers
+                        <div className="h-2.5 w-px bg-zinc-200" />
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                          {vendorData.followersCount?.toLocaleString() || '0'} Followers
                         </span>
                       </div>
                     </div>
 
-                    {/* Actions Section */}
-                    <div className="flex items-center gap-3 pt-4 border-t border-zinc-50">
+                    {/* Integrated Action Row Buttons */}
+                    <div className="flex items-center gap-2 pt-4 border-t border-zinc-100">
                       <Link 
                         href={`/vendors/${vendorId}`}
-                        className="flex-1 group/btn relative overflow-hidden bg-black py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-zinc-200/50"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-black text-white py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm"
                       >
-                        <span className="relative z-10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
-                          View Store <ArrowUpRight size={14} />
-                        </span>
-                        <div className="absolute inset-0 bg-[#A4143D] translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                        Enter Catalog
+                        <ArrowUpRight size={12} className="text-zinc-400" />
                       </Link>
 
                       <button 
                         onClick={() => handleUnfollow(vendorId)}
-                        className="p-3 bg-zinc-50 text-zinc-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all shrink-0"
-                        title="Unfollow Vendor"
+                        className="p-3 bg-white text-zinc-400 hover:text-red-600 border border-zinc-200 hover:border-zinc-300 rounded-xl transition-all shrink-0"
+                        title="Disconnect Merchant Updates"
                       >
-                        <Unlink size={16} />
+                        <UserMinus size={14} />
                       </button>
                     </div>
                   </div>

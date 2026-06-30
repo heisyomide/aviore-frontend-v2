@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Trash2, Clock } from 'lucide-react';
+import { Trash2, Clock, Loader2, Inbox } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 import { motion } from 'framer-motion';
 import { ProductCard } from '../../../components/product/ProductCard';
@@ -33,7 +33,7 @@ export default function HistoryPage() {
   }, []);
 
   const clearHistory = async () => {
-    const confirmClear = window.confirm('Purge your browsing registry?');
+    const confirmClear = window.confirm('Are you sure you want to clear your browsing history?');
     if (!confirmClear) return;
 
     try {
@@ -67,59 +67,52 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center animate-in fade-in duration-300">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-[#A4143D] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Retrieving Registry...</p>
-        </div>
+        <Loader2 className="animate-spin text-[#A4143D]" size={28} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-12 pb-20 animate-in fade-in duration-500">
-      {/* Header Section */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-100 pb-8">
-        <div className="space-y-2">
+    <div className="min-h-screen bg-white space-y-12 pb-20 animate-in fade-in duration-500">
+      
+      {/* 1. PREMIUM HEADER */}
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-zinc-100 pb-8">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-[#A4143D]">
             <Clock size={14} />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Browsing_Registry</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Browsing History</span>
           </div>
-          <h1 className="text-4xl font-black text-gray-900 uppercase italic tracking-tighter leading-none">
-            Recent <span className="text-zinc-200 font-medium">Views</span>
+          <h1 className="text-3xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none">
+            Recent <span className="text-zinc-300 font-medium">Views</span>
           </h1>
         </div>
 
         {history.length > 0 && (
           <button
             onClick={clearHistory}
-            className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-black transition-colors"
+            className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-700 transition-colors pt-2 sm:pt-0"
           >
-            <Trash2 size={14} className="group-hover:rotate-12 transition-transform" />
-            Purge History
+            <Trash2 size={14} className="group-hover:scale-105 transition-transform" />
+            Clear History
           </button>
         )}
       </header>
 
+      {/* 2. MAIN VIEWS LOG */}
       {history.length === 0 ? (
-        <div className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 rounded-[4rem] text-center bg-zinc-50/20">
-          <div className="p-10 bg-zinc-50 rounded-full text-zinc-200 mb-6">
-            <Clock size={48} strokeWidth={1.5} />
-          </div>
-          <h2 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter mb-2">
-            No History Found
-          </h2>
-          <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold italic">
-            Your browsing registry is currently clear.
-          </p>
+        <div className="py-32 flex flex-col items-center justify-center border border-dashed border-zinc-200 rounded-2xl text-center bg-zinc-50/30">
+          <Inbox size={36} className="text-zinc-300 mb-4" />
+          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">No History Found</p>
+          <p className="text-[10px] text-zinc-400 mt-1 italic">Your recently viewed items will appear here.</p>
         </div>
       ) : (
         <div className="space-y-16">
-          {Object.entries(groupedHistory).map(([group, items]) => (
+          {(Object.entries(groupedHistory) as [keyof typeof groupedHistory, HistoryItem[]][]).map(([group, items]) => (
             items.length > 0 && (
-              <section key={group} className="space-y-8">
+              <section key={group} className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <h3 className="font-black text-[10px] uppercase tracking-[0.4em] text-zinc-400 whitespace-nowrap">
-                    {group}_Activity
+                  <h3 className="font-bold text-[10px] uppercase tracking-[0.2em] text-zinc-400 whitespace-nowrap">
+                    {group}
                   </h3>
                   <div className="h-[1px] w-full bg-zinc-100" />
                 </div>
