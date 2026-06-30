@@ -18,6 +18,21 @@ interface ShopFilters {
   status: string;
 }
 
+// 💡 Define structural interfaces instead of utilizing 'any[]'
+interface NormalizedProduct {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  categoryName?: string;
+  categoryId?: string;
+}
+
 export default function ShopPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FDFBF9]" />}>
@@ -27,11 +42,10 @@ export default function ShopPage() {
 }
 
 function ShopContent() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<NormalizedProduct[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, lastPage: 1 });
   const [loading, setLoading] = useState(true);
   
-  // Ref anchor to clean viewport on filter resets
   const topAnchorRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState<ShopFilters>({
@@ -49,16 +63,11 @@ function ShopContent() {
       );
       const { data } = await api.get("/products", { params: activeParams });
       
-      const incomingProducts = data.data || [];
+      const incomingProducts = data.products || data.data || [];
       
-      // 🛠️ ACCUMULATIVE STATE STORAGE MATRIX
-      setProducts(prev => 
-        currentFilters.page === 1 
-          ? incomingProducts 
-          : [...prev, ...incomingProducts]
-      );
-      
-      setMeta(data.meta || { total: 0, page: 1, lastPage: 1 });
+      // ⚡ FIX: Standard discrete pagination replaces data state cleanly per page selection
+      setProducts(incomingProducts);
+      setMeta(data.meta || { total: data.count || incomingProducts.length, page: currentFilters.page, lastPage: data.lastPage || 1 });
     } catch (error) {
       console.error("AVIORÈ_SHOP_FETCH_ERROR", error);
     } finally {
@@ -68,23 +77,19 @@ function ShopContent() {
 
   /**
    * 🎯 TIERS SEARCH RELEVANCE ENGINE
-   * Re-orders the display list so exact title/category hits anchor the front rows.
-   * Description or fallback loose matches automatically sit directly below them.
    */
   const prioritizedProducts = useMemo(() => {
     if (!filters.search.trim()) return products;
 
     const query = filters.search.toLowerCase().trim();
 
-    const primaryMatches: any[] = [];
-    const secondaryMatches: any[] = [];
+    const primaryMatches: NormalizedProduct[] = [];
+    const secondaryMatches: NormalizedProduct[] = [];
 
     products.forEach((product) => {
       const title = (product.title || "").toLowerCase();
-      // Safe fallback checks for category structure variants
       const category = (product.category?.name || product.categoryName || product.categoryId || "").toLowerCase();
 
-      // Priority 1: Check if keyword is explicitly part of the title or category name
       if (title.includes(query) || category.includes(query)) {
         primaryMatches.push(product);
       } else {
@@ -92,12 +97,12 @@ function ShopContent() {
       }
     });
 
-    // Merge: Exact identity items display first, followed seamlessly by the rest
     return [...primaryMatches, ...secondaryMatches];
   }, [products, filters.search]);
 
-  const debouncedFetch = useCallback(
-    debounce((f: ShopFilters) => fetchProducts(f), 400),
+  // Stable debouncer setup to handle rapid search query inputs securely
+  const debouncedFetch = useMemo(
+    () => debounce((f: ShopFilters) => fetchProducts(f), 400),
     []
   );
 
@@ -110,11 +115,10 @@ function ShopContent() {
     return () => debouncedFetch.cancel();
   }, [filters, debouncedFetch]);
 
-  // Handle explicit filter changes (Search inputs, Sort options)
+  // Handle resets and adjust screen scroll context seamlessly
   const handleFilterReset = (updater: (prev: ShopFilters) => ShopFilters) => {
     setFilters(prev => updater(prev));
     
-    // Smoothly re-adjust focus context to top of the grid view when dataset shifts completely
     if (topAnchorRef.current) {
       const elementPosition = topAnchorRef.current.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.scrollY - 140;
@@ -126,7 +130,6 @@ function ShopContent() {
     <div className="min-h-screen bg-[#FDFBF9] text-zinc-900 selection:bg-[#E4A07A] selection:text-white antialiased">
       <Navbar />
       
-      {/* GLOBAL SEARCH / HEADER STICKY ANCHOR */}
       <div className="bg-white border-b border-zinc-200/50 sticky top-0 z-40 shadow-sm shadow-zinc-100/40">
         <ShopHeader 
           totalItems={meta.total}
@@ -134,23 +137,20 @@ function ShopContent() {
         />
       </div>
 
-      {/* MAIN PRODUCTS SHOWCASE */}
       <main ref={topAnchorRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:py-16 scroll-mt-36">
         <div className="space-y-10">
           
-          {/* HEADER ORDER MANAGEMENT CONTROLS */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-zinc-200/60 pb-5 gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-mono tracking-widest text-[#E4A07A] uppercase block">
-                {loading && products.length === 0 ? "Refreshing Catalog..." : "Curated Collection"}
+                {loading ? "Refreshing Catalog..." : "Curated Collection"}
               </span>
               <h2 className="text-2xl sm:text-3xl font-serif font-medium tracking-tight text-zinc-900">
                 {filters.search ? `Results for "${filters.search}"` : "All Products"}
               </h2>
             </div>
             
-            {/* MINIMAL SORT SELECTION DROPDOWN */}
-            <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-zinc-200/80 shadow-sm shrink-0 alignment-right">
+            <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-zinc-200/80 shadow-sm shrink-0">
               <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider pl-1">Sort By</span>
               <select 
                 value={filters.sort}
@@ -166,9 +166,8 @@ function ShopContent() {
             </div>
           </div>
 
-          {/* DYNAMIC PRODUCT INVENTORY GRID CONTAINER */}
           <div className="relative min-h-[400px]">
-            {loading && products.length === 0 ? (
+            {loading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10">
                 {[...Array(8)].map((_, i) => (
                   <div key={i} className="animate-pulse space-y-4">
@@ -178,7 +177,7 @@ function ShopContent() {
                   </div>
                 ))}
               </div>
-            ) : products.length === 0 ? (
+            ) : prioritizedProducts.length === 0 ? (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -192,26 +191,17 @@ function ShopContent() {
               </motion.div>
             ) : (
               <div>
-                {/* 🛠️ GRID RENDERS THE RE-PRIORITIZED POOL */}
                 <ProductGrid products={prioritizedProducts} />
-                
-                {/* Embedded dynamic loading indicator for continuous page retrieval */}
-                {loading && (
-                  <div className="flex justify-center items-center pt-10">
-                    <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-800 rounded-full animate-spin" />
-                  </div>
-                )}
               </div>
             )}
           </div>
           
-          {/* CATALOG PAGINATION */}
           {meta.lastPage > 1 && (
             <div className="pt-8 border-t border-zinc-200/60">
               <Pagination 
                 current={filters.page} 
                 total={meta.lastPage} 
-                onPageChange={(p: number) => setFilters(prev => ({ ...prev, page: p }))} 
+                onPageChange={(p: number) => handleFilterReset(prev => ({ ...prev, page: p }))} 
               />
             </div>
           )}
