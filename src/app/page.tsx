@@ -51,14 +51,11 @@ export default function HomePage() {
     topSaver: []
   });
 
-  // ─── UNIFIED SYSTEM DISCOVERY LIFECYCLE ───
   useEffect(() => {
-    const synchronizeStorefrontCore = async () => {
+    const fetchHomepageDiscoveryData = async () => {
       try {
-        setLoading(true);
         const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-        // Fire all contextual storefront pipelines concurrently
+        
         const [
           trendingRes, 
           beautyRes, 
@@ -67,10 +64,7 @@ export default function HomePage() {
           importedRes, 
           fastRes, 
           fashionRes, 
-          accessoriesRes,
-          depRes,
-          homeRes,
-          dealsRes
+          accessoriesRes
         ] = await Promise.all([
           axios.get(`${API_URL}/storefront/products?sort=trending&limit=10`),
           axios.get(`${API_URL}/storefront/products?category=beauty-skincare&limit=10`),
@@ -80,12 +74,8 @@ export default function HomePage() {
           axios.get(`${API_URL}/storefront/products?origin=LOCAL&maxDeliveryDays=3&limit=10`),
           axios.get(`${API_URL}/storefront/products?category=fashion&limit=10`),
           axios.get(`${API_URL}/storefront/products?category=accessories&limit=10`),
-          api.get('/storefront/registry'), 
-          api.get('/storefront/homepage'),
-          api.get('/storefront/top-deals')
         ]);
 
-        // Commit Rail-Discovery States
         setData({
           trending: trendingRes.data?.products || trendingRes.data || [],
           beauty: beautyRes.data?.products || beautyRes.data || [],
@@ -96,23 +86,39 @@ export default function HomePage() {
           fashion: fashionRes.data?.products || fashionRes.data || [],
           accessories: accessoriesRes.data?.products || accessoriesRes.data || [],
         });
-
-        // Commit Discovery Engine Feed Array System
-        setRegistry({
-          departments: depRes.data?.sections || [],
-          feed: homeRes.data?.sections?.flatMap((s: any) => s.data) || homeRes.data?.products || [],
-          vendors: homeRes.data?.vendors || [],
-          topSaver: dealsRes.data || []
-        });
-
       } catch (err) {
-        console.error("Critical_Storefront_Discovery_Engine_Crash", err);
+        console.error("Discovery_Engine_Crash_Sync", err);
       } finally {
         setLoading(false);
       }
     };
 
-    synchronizeStorefrontCore();
+    fetchHomepageDiscoveryData();
+  }, []);
+
+  useEffect(() => {
+    const syncAvioreRegistry = async () => {
+      try {
+        setLoading(true);
+        const [depRes, homeRes, dealsRes] = await Promise.all([
+          api.get('/storefront/registry'), 
+          api.get('/storefront/homepage'),
+          api.get('/storefront/top-deals')
+        ]);
+        
+        setRegistry({
+          departments: depRes.data?.sections || [],
+          feed: homeRes.data?.sections?.flatMap((s: any) => s.data) || [],
+          vendors: homeRes.data?.vendors || [],
+          topSaver: dealsRes.data || []
+        });
+      } catch (err) {
+        console.error("AVI_REGISTRY_SYNC_FAILURE", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    syncAvioreRegistry();
   }, []);
 
   const flashDealsInventory = useMemo(() => registry.feed.slice(0, 6), [registry.feed]);
@@ -123,23 +129,23 @@ export default function HomePage() {
   }, [registry.feed]);
 
   const totalPages = useMemo(() => {
-    const count = Math.ceil(availableDiscoveryPool.length / itemsPerPage);
-    // Fallback to 1 so pagination controllers maintain layout bounds if data is low
-    return count < 1 ? 1 : count;
+    return Math.ceil(availableDiscoveryPool.length / itemsPerPage);
   }, [availableDiscoveryPool, itemsPerPage]);
 
+  /**
+   * 🛠️ ACCUMULATIVE DISCOVERY SLICE
+   * Instead of starting from an offset index (which swaps out products), we 
+   * slice from 0 to the current threshold. Interacting with pagination grows 
+   * the array downwards, appending new cards under the existing ones.
+   */
   const paginatedDiscovery = useMemo(() => {
     const endIndex = currentPage * itemsPerPage;
     return availableDiscoveryPool.slice(0, endIndex);
   }, [availableDiscoveryPool, currentPage, itemsPerPage]);
 
+  // Clean updates to data visibility bounds without resetting window layout scroll positions
   const handlePageChange = useCallback((nextPage: number) => {
     setCurrentPage(nextPage);
-    
-    // Smooth view adjustment to discovery feed anchor when navigating
-    if (discoveryAnchorRef.current) {
-      discoveryAnchorRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   }, []);
 
   if (loading) return <HomeSkeleton />;
@@ -198,8 +204,7 @@ export default function HomePage() {
               <>
                 <ProductGrid products={paginatedDiscovery} />
                 
-                {/* Pagination Controls will now persistently mount correctly */}
-                <div className="mt-16 flex justify-center">
+                <div className="mt-12">
                   <Pagination 
                     current={currentPage}
                     total={totalPages}
