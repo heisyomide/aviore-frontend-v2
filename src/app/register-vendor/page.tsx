@@ -37,16 +37,14 @@ function OnboardingWizardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Progress Engine: Step 1 (Profile), Step 2 (Security/Contact), Step 3 (Compliance KYC)
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State Bucket matching API specs
   const [formData, setFormData] = useState({
     firstName: '',
-    middleName: '', // Optional/Aesthetic addition requested
+    middleName: '', 
     lastName: '',
     storeName: '',
     dob: '',
@@ -60,7 +58,6 @@ function OnboardingWizardForm() {
     file: null as File | null,
   });
 
-  // Track growth loops from URL search terms
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) {
@@ -107,6 +104,11 @@ function OnboardingWizardForm() {
         setError("Security structural requirement: Password must span 6+ characters.");
         return false;
       }
+      // Basic client-side check to alert users about country codes
+      if (!formData.phone.startsWith('+')) {
+        setError("Format Requirement: Phone number must include your international plus prefix code (e.g. +234...)");
+        return false;
+      }
     }
     return true;
   };
@@ -131,12 +133,19 @@ function OnboardingWizardForm() {
     setError(null);
 
     try {
-      // 1. DISPATCH ACCOUNT REGISTRATION PROFILE TO SYSTEM ENDPOINT
+      // 🌟 FIX: Convert your generic HTML date string ("YYYY-MM-DD") to a full ISO string representation for your DTO.
+      const formattedDob = formData.dob ? new Date(formData.dob).toISOString() : new Date().toISOString();
+
+      // 🌟 FIX: Re-assembled the payload block containing ALL 9 properties required by your validation engine DTO schema parameters.
       const registrationPayload = {
         firstName: formData.firstName,
+        middleName: formData.middleName || "None", // Guarantees a string fallback value
         lastName: formData.lastName,
         email: formData.email,
+        phone: formData.phone.trim(), 
+        dob: formattedDob,
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
         role: 'VENDOR',
         storeName: formData.storeName,
         referralCode: formData.referralCode || undefined,
@@ -150,17 +159,17 @@ function OnboardingWizardForm() {
 
       const regResult = await regResponse.json();
       if (!regResponse.ok) {
-        throw new Error(regResult.message || 'Identity initialization failed.');
+        // Formats structured backend errors safely
+        const backendMessage = Array.isArray(regResult.message) ? regResult.message.join(', ') : regResult.message;
+        throw new Error(backendMessage || 'Identity initialization failed.');
       }
 
-      // 2. RETRIEVE TEMPORARY/PERMANENT BEARER ACCESS AND TRANSMIT KYC DISPATCH
-      // (Assuming login token or auto-auth cookie returns, or utilizing a direct validation handoff)
+      // 2. RETRIEVE BEARER ACCESS AND TRANSMIT KYC DISPATCH
       const kycData = new FormData();
       kycData.append('idType', formData.idType);
       kycData.append('idNumber', formData.idNumber);
       kycData.append('file', formData.file);
 
-      // Attempting compliance document attachment pipeline transmission
       await api.post('/vendor/submit-kyc', kycData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -178,7 +187,6 @@ function OnboardingWizardForm() {
     }
   };
 
-  // SUCCESS COMPLETION PROFILE UI
   if (isSuccess) {
     return (
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-10 text-center border border-zinc-100 animate-in fade-in zoom-in duration-300">
@@ -197,7 +205,6 @@ function OnboardingWizardForm() {
   return (
     <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-zinc-200 overflow-hidden animate-in fade-in duration-300">
       
-      {/* GLOBAL TOP PROGRESS STEP TRACKING STATUS BAR */}
       <div className="bg-zinc-950 p-6 text-white relative">
         <div className="relative z-10 flex justify-between items-center">
           <div>
@@ -216,7 +223,6 @@ function OnboardingWizardForm() {
           </div>
         </div>
         
-        {/* STRUCTURAL SEGMENT PROGRESS TRACK LINE INDICATOR */}
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-900">
           <div 
             className="h-full bg-white transition-all duration-300"
@@ -310,7 +316,7 @@ function OnboardingWizardForm() {
               name="phone"
               type="tel"
               icon={<Phone size={15}/>} 
-              placeholder="+234..."
+              placeholder="e.g. +2348012345678"
               value={formData.phone}
               onChange={handleChange} 
             />
@@ -418,7 +424,6 @@ function OnboardingWizardForm() {
               </div>
             </div>
 
-            {/* UPLOAD SELECTION CONTAINER LAYER */}
             <div className={`relative border border-dashed rounded-xl p-6 text-center transition-all duration-300 ${formData.file ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200 hover:border-zinc-400'}`}>
               <input 
                 type="file" 
@@ -478,7 +483,6 @@ function OnboardingWizardForm() {
         )}
       </div>
 
-      {/* FOOTER METRIC ANCHOR LINKS */}
       {step < 3 && (
         <p className="text-center text-xs text-zinc-400 px-6 pb-6 pt-2">
           Already verified?{' '}
@@ -496,7 +500,6 @@ function OnboardingWizardForm() {
   );
 }
 
-// --- SECURE SYSTEM ENTRY WRAPPER MODULE ---
 export default function RegisterVendor() {
   return (
     <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
