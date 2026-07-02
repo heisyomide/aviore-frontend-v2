@@ -123,69 +123,75 @@ function OnboardingWizardForm() {
     setStep((prev) => prev - 1);
   };
 
-  const handleSubmitFinal = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!formData.file || !formData.idNumber) {
-      return setError("Fulfillment rejected: Compliance identity components are missing.");
+ const handleSubmitFinal = async (e: FormEvent) => {
+  e.preventDefault();
+  if (!formData.file || !formData.idNumber) {
+    return setError("Fulfillment rejected: Compliance identity components are missing.");
+  }
+
+  setLoading(true);
+  setError(null);
+
+  try {
+    const formattedDob = formData.dob ? new Date(formData.dob).toISOString() : new Date().toISOString();
+
+    const registrationPayload = {
+      firstName: formData.firstName,
+      middleName: formData.middleName || "None",
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone.trim(), 
+      dob: formattedDob,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      role: 'VENDOR',
+      storeName: formData.storeName,
+      referralCode: formData.referralCode || undefined,
+    };
+
+    // 1. DISPATCH ACCOUNT REGISTRATION PROFILE
+    const regResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registrationPayload),
+    });
+
+    const regResult = await regResponse.json();
+    if (!regResponse.ok) {
+      const backendMessage = Array.isArray(regResult.message) ? regResult.message.join(', ') : regResult.message;
+      throw new Error(backendMessage || 'Identity initialization failed.');
     }
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      // 🌟 FIX: Convert your generic HTML date string ("YYYY-MM-DD") to a full ISO string representation for your DTO.
-      const formattedDob = formData.dob ? new Date(formData.dob).toISOString() : new Date().toISOString();
-
-      // 🌟 FIX: Re-assembled the payload block containing ALL 9 properties required by your validation engine DTO schema parameters.
-      const registrationPayload = {
-        firstName: formData.firstName,
-        middleName: formData.middleName || "None", // Guarantees a string fallback value
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone.trim(), 
-        dob: formattedDob,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        role: 'VENDOR',
-        storeName: formData.storeName,
-        referralCode: formData.referralCode || undefined,
-      };
-
-      const regResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registrationPayload),
-      });
-
-      const regResult = await regResponse.json();
-      if (!regResponse.ok) {
-        // Formats structured backend errors safely
-        const backendMessage = Array.isArray(regResult.message) ? regResult.message.join(', ') : regResult.message;
-        throw new Error(backendMessage || 'Identity initialization failed.');
-      }
-
-      // 2. RETRIEVE BEARER ACCESS AND TRANSMIT KYC DISPATCH
-      const kycData = new FormData();
-      kycData.append('idType', formData.idType);
-      kycData.append('idNumber', formData.idNumber);
-      kycData.append('file', formData.file);
-
-      await api.post('/vendor/submit-kyc', kycData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      setIsSuccess(true);
-      setTimeout(() => {
-        router.push(`/login?email=${encodeURIComponent(formData.email)}&registered=true`);
-      }, 3000);
-
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'An unexpected operational breakdown occurred.');
-      setLoading(false);
+    // 🌟 FIX: Extract the secure, short-lived onboarding token from your API's response
+    const token = regResult.onboardingToken;
+    if (!token) {
+      throw new Error('Security handshake failed: Onboarding authorization token missing.');
     }
-  };
+
+    // 2. TRANSMIT KYC DISPATCH SECURELY WITH THE TOKEN
+    const kycData = new FormData();
+    kycData.append('idType', formData.idType);
+    kycData.append('idNumber', formData.idNumber);
+    kycData.append('file', formData.file);
+
+    // We pass the token explicitly in the header so the backend Guard accepts the payload safely.
+    await api.post('/vendor/submit-kyc', kycData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}` // 👈 Locks down authorization validation
+      },
+    });
+
+    setIsSuccess(true);
+    setTimeout(() => {
+      router.push(`/login?email=${encodeURIComponent(formData.email)}&registered=true`);
+    }, 3000);
+
+  } catch (err: any) {
+    setError(err.response?.data?.message || err.message || 'An unexpected operational breakdown occurred.');
+    setLoading(false);
+  }
+};
 
   if (isSuccess) {
     return (
