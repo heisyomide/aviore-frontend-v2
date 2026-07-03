@@ -1,6 +1,8 @@
+
+"use client"; 
+
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { middleware } from '../../../middleware'; // Your Axios instance
+import { useRouter } from 'next/navigation';
 import { api } from '@/src/lib/axios';
 
 
