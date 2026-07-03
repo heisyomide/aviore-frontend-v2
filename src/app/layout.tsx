@@ -31,7 +31,7 @@ const geistMono = Geist_Mono({
 
 // Metadata
 export const metadata: Metadata = {
-  metadataBase: new URL('https://shopaviore.com'),
+  metadataBase: new URL('https://shopaviore.store'),
 
   title: {
     default: 'Aviorè Marketplace | Global Shopping, Fashion & Luxury Deals',
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   authors: [
     {
       name: 'Aviorè',
-      url: 'https://shopaviore.com',
+      url: 'https://shopaviore.store',
     },
   ],
 
@@ -86,7 +86,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://shopaviore.com',
+    url: 'https://shopaviore.store',
     siteName: 'Aviorè',
     title: 'Aviorè Marketplace',
     description:
