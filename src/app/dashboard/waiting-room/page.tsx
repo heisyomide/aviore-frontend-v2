@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { middleware } from '../../middleware'; // Your Axios instance
+import { middleware } from '../../../middleware'; // Your Axios instance
 import { api } from '@/src/lib/axios';
 
 
