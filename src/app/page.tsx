@@ -16,7 +16,7 @@ import { Footer } from '../components/Footer';
 import { Pagination } from '../components/shop/Pagination';
 
 import { VendorCTA } from '../components/home/VendorCTA';
-import { CategoryWorldSection } from '../components/home/CategoryWorldSection';
+
 import { HomepageRail } from '../components/home/HomeRailSection';
 import axios from 'axios';
 import CategoryGrid from '../components/storefront/CategoryGrid';

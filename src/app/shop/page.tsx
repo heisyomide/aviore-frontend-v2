@@ -8,7 +8,7 @@ import { Pagination } from "@/src/components/shop/Pagination";
 import { debounce } from "lodash";
 import { Navbar } from "../../components/navbar/Navbar";
 import { Footer } from "@/src/components/Footer";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Dices } from "lucide-react"; // 🎲 Added Dices icon for interactive feel
 import { motion } from "framer-motion";
 
 interface ShopFilters {
@@ -18,7 +18,6 @@ interface ShopFilters {
   status: string;
 }
 
-// 💡 Define structural interfaces instead of utilizing 'any[]'
 interface NormalizedProduct {
   id: string;
   title: string;
@@ -50,7 +49,7 @@ function ShopContent() {
 
   const [filters, setFilters] = useState<ShopFilters>({
     search: "",
-    sort: "newest",
+    sort: "random", // 🎲 FIX: Default to 'random' to trigger our backend dice shuffle on initial load!
     page: 1,
     status: "APPROVED" 
   });
@@ -65,7 +64,6 @@ function ShopContent() {
       
       const incomingProducts = data.products || data.data || [];
       
-      // ⚡ FIX: Standard discrete pagination replaces data state cleanly per page selection
       setProducts(incomingProducts);
       setMeta(data.meta || { total: data.count || incomingProducts.length, page: currentFilters.page, lastPage: data.lastPage || 1 });
     } catch (error) {
@@ -75,9 +73,6 @@ function ShopContent() {
     }
   };
 
-  /**
-   * 🎯 TIERS SEARCH RELEVANCE ENGINE
-   */
   const prioritizedProducts = useMemo(() => {
     if (!filters.search.trim()) return products;
 
@@ -100,7 +95,6 @@ function ShopContent() {
     return [...primaryMatches, ...secondaryMatches];
   }, [products, filters.search]);
 
-  // Stable debouncer setup to handle rapid search query inputs securely
   const debouncedFetch = useMemo(
     () => debounce((f: ShopFilters) => fetchProducts(f), 400),
     []
@@ -115,7 +109,6 @@ function ShopContent() {
     return () => debouncedFetch.cancel();
   }, [filters, debouncedFetch]);
 
-  // Handle resets and adjust screen scroll context seamlessly
   const handleFilterReset = (updater: (prev: ShopFilters) => ShopFilters) => {
     setFilters(prev => updater(prev));
     
@@ -151,7 +144,11 @@ function ShopContent() {
             </div>
             
             <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-zinc-200/80 shadow-sm shrink-0">
-              <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider pl-1">Sort By</span>
+              {filters.sort === "random" ? (
+                <Dices size={13} className="text-[#E4A07A] animate-spin-slow" />
+              ) : (
+                <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider pl-1">Sort By</span>
+              )}
               <select 
                 value={filters.sort}
                 className="bg-transparent text-xs font-medium text-zinc-700 outline-none pr-2 cursor-pointer hover:text-zinc-900 transition-colors"
@@ -159,6 +156,8 @@ function ShopContent() {
                   handleFilterReset(prev => ({ ...prev, sort: e.target.value, page: 1 }))
                 }
               >
+                {/* 🎲 New Shuffle Sorting Target Option */}
+                <option value="random">🎲 Explore & Shuffle</option>
                 <option value="newest">Newest Arrivals</option>
                 <option value="price_asc">Price: Low to High</option>
                 <option value="price_desc">Price: High to Low</option>
