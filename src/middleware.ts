@@ -1,27 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-
-// 🌟 TIP: If your token is a standard JWT, you can import 'decodeJwt' from 'jose' 
-// to inspect payload fields directly at the Edge without slowing down execution speeds.
 import { decodeJwt } from 'jose'; 
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const pathname = request.nextUrl.pathname;
-
-  // Define the explicit bypass route for the waiting room to avoid infinite redirect loops
   const WAITING_ROOM_ROUTE = '/vendor/waiting-room';
 
-  // ✅ PROTECTED BASE PATHS
-  const protectedRoutes = [
-    '/vendor',
-    '/dashboard',
-    '/admin',
-  ];
-
-  const isProtected = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  const protectedRoutes = ['/vendor', '/dashboard', '/admin'];
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
   // 1. RULE: NO TOKEN -> ENFORCE LOGIN
   if (isProtected && !token) {
@@ -30,30 +17,48 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2. RULE: EVALUATE TOKEN ROLES & KYC SCOPES AT THE SERVER LEVEL
+  // 2. RULE: EVALUATE TOKEN ROLES & KYC SCOPES
   if (token) {
     try {
-      // Decode the JWT structure on the fly at the Edge firewall layer
-      const payload = decodeJwt(token) as { role?: string; kycStatus?: string };
+      const payload = decodeJwt(token) as { 
+        role?: string; 
+        kycStatus?: string; 
+        kyc_status?: string;
+        status?: string;
+        isApproved?: boolean;
+        is_approved?: boolean;
+      };
 
-      // Check if the user is a vendor who has NOT been approved yet
-      if (payload?.role === 'VENDOR' && payload?.kycStatus !== 'APPROVED') {
+      const userRole = payload?.role?.toUpperCase();
+      
+      // Extract status using multiple common keys as fallbacks
+      const rawStatus = payload?.kycStatus || payload?.kyc_status || payload?.status || '';
+      const currentKycStatus = rawStatus.toUpperCase();
+      
+      // Fallback flag check: If your system sets a boolean like isApproved: true
+      const isExplicitlyApproved = payload?.isApproved === true || payload?.is_approved === true || currentKycStatus === 'ACTIVE';
+
+      // 🚨 CRITICAL FIX: If they are a VENDOR, they only get sent to the waiting room 
+      // if we are ABSOLUTELY certain their status is explicitly 'PENDING', 'REJECTED', or unverified.
+      // If they are already active with products, this ensures they pass right through.
+      if (userRole === 'VENDOR') {
+        const isUnverified = currentKycStatus === 'PENDING' || currentKycStatus === 'REJECTED' || (!currentKycStatus && !isExplicitlyApproved);
         
-        // Allow them to visit the waiting room or a retry submission page, block everything else under /vendor
-        if (pathname.startsWith('/vendor') && pathname !== WAITING_ROOM_ROUTE && !pathname.includes('submit-kyc-retry')) {
-          console.warn(`[MIDDLEWARE BLOCK] Redirecting unverified Vendor to secure sandbox cage.`);
-          return NextResponse.redirect(new URL(WAITING_ROOM_ROUTE, request.url));
+        if (isUnverified) {
+          if (pathname.startsWith('/vendor') && pathname !== WAITING_ROOM_ROUTE && !pathname.includes('submit-kyc-retry')) {
+            console.warn(`[MIDDLEWARE VERIFICATION REJECT] Catching unverified vendor application.`);
+            return NextResponse.redirect(new URL(WAITING_ROOM_ROUTE, request.url));
+          }
         }
       }
       
       // Prevent standard vendors or customers from cracking into /admin routes completely
-      if (pathname.startsWith('/admin') && payload?.role !== 'ADMIN') {
+      if (pathname.startsWith('/admin') && userRole !== 'ADMIN') {
         return NextResponse.redirect(new URL('/unauthorized', request.url));
       }
 
     } catch (err) {
       console.error('Edge JWT analysis anomaly:', err);
-      // If the token cookie is corrupted or tampered with, wipe it and clear access
       const loginUrl = new URL('/login', request.url);
       return NextResponse.redirect(loginUrl);
     }
