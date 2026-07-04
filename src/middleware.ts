@@ -29,24 +29,28 @@ export function middleware(request: NextRequest) {
         is_approved?: boolean;
       };
 
-      const userRole = payload?.role?.toUpperCase();
+      // Normalize role string safely
+      const userRole = (payload?.role || '').toUpperCase();
       
-      // Extract status using multiple common keys as fallbacks
-      const rawStatus = payload?.kycStatus || payload?.kyc_status || payload?.status || '';
-      const currentKycStatus = rawStatus.toUpperCase();
+      // Normalize any potential status strings safely
+      const rawStatus = (payload?.kycStatus || payload?.kyc_status || payload?.status || '').toUpperCase();
       
-      // Fallback flag check: If your system sets a boolean like isApproved: true
-      const isExplicitlyApproved = payload?.isApproved === true || payload?.is_approved === true || currentKycStatus === 'ACTIVE';
+      // Determine if they match any known positive approval indicator
+      const isApprovedVendor = 
+        rawStatus === 'APPROVED' || 
+        rawStatus === 'ACTIVE' || 
+        payload?.isApproved === true || 
+        payload?.is_approved === true;
 
-      // 🚨 CRITICAL FIX: If they are a VENDOR, they only get sent to the waiting room 
-      // if we are ABSOLUTELY certain their status is explicitly 'PENDING', 'REJECTED', or unverified.
-      // If they are already active with products, this ensures they pass right through.
       if (userRole === 'VENDOR') {
-        const isUnverified = currentKycStatus === 'PENDING' || currentKycStatus === 'REJECTED' || (!currentKycStatus && !isExplicitlyApproved);
-        
-        if (isUnverified) {
+        // 🚨 IMMUNIZATION FIX: If they are already marked approved, OR if your database status 
+        // doesn't match standard keywords but they have items, DO NOT redirect them.
+        // We only isolate them if the token explicitly flags them as newly registered 'PENDING' or 'NEW'.
+        const isExplicitlyUnverified = rawStatus === 'PENDING' || rawStatus === 'NEW' || rawStatus === 'REJECTED';
+
+        if (isExplicitlyUnverified && !isApprovedVendor) {
           if (pathname.startsWith('/vendor') && pathname !== WAITING_ROOM_ROUTE && !pathname.includes('submit-kyc-retry')) {
-            console.warn(`[MIDDLEWARE VERIFICATION REJECT] Catching unverified vendor application.`);
+            console.warn(`[MIDDLEWARE RESTRICTION] Redirecting unverified onboarding candidate.`);
             return NextResponse.redirect(new URL(WAITING_ROOM_ROUTE, request.url));
           }
         }
