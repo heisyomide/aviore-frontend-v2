@@ -29,7 +29,7 @@ export default function MarketingTeamPage() {
   ];
 
   const faqs = [
-    { q: "How do I make money online with the Avio IO team?", a: "You make money by sharing tracking links for products available on the Aviorè marketplace. Whenever a buyer completes an order using your direct recommendation, a percentage commission is captured and attributed to your profile." },
+    { q: "How do I make money online with the Aviorè IO team?", a: "You make money by sharing tracking links for products available on the Aviorè marketplace. Whenever a buyer completes an order using your direct recommendation, a percentage commission is captured and attributed to your profile." },
     { q: "Do I need to purchase products or hold stock inventory?", a: "No. This program is completely risk-free. Aviorè handles warehousing, package assembly, payment collection via escrow gateways, and delivery fleets. Your sole objective is network distribution and promotion." },
     { q: "What is Activation and how do I receive my payouts?", a: "Activation occurs once you connect with the manager and complete your introductory training session. Earnings are calculated dynamically and distributed twice monthly on standard payroll dates." }
   ];
@@ -43,10 +43,10 @@ export default function MarketingTeamPage() {
           <div className="grid md:grid-cols-12 gap-8 items-center">
             <div className="md:col-span-7 space-y-6">
               <span className="inline-flex items-center gap-1.5 bg-[#A4143D]/10 text-[#A4143D] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                <Users size={12} /> Avio IO Growth Hub
+                <Users size={12} /> Aviorè IO Growth Hub
               </span>
               <h1 className="text-3xl md:text-5xl font-black text-zinc-950 tracking-tight leading-tight">
-                Make Money Online by Joining <span className="text-[#A4143D]">Avio IO Marketing Team</span> as a Sales Consultant
+                Make Money Online by Joining <span className="text-[#A4143D]">Aviorè IO Marketing Team</span> as a Sales Consultant
               </h1>
               <p className="text-zinc-600 text-sm md:text-base max-w-xl leading-relaxed">
                 Set your own working hours, earn highly competitive commissions, and scale your digital marketing business with a community of successful sales professionals.

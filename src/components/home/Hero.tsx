@@ -138,7 +138,7 @@ export function Hero() {
               </div>
             </div>
 
-            <Link href="/register" className="flex-1 bg-white border border-zinc-200 rounded-xl p-3 flex items-center gap-3 shadow-xs">
+            <Link href="/become-a-vendor" className="flex-1 bg-white border border-zinc-200 rounded-xl p-3 flex items-center gap-3 shadow-xs">
               <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                 <Store size={14} />
               </div>
@@ -310,7 +310,7 @@ export function Hero() {
                   Do you want to join <br />Aviorè IO marketing team?
                 </h3>
               </div>
-              <Link href="/marketing-team" className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase bg-white text-zinc-950 px-3 py-1.5 rounded-md w-max transition-transform hover:scale-[1.02]">
+              <Link href="/Team_io" className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase bg-white text-zinc-950 px-3 py-1.5 rounded-md w-max transition-transform hover:scale-[1.02]">
                 <span>Join Aviorè IO Team</span>
                 <ArrowRight size={10} />
               </Link>
