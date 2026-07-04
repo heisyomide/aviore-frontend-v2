@@ -9,14 +9,12 @@ import { TrustBar } from '../components/home/TrustBar';
 import { TopDealsSection } from '../components/home/TopSaverDeals';
 import { PopularVendorsSection } from '../components/home/PopularVendors';
 import { api } from '@/src/lib/axios';
-import { ChevronRight, Sparkles, Zap, Loader2, PackageSearch } from 'lucide-react';
+import { Sparkles, Loader2, PackageSearch } from 'lucide-react';
 import { Container } from '../components/layout/Container';
 import { Navbar } from '../components/navbar/Navbar';
 import { Footer } from '../components/Footer';
-import { Pagination } from '../components/shop/Pagination';
 
 import { VendorCTA } from '../components/home/VendorCTA';
-
 import { HomepageRail } from '../components/home/HomeRailSection';
 import axios from 'axios';
 import CategoryGrid from '../components/storefront/CategoryGrid';
@@ -34,10 +32,10 @@ export default function HomePage() {
   });
   const [loading, setLoading] = useState(true);
 
-  // Pagination Architecture Setup
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 16;
-  const discoveryAnchorRef = useRef<HTMLDivElement>(null);
+  // 🔄 INFINITE SCROLL STATE ARCHITECTURE
+  const [visibleCount, setVisibleCount] = useState(16); 
+  const itemsPerLoad = 16;
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   
   const [registry, setRegistry] = useState<{
     departments: any[];
@@ -128,25 +126,39 @@ export default function HomePage() {
     return registry.feed.slice(skipCount);
   }, [registry.feed]);
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(availableDiscoveryPool.length / itemsPerPage);
-  }, [availableDiscoveryPool, itemsPerPage]);
-
   /**
    * 🛠️ ACCUMULATIVE DISCOVERY SLICE
-   * Instead of starting from an offset index (which swaps out products), we 
-   * slice from 0 to the current threshold. Interacting with pagination grows 
-   * the array downwards, appending new cards under the existing ones.
+   * Pulls structural cuts out of our memoized array based on user's intersection depth
    */
   const paginatedDiscovery = useMemo(() => {
-    const endIndex = currentPage * itemsPerPage;
-    return availableDiscoveryPool.slice(0, endIndex);
-  }, [availableDiscoveryPool, currentPage, itemsPerPage]);
+    return availableDiscoveryPool.slice(0, visibleCount);
+  }, [availableDiscoveryPool, visibleCount]);
 
-  // Clean updates to data visibility bounds without resetting window layout scroll positions
-  const handlePageChange = useCallback((nextPage: number) => {
-    setCurrentPage(nextPage);
-  }, []);
+  const hasMore = useMemo(() => {
+    return visibleCount < availableDiscoveryPool.length;
+  }, [visibleCount, availableDiscoveryPool.length]);
+
+  // 👀 INTERSECTION OBSERVER ROOT ENGINE
+  useEffect(() => {
+    if (!hasMore || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // User scrolled to bottom! Increment view threshold smoothly
+          setVisibleCount((prev) => prev + itemsPerLoad);
+        }
+      },
+      { rootMargin: '200px' } // Pre-load products 200px before reaching screen viewport boundary
+    );
+
+    const target = loadMoreRef.current;
+    if (target) observer.observe(target);
+
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [hasMore, loading]);
 
   if (loading) return <HomeSkeleton />;
 
@@ -186,7 +198,7 @@ export default function HomePage() {
         <VendorCTA />
 
         {/* DISCOVERY CORE HOOK CONTAINER ANCHOR AREA */}
-        <div id="discovery-feed" ref={discoveryAnchorRef} className="scroll-mt-24">
+        <div id="discovery-feed" className="scroll-mt-24">
           <Container className="mt-22 md:mt-12 mb-20">
             <header className="mb-16 flex flex-col justify-between gap-6 border-b border-gray-100 pb-10 md:flex-row md:items-end">
               <div className="space-y-2">
@@ -204,13 +216,15 @@ export default function HomePage() {
               <>
                 <ProductGrid products={paginatedDiscovery} />
                 
-                <div className="mt-12">
-                  <Pagination 
-                    current={currentPage}
-                    total={totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
+                {/* 🎯 Infinite Scroll Pull Anchor */}
+                {hasMore && (
+                  <div ref={loadMoreRef} className="mt-16 flex justify-center py-8">
+                    <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-200/60 px-5 py-2.5 rounded-full shadow-sm text-zinc-500">
+                      <Loader2 size={16} className="animate-spin text-[#A4143D]" />
+                      <span className="text-xs font-mono font-medium tracking-wider uppercase">Loading matching inventory...</span>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <DiscoveryEmptyState />
