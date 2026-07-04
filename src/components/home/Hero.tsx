@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container } from '../layout/Container';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, PhoneCall, ShoppingBag, Store, ChevronLeft, ChevronRight, Percent } from 'lucide-react';
 import Link from 'next/link';
 
 type Slide = {
@@ -36,166 +36,159 @@ export function Hero() {
     fetchSlides();
   }, []);
 
+  // Auto-play slider configuration
+  useEffect(() => {
+    if (!slides.length) return;
+    const interval = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [slides]);
+
   if (!slides.length) return null;
   const activeSlide = slides[current];
 
+  const handleNext = () => setCurrent((prev) => (prev + 1) % slides.length);
+  const handlePrev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+
   return (
-    <section className="relative bg-[#FDFBF9] overflow-hidden py-6 md:py-12">
+    <section className="bg-[#F4F4F6] py-4 md:py-6 text-zinc-900 font-sans">
       <Container>
-        <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[580px]">
+        {/* =================================================================
+            MARKETPLACE THREE-COLUMN HUB GRID
+            ================================================================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           
-          {/* ==========================================
-              1. MOBILE BACKGROUND IMAGE COMPOSITION 
-             ========================================== */}
-          <div className="absolute inset-0 block lg:hidden z-0 pointer-events-none">
+          {/* COLUMN 1: LEFT CATEGORY LINKS MENU (Optional/Placeholder Hidden on mobile) */}
+          <div className="hidden xl:block xl:col-span-3 bg-white rounded-xl border border-zinc-200/80 p-3 h-[420px] shadow-sm">
+            <h3 className="text-[11px] uppercase tracking-wider font-bold text-zinc-400 px-3 mb-2">Top Categories</h3>
+            <div className="flex flex-col text-xs font-medium text-zinc-700 space-y-0.5">
+              {['Supermarket', 'Phones & Tablets', 'Electronics', 'Computing', 'Fashion', 'Home & Office', 'Appliances'].map((cat, idx) => (
+                <Link key={idx} href={`/shop?category=${cat.toLowerCase()}`} className="px-3 py-2 hover:bg-zinc-50 hover:text-[#A4143D] rounded-lg transition-all flex items-center justify-between">
+                  <span>{cat}</span>
+                  <ChevronRight size={12} className="text-zinc-400" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* COLUMN 2: MAIN DYNAMIC CAROUSEL SLIDER BANNER (Centerpiece) */}
+          <div className="col-span-1 lg:col-span-9 xl:col-span-6 relative bg-white rounded-xl overflow-hidden h-[320px] sm:h-[420px] shadow-sm border border-zinc-200/60 group">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeSlide.id}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.2 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative w-full h-full"
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 w-full h-full"
+                style={{ backgroundColor: activeSlide.bgColor || '#FDFBF9' }}
               >
-                <Image
-                  src={activeSlide.imageUrl.startsWith('http') 
-                    ? activeSlide.imageUrl 
-                    : `${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`
-                  }
-                  alt=""
-                  fill
-                  className="object-cover object-center"
-                  priority
-                />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* ==========================================
-              2. TEXT CONTENT & BUTTON AREA (Glass Card on Mobile)
-             ========================================== */}
-          <div className="z-10 w-full max-w-xl mx-auto lg:mx-0">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSlide.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="
-                  relative
-                  bg-white/70 
-                  backdrop-blur-xl 
-                  rounded-3xl 
-                  p-6 
-                  sm:p-10
-                  border 
-                  border-white/50 
-                  shadow-xl 
-                  shadow-zinc-900/5
-                  lg:bg-transparent 
-                  lg:backdrop-blur-none 
-                  lg:border-none 
-                  lg:shadow-none 
-                  lg:p-0 
-                  space-y-6
-                "
-              >
-                {/* Tag Kicker */}
-                <span className="text-[10px] uppercase font-mono tracking-[0.3em] text-zinc-400 block">
-                  Welcome to Aviorè
-                </span>
-
-                {/* Premium Editorial Split Typography */}
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-medium text-zinc-900 leading-[1.15] tracking-tight">
-                  Discover.
-                  <br />
-                  Shop. <span className="text-[#E4A07A] italic font-normal">Love.</span>
-                  <br />
-                  All in One Place.
-                </h1>
-                
-                {/* Subtitle description */}
-                <p className="text-zinc-500 text-sm md:text-base font-light leading-relaxed max-w-md">
-                  {activeSlide.subtitle || "A premium marketplace for everything you love. Curated. Trusted. Delivered to you."}
-                </p>
-
-                {/* Main Action Buttons */}
-
-<div className="flex flex-wrap gap-3 pt-2">
-  {/* Primary Route: Redirects straight to your newly refactored edge-to-edge product showcase */}
-  <Link 
-    href="/shop" 
-    className="flex items-center justify-center gap-2 bg-[#121316] hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-widest px-7 py-4 rounded-xl transition-all shadow-md shadow-zinc-900/10 group"
-  >
-    <span>Shop Now</span>
-    <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-  </Link>
-  
-  {/* Secondary Route: Anchors directly down or forwards users to collections */}
-  <Link 
-    href="/shop?sort=newest" 
-    className="flex items-center justify-center bg-white hover:bg-zinc-50 text-zinc-800 text-xs font-bold uppercase tracking-widest px-7 py-4 rounded-xl border border-zinc-200 transition-all shadow-sm"
-  >
-    Explore Collections
-  </Link>
-</div>
-
-                {/* Customer Trust & Ratings Matrix */}
-                <div className="flex items-center gap-4 pt-4 border-t border-zinc-200/60 max-w-xs">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((avatar) => (
-                      <div key={avatar} className="w-7 h-7 rounded-full border-2 border-white bg-zinc-200 overflow-hidden relative">
-                        <div className="w-full h-full bg-gradient-to-tr from-zinc-400 to-zinc-300" />
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 font-bold text-xs text-zinc-800">
-                      <span>4.9/5</span>
-                      <div className="flex text-amber-400">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={10} className="fill-current text-amber-400" />
-                        ))}
-                      </div>
+                {/* Clickable Banner Wrap */}
+                <Link href="/shop" className="relative block w-full h-full">
+                  <Image
+                    src={activeSlide.imageUrl.startsWith('http') 
+                      ? activeSlide.imageUrl 
+                      : `${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`
+                    }
+                    alt={activeSlide.title || "Promotional Banner"}
+                    fill
+                    className="object-cover object-center lg:object-contain"
+                    priority
+                  />
+                  
+                  {/* Absolute text fallback layer overlay for dynamic banners */}
+                  {activeSlide.title && (
+                    <div className="absolute left-6 bottom-6 sm:left-12 sm:bottom-12 max-w-xs sm:max-w-md bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-2xl shadow-xl border border-white/60 space-y-1 sm:space-y-2 pointer-events-none">
+                      {activeSlide.discount && (
+                        <span className="inline-flex items-center gap-1 bg-[#A4143D] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <Percent size={10} /> {activeSlide.discount} OFF
+                        </span>
+                      )}
+                      <h2 className="text-base sm:text-2xl font-black tracking-tight text-zinc-900 leading-tight">
+                        {activeSlide.title}
+                      </h2>
+                      <p className="text-xs text-zinc-500 line-clamp-2">
+                        {activeSlide.subtitle}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-zinc-400 font-medium">From 2,300+ reviews</p>
-                  </div>
-                </div>
-
+                  )}
+                </Link>
               </motion.div>
             </AnimatePresence>
+
+            {/* Slider Pagination Controls */}
+            <button 
+              onClick={handlePrev}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 z-20 cursor-pointer"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button 
+              onClick={handleNext}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 z-20 cursor-pointer"
+            >
+              <ChevronRight size={18} />
+            </button>
+
+            {/* Carousel Index Indicator Dots */}
+            <div className="absolute bottom-4 right-6 flex items-center gap-1.5 z-20">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrent(index)}
+                  className={`h-1.5 rounded-full transition-all cursor-pointer ${current === index ? 'w-5 bg-[#A4143D]' : 'w-1.5 bg-zinc-300'}`}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* ==========================================
-              3. DESKTOP HERO IMAGE AREA (Hidden on Mobile)
-             ========================================== */}
-          <div className="hidden lg:flex relative w-full h-[580px] items-center justify-center z-10">
+          {/* COLUMN 3: RIGHT-SIDE UTILITY & FLASH ACCESS CARDS (Jumia Style) */}
+          <div className="col-span-1 lg:col-span-3 flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:h-[420px]">
             
-            {/* Soft background luxury platform silhouette */}
-            <div className="absolute inset-4 rounded-full bg-[#F6F1EB] blur-sm opacity-80 z-0 pointer-events-none" />
+            {/* Utility Node A: Call-to-Order Support */}
+            <div className="flex-1 bg-white border border-zinc-200 rounded-xl p-4 flex items-center gap-3.5 shadow-xs">
+              <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                <PhoneCall size={18} />
+              </div>
+              <div>
+                <h4 className="text-[11px] uppercase tracking-wider font-bold text-zinc-400">Order Hotline</h4>
+                <p className="text-xs font-bold text-zinc-800 mt-0.5">02018883300</p>
+                <span className="text-[10px] text-zinc-400 font-medium">8AM - 8PM Daily</span>
+              </div>
+            </div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSlide.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                transition={{ duration: 0.5 }}
-                className="relative w-full h-[85%] z-10"
-              >
-                <Image
-                  src={activeSlide.imageUrl.startsWith('http') 
-                    ? activeSlide.imageUrl 
-                    : `${process.env.NEXT_PUBLIC_API_URL}${activeSlide.imageUrl}`
-                  }
-                  alt={activeSlide.title}
-                  fill
-                  className="object-contain drop-shadow-[0_25px_45px_rgba(180,165,150,0.4)]"
-                  priority
-                />
-              </motion.div>
-            </AnimatePresence>
+            {/* Utility Node B: Merchant Conversion Panel */}
+            <Link href="/register" className="flex-1 bg-white border border-zinc-200 hover:border-zinc-300 rounded-xl p-4 flex items-center gap-3.5 shadow-xs transition-all group">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                <Store size={18} />
+              </div>
+              <div className="grow">
+                <h4 className="text-[11px] uppercase tracking-wider font-bold text-zinc-400">Sell on Aviorè</h4>
+                <p className="text-xs font-bold text-zinc-800 mt-0.5 group-hover:text-[#A4143D] transition-colors">Open Merchant Account</p>
+                <span className="text-[10px] text-zinc-400 font-medium">Reach millions of buyers</span>
+              </div>
+              <ChevronRight size={14} className="text-zinc-400 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+
+            {/* Utility Node C: Bold Commercial Campaign Card */}
+            <div className="flex-[2] bg-gradient-to-br from-[#A4143D] to-[#801030] rounded-xl p-5 text-white flex flex-col justify-between shadow-md relative overflow-hidden min-h-[140px] sm:min-h-0 lg:min-h-[175px]">
+              {/* Background graphic motif */}
+              <div className="absolute right-[-10px] bottom-[-10px] text-white/5 font-black text-7xl select-none uppercase tracking-tighter">SALE</div>
+              
+              <div>
+                <span className="text-[9px] font-bold tracking-[0.25em] bg-white/20 px-2 py-0.5 rounded-md uppercase">Aviorè Express</span>
+                <h3 className="text-base font-black tracking-tight mt-3 leading-tight">
+                  Free Shipping & <br />Guaranteed Delivery
+                </h3>
+              </div>
+              
+              <Link href="/shop" className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-white text-zinc-950 px-4 py-2.5 rounded-lg w-max transition-transform hover:scale-[1.02]">
+                <span>Explore Deals</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+
           </div>
 
         </div>
