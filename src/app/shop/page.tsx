@@ -8,7 +8,7 @@ import { Pagination } from "@/src/components/shop/Pagination";
 import { debounce } from "lodash";
 import { Navbar } from "../../components/navbar/Navbar";
 import { Footer } from "@/src/components/Footer";
-import { ShoppingBag, Dices } from "lucide-react"; // 🎲 Added Dices icon for interactive feel
+import { ShoppingBag, Dices } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ShopFilters {
@@ -47,9 +47,10 @@ function ShopContent() {
   
   const topAnchorRef = useRef<HTMLDivElement>(null);
 
+  // 🎲 FIX 1: Set the initial state of sort to "random" so it forces the backend `getDiscoveryProducts` dice roll on load/refresh
   const [filters, setFilters] = useState<ShopFilters>({
     search: "",
-    sort: "random", // 🎲 FIX: Default to 'random' to trigger our backend dice shuffle on initial load!
+    sort: "random", 
     page: 1,
     status: "APPROVED" 
   });
@@ -60,6 +61,8 @@ function ShopContent() {
       const activeParams = Object.fromEntries(
         Object.entries(currentFilters).filter(([_, v]) => v !== "" && v !== undefined)
       );
+      
+      // This maps directly to StorefrontService.getDiscoveryProducts(query) on the backend
       const { data } = await api.get("/products", { params: activeParams });
       
       const incomingProducts = data.products || data.data || [];
@@ -145,7 +148,7 @@ function ShopContent() {
             
             <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-zinc-200/80 shadow-sm shrink-0">
               {filters.sort === "random" ? (
-                <Dices size={13} className="text-[#E4A07A] animate-spin-slow" />
+                <Dices size={14} className="text-[#E4A07A] animate-pulse" />
               ) : (
                 <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider pl-1">Sort By</span>
               )}
@@ -156,7 +159,7 @@ function ShopContent() {
                   handleFilterReset(prev => ({ ...prev, sort: e.target.value, page: 1 }))
                 }
               >
-                {/* 🎲 New Shuffle Sorting Target Option */}
+                {/* 🎲 FIX 2: Expose the option to select shuffle sorting manually or let it sit on default */}
                 <option value="random">🎲 Explore & Shuffle</option>
                 <option value="newest">Newest Arrivals</option>
                 <option value="price_asc">Price: Low to High</option>
