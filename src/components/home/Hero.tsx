@@ -291,7 +291,7 @@ export function Hero() {
               </div>
             </div>
 
-            <Link href="/register" className="bg-white border border-zinc-200 hover:border-zinc-300 rounded-xl p-3.5 flex items-center gap-3 shadow-xs transition-all group">
+            <Link href="/become-a-vendor" className="bg-white border border-zinc-200 hover:border-zinc-300 rounded-xl p-3.5 flex items-center gap-3 shadow-xs transition-all group">
               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                 <Store size={16} />
               </div>
