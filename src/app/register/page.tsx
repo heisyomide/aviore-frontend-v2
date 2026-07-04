@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react'; // ◄ 1. Import Suspense
+import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/axios';
 import { Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
+import { SupportBot } from '@/src/components/support/SupportBot';
 
 interface RegisterInput {
   firstName: string;
@@ -14,10 +15,39 @@ interface RegisterInput {
   confirmPassword: string;
 }
 
-// ◄ 2. Move form logic into an isolated component to make it safe for static optimization
+export default function RegisterPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4 relative">
+      <div className="w-full max-w-sm bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">
+        
+        <div className="mb-8 text-center">
+          <div className="w-20 h-20 mx-auto bg-[#e0e5ec] rounded-full mb-4 shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] flex items-center justify-center">
+            <UserPlus size={30} className="text-slate-600" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-700">Create Account</h1>
+          <p className="text-xs text-slate-400 uppercase tracking-widest mt-1">Aviore Marketplace</p>
+        </div>
+
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center p-6 space-y-3">
+            <Loader2 className="animate-spin text-slate-500" size={32} />
+            <p className="text-xs text-slate-400 tracking-wide font-medium">Loading register payload context...</p>
+          </div>
+        }>
+          <RegisterFormFields />
+        </Suspense>
+
+      </div>
+
+      {/* 🚀 Mounted support bot firmly locked in the fixed window layout layer */}
+      <SupportBot />
+    </div>
+  );
+}
+
 function RegisterFormFields() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // Safe here inside the Suspense Boundary
+  const searchParams = useSearchParams();
   const { register, handleSubmit } = useForm<RegisterInput>();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -100,33 +130,33 @@ function RegisterFormFields() {
       <div className="flex gap-3">
         <input
           {...register('firstName')}
-          placeholder="first name"
+          placeholder="First Name"
           required
-          className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
+          className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 text-slate-700"
         />
         <input
           {...register('lastName')}
-          placeholder="last name"
+          placeholder="Last Name"
           required
-          className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
+          className="w-1/2 bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 text-slate-700"
         />
       </div>
 
       <input
         {...register('email')}
         type="email"
-        placeholder="email"
+        placeholder="Email Address"
         required
-        className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400"
+        className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 text-slate-700"
       />
 
       <div className="relative">
         <input
           {...register('password')}
           type={showPassword ? 'text' : 'password'}
-          placeholder="password"
+          placeholder="Password"
           required
-          className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12"
+          className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12 text-slate-700"
         />
         <button
           type="button"
@@ -141,9 +171,9 @@ function RegisterFormFields() {
         <input
           {...register('confirmPassword')}
           type={showConfirm ? 'text' : 'password'}
-          placeholder="confirm password"
+          placeholder="Confirm Password"
           required
-          className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12"
+          className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 pr-12 text-slate-700"
         />
         <button
           type="button"
@@ -154,7 +184,7 @@ function RegisterFormFields() {
         </button>
       </div>
 
-      {error && <div className="text-xs text-red-500 text-center font-semibold italic">{error}</div>}
+      {error && <div className="text-xs text-red-500 text-center font-bold uppercase tracking-wider">{error}</div>}
 
       <button
         type="submit"
@@ -164,39 +194,10 @@ function RegisterFormFields() {
         {loading ? <Loader2 className="animate-spin" size={20} /> : 'REGISTER'}
       </button>
 
-      <div className="text-center text-xs text-slate-400 mt-4">
+      <div className="text-center text-xs text-slate-400 mt-4 uppercase font-bold tracking-widest">
         Already have an account?{' '}
-        <span onClick={() => router.push('/login')} className="font-semibold text-slate-600 cursor-pointer">Login</span>
+        <span onClick={() => router.push('/login')} className="font-semibold text-slate-600 cursor-pointer hover:underline">Login</span>
       </div>
     </form>
-  );
-}
-
-// ◄ 3. Export the main container page wrapped with a Suspense fallback
-export default function RegisterPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4">
-      <div className="w-full max-w-sm bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">
-        
-        <div className="mb-8 text-center">
-          <div className="w-20 h-20 mx-auto bg-[#e0e5ec] rounded-full mb-4 shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] flex items-center justify-center">
-            <UserPlus size={30} className="text-slate-600" />
-          </div>
-          <h1 className="text-xl font-bold text-slate-700">Create Account</h1>
-          <p className="text-xs text-slate-400 uppercase tracking-widest mt-1">Aviore Marketplace</p>
-        </div>
-
-        {/* This boundary stops the Next build process from breaking */}
-        <Suspense fallback={
-          <div className="flex flex-col items-center justify-center p-6 space-y-3">
-            <Loader2 className="animate-spin text-slate-500" size={32} />
-            <p className="text-xs text-slate-400 tracking-wide font-medium">Loading register payload context...</p>
-          </div>
-        }>
-          <RegisterFormFields />
-        </Suspense>
-
-      </div>
-    </div>
   );
 }
