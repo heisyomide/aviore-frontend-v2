@@ -13,6 +13,9 @@ import { WishlistProvider } from "../components/providers/WishlistProvider";
 import { BackToTop } from "../components/ui/BackToTop";
 import { CartToast } from "@/src/components/product/CartToast";
 
+// PWA Engine Controller Injection
+import PwaManager from "@/src/components/pwa/PwaManager"; // 🌟 ADDED
+
 // Error Handling
 import GlobalErrorHandler from "../components/GlobalErrorHandler";
 
@@ -29,7 +32,7 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-// Metadata
+// Metadata Ecosystem Configuration
 export const metadata: Metadata = {
   metadataBase: new URL('https://shopaviore.store'),
 
@@ -114,35 +117,41 @@ export const metadata: Metadata = {
     icon: [
       { url: '/appicon.png' },
       { url: '/appicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' }, // 🌟 ADDED FOR PWA
     ],
-
-  
-
     apple: [
       {
-        url: '/appicon.png',
+        url: '/icons/icon-512.png', // 🌟 ADDED FOR iOS HIGH-RES APPS
         sizes: '180x180',
         type: 'image/png',
       },
     ],
   },
 
-  manifest: '/site.webmanifest',
+  // 🌟 FIXED: Points to /manifest.json to match your build output precisely
+  manifest: '/manifest.json',
+
+  // 🌟 ADDED: Tells iOS Safari to remove mobile navigation chrome layout panels
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Aviorè",
+  },
 
   category: 'shopping',
 };
 
-// Viewport
+// Viewport Setup for Ultra Fluid Mobile Controls
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover", // 🌟 ADDED: Integrates smoothly with mobile notch boundaries
+  themeColor: "#0a0a0a", // 🌟 ADDED: Matches luxury dark background fallback aesthetics
 };
 
 export default function RootLayout({
-
-  
   children,
 }: {
   children: React.ReactNode;
@@ -175,7 +184,7 @@ export default function RootLayout({
                   {children}
                 </main>
 
-                {/* Global UI */}
+                {/* Global UI Elements */}
                 <CartToast />
                 <BackToTop />
               </div>
@@ -183,6 +192,7 @@ export default function RootLayout({
             </CartSyncProvider>
           </WishlistProvider>
 
+          {/* Global Toast System */}
           {/* Global Toast System */}
           <Toaster
             position="top-right"
@@ -193,9 +203,13 @@ export default function RootLayout({
                 color: "#fff",
                 borderRadius: "12px",
                 fontSize: "12px",
+                transform: "translateY(env(safe-area-inset-top, 0px))" // 🌟 FIXED: Flattened directly onto the parent style object
               },
             }}
           />
+
+          {/* 🌟 INJECTED: Handles offline mode, updates, and custom install prompts globally */}
+          <PwaManager />
         </Providers>
       </body>
     </html>
