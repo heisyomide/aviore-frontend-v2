@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, Shield, MessageCircle, Info, ShoppingBag, Loader2, Eye, CheckSquare } from 'lucide-react';
+import { Bell, Shield, MessageCircle, Info, ShoppingBag, Loader2, Eye, CheckSquare, Radio, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { api } from '@/src/lib/axios';
 
 interface NotificationPrefs {
@@ -10,6 +10,7 @@ interface NotificationPrefs {
   chatMessages: boolean;
   storeActivity: boolean;
   priceDrops: boolean;
+  pushEnabled: boolean; // 🌟 Sync matching backend key criteria toggle
 }
 
 interface NotificationItem {
@@ -30,7 +31,18 @@ export default function VendorNotificationsPage() {
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
 
+  // 🌟 Push Activation Management HUD States
+  const [pushPermission, setPushPermission] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default');
+  const [syncingDevice, setSyncingDevice] = useState(false);
+
   useEffect(() => {
+    // Check initial layout browser capabilities matrix
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      setPushPermission('unsupported');
+    } else {
+      setPushPermission(Notification.permission);
+    }
+
     Promise.all([fetchPrefs(), fetchFeed(), fetchUnreadCount()]).finally(() => {
       setLoading(false);
     });
@@ -40,6 +52,11 @@ export default function VendorNotificationsPage() {
     try {
       const res = await api.get('/notifications/settings');
       setPrefs(res.data);
+      
+      // Auto-reconnect device credentials silently if they are verified on the lockscreen layer
+      if (Notification.permission === 'granted' && res.data.pushEnabled) {
+        navigator.serviceWorker.ready.then((reg) => syncPushDeviceToken(reg));
+      }
     } catch (err) {
       console.error("Failed to fetch vendor settings:", err);
     }
@@ -63,6 +80,75 @@ export default function VendorNotificationsPage() {
     }
   };
 
+  // 🌟 HELPER: Binary Parser Configuration Conversion
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  // 🌟 CORE PIPELINE: Intercepts browser hooks and maps straight to NestJS
+  const syncPushDeviceToken = async (registration: ServiceWorkerRegistration) => {
+    try {
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!publicVapidKey) {
+          console.warn("VAPID baseline key payload unconfigured inside environment.");
+          return;
+        }
+
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+        });
+      }
+
+      // Registers device endpoint matching your update controller endpoint criteria 
+      await api.post('/notifications/subscribe', subscription);
+    } catch (err) {
+      console.error("Backend subscription pipeline registration failed:", err);
+      throw err;
+    }
+  };
+
+  // 🌟 MANUAL INTERACTION CLICK EVENT (Required by Apple Guidelines)
+  const handleEnablePushAlerts = async () => {
+    if (pushPermission === 'unsupported') {
+      alert("Realtime hardware push architecture is unsupported inside this browser runtime profile.");
+      return;
+    }
+
+    setSyncingDevice(true);
+    try {
+      const status = await Notification.requestPermission();
+      setPushPermission(status);
+
+      if (status === 'granted') {
+        const registration = await navigator.serviceWorker.ready;
+        await syncPushDeviceToken(registration);
+        
+        // Explicitly set matching system toggle on for synchronization mapping consistency
+        if (prefs && !prefs.pushEnabled) {
+          await updateToggle('pushEnabled', true);
+        }
+      } else {
+        alert("Permission denied. Reset alerts using iPhone Settings -> Safari -> Advanced -> Feature Flags if nested.");
+      }
+    } catch (err) {
+      console.error("Hardware synchronization failed:", err);
+      alert("Could not register device to live broadcast routing gateways.");
+    } finally {
+      setSyncingDevice(false);
+    }
+  };
+
   const updateToggle = async (key: keyof NotificationPrefs, value: boolean) => {
     if (!prefs) return;
     setSaving(true);
@@ -70,6 +156,11 @@ export default function VendorNotificationsPage() {
       const newPrefs = { ...prefs, [key]: value };
       setPrefs(newPrefs);
       await api.patch('/notifications/settings', { [key]: value });
+
+      // If user toggles hardware layer manually, check device validation layers match
+      if (key === 'pushEnabled' && value && pushPermission !== 'granted') {
+        handleEnablePushAlerts();
+      }
     } catch (err) {
       console.error("Failed to save vendor preference:", err);
       fetchPrefs();
@@ -130,6 +221,62 @@ export default function VendorNotificationsPage() {
         )}
       </div>
 
+      {/* 🌟 NEW HARDWARE SYNC HUD GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="md:col-span-2 bg-[#111113] border border-zinc-900 rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-xl">
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold tracking-widest text-zinc-400 uppercase font-mono flex items-center gap-2">
+              <Radio size={12} className={pushPermission === 'granted' ? 'text-emerald-500 animate-pulse' : 'text-zinc-600'} />
+              Hardware Lockscreen Interceptor
+            </h4>
+            <p className="text-xs text-zinc-500 font-light leading-relaxed">
+              Enable low-overhead, native system background message listeners. Allows incoming transmissions to securely wake up your phone viewport context even when the web application is fully closed.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {pushPermission !== 'granted' ? (
+              <button
+                type="button"
+                onClick={handleEnablePushAlerts}
+                disabled={syncingDevice}
+                className="bg-zinc-100 text-zinc-950 hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 text-xs font-bold px-4 py-2 rounded-xl uppercase tracking-widest transition-all font-mono flex items-center gap-2 cursor-pointer focus:outline-none"
+              >
+                {syncingDevice && <Loader2 size={12} className="animate-spin" />}
+                Authorize Live Connection
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 bg-emerald-950/20 border border-emerald-900/60 text-emerald-400 text-[10px] font-mono font-bold tracking-widest px-3 py-1.5 rounded-lg uppercase">
+                <CheckCircle2 size={12} />
+Ecosystem Transmissions Active
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-[#111113] border border-zinc-900 rounded-2xl p-5 flex flex-col justify-between shadow-xl">
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold tracking-widest text-zinc-400 uppercase font-mono">Gateway Status</h4>
+            <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-wider">Telemetry Diagnostic Core</p>
+          </div>
+          
+          <div className="space-y-2 pt-4 border-t border-zinc-900/80">
+            <div className="flex justify-between items-center text-[10px] font-mono">
+              <span className="text-zinc-500 uppercase">System Sync:</span>
+              <span className={pushPermission === 'granted' ? 'text-emerald-500 font-bold' : 'text-amber-500 font-bold'}>
+                {pushPermission.toUpperCase()}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-mono">
+              <span className="text-zinc-500 uppercase">Database Link:</span>
+              <span className={prefs?.pushEnabled ? 'text-emerald-500 font-bold' : 'text-zinc-600'}>
+                {prefs?.pushEnabled ? 'CONNECTED' : 'STANDBY'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* CHANNELS CONFIGURATION TOGGLES */}
       {prefs && (
         <div className="space-y-4">
@@ -142,6 +289,8 @@ export default function VendorNotificationsPage() {
               <VendorRow label="Order Transactions" sub="Real-time distribution metrics, status routing changes, and payload confirmations." checked={prefs.orderUpdates} onChange={(val) => updateToggle('orderUpdates', val)} />
               <VendorRow label="Customer Communication" sub="Direct secure pipeline messaging alerts generated from downstream buyer sockets." checked={prefs.chatMessages} onChange={(val) => updateToggle('chatMessages', val)} />
               <VendorRow label="Store Activity Metrics" sub="Inventory margin ceilings, continuous payout logs, and analytical framework status changes." checked={prefs.storeActivity} onChange={(val) => updateToggle('storeActivity', val)} />
+              {/* 🌟 INJECTED MASTER HARDWARE SWITCH FOR CONFIGURATION PARITY */}
+              <VendorRow label="System Hardware Alerts" sub="Master pipeline driver required to trigger real-time device screen notifications." checked={prefs.pushEnabled} onChange={(val) => updateToggle('pushEnabled', val)} />
             </div>
           </div>
         </div>
