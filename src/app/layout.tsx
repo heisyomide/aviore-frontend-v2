@@ -96,7 +96,7 @@ export const metadata: Metadata = {
       'Discover trending fashion, gadgets, beauty products and global marketplace deals on Aviorè.',
     images: [
       {
-        url: '/appicon.png',
+        url: '/icons/appicon.png',
         width: 1200,
         height: 630,
         alt: 'Aviorè Marketplace',
@@ -109,14 +109,14 @@ export const metadata: Metadata = {
     title: 'Aviorè Marketplace',
     description:
       'Fashion, beauty, electronics & luxury deals from trusted vendors.',
-    images: ['/appicon.png'],
+    images: ['/icons/appicon.png'],
     creator: '@aviorè',
   },
 
   icons: {
     icon: [
-      { url: '/appicon.png' },
-      { url: '/appicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/icons/appicon.png' },
+      { url: '/icons/appicon.png', type: 'image/png', sizes: '32x32' },
       { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' }, // 🌟 ADDED FOR PWA
     ],
     apple: [
