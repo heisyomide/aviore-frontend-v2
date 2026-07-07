@@ -6,37 +6,52 @@ import axios from 'axios';
 export default function PwaManager() {
   const [isOnline, setIsOnline] = useState(true);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [showFloatingBtn, setShowFloatingBtn] = useState(false);
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
-  const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied'>('default');
+  const [showIosGuide, setShowIosGuide] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
 
   useEffect(() => {
-    // 1. Network Sync Handlers
+    // 1. Detect Environment Frameworks & Already Installed Statuses
+    if (typeof window === 'undefined') return;
+
+    const isInstalled = 
+      window.matchMedia('(display-mode: standalone)').matches || 
+      (window.navigator as any).standalone === true;
+
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isAppleMobile = /iphone|ipad|ipod/.test(ua);
+    setIsIosDevice(isAppleMobile);
+
+    // If already running standalone inside the installed app, hide everything
+    if (isInstalled) {
+      setShowFloatingBtn(false);
+    } else {
+      // On iOS, we show the floating button automatically since there's no native event trigger
+      if (isAppleMobile) {
+        setShowFloatingBtn(true);
+      }
+    }
+
+    // 2. Network Status Controllers
     setIsOnline(navigator.onLine);
     const goOnline = () => setIsOnline(true);
     const goOffline = () => setIsOnline(false);
-
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
 
-    // 2. Read Native Notification Permissions
-    if ('Notification' in window) {
-      setPushStatus(Notification.permission);
-    }
-
-    // 3. Prevent standard prompt and catch install target reference hook
+    // 3. Catch Android / Chrome Native Install Triggers
     const captureInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (!window.matchMedia('(display-mode: standalone)').matches) {
-        setShowInstallBtn(true);
+      if (!isInstalled) {
+        setShowFloatingBtn(true);
       }
     };
-
     window.addEventListener('beforeinstallprompt', captureInstallPrompt);
 
-    // 4. Lifecycle Controller Matrix Engine
-    if ('serviceWorker' in navigator && typeof window !== 'undefined') {
+    // 4. Service Worker Watchers & Push Tokens Re-Sync
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
@@ -49,7 +64,7 @@ export default function PwaManager() {
           }
         });
 
-        if (Notification.permission === 'granted') {
+        if ('Notification' in window && Notification.permission === 'granted') {
           syncPushTokenWithBackend(registration).catch(console.error);
         }
       });
@@ -62,28 +77,24 @@ export default function PwaManager() {
     };
   }, []);
 
-  function urlBase64ToUint8Array(base64String: string) {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  }
-
   const syncPushTokenWithBackend = async (registration: ServiceWorkerRegistration) => {
     try {
       let subscription = await registration.pushManager.getSubscription();
-      
       if (!subscription) {
         const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!publicVapidKey) return;
 
+        const padding = '='.repeat((4 - (publicVapidKey.length % 4)) % 4);
+        const base64 = (publicVapidKey + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+          applicationServerKey: outputArray,
         });
       }
 
@@ -99,138 +110,109 @@ export default function PwaManager() {
         subscription,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      console.log('✅ Device push gateway endpoints registered safely.');
     } catch (err) {
-      console.error('Failed to link device token to the server:', err);
+      console.error('Push registry token re-sync failed:', err);
     }
   };
 
-  const requestNotificationAccess = async () => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-      alert('Push notifications are unsupported on this browser profile.');
+  const handleInstallTrigger = async () => {
+    if (isIosDevice) {
+      // Open Apple Instruction Overlay Sheets
+      setShowIosGuide(true);
       return;
     }
 
-    const permission = await Notification.requestPermission();
-    setPushStatus(permission);
-
-    if (permission === 'granted') {
-      const registration = await navigator.serviceWorker.ready;
-      await syncPushTokenWithBackend(registration);
-    }
-  };
-
-  const triggerNativeInstall = async () => {
     if (!deferredPrompt) return;
+    
+    // Trigger Clean Chrome Installation Prompt Dialogue Box
     deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
     if (choice.outcome === 'accepted') {
-      setShowInstallBtn(false);
+      setShowFloatingBtn(false);
     }
     setDeferredPrompt(null);
   };
 
   return (
     <>
-      {/* 1. TOP DISPATCH: Offline Status HUD Bar */}
+      {/* 1. TOP DISPATCH: Network Status Bar Indicator */}
       {!isOnline && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100000] bg-red-950/95 border border-red-800/60 backdrop-blur-md px-4 py-2.5 rounded-full flex items-center gap-2.5 shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-top-2 max-w-[90%] w-auto">
-          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-          <span className="text-red-200 tracking-widest text-[10px] font-medium font-mono uppercase whitespace-nowrap">
-            Offline Mode — Cache Active
-          </span>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100000] bg-red-950/95 border border-red-900/40 backdrop-blur px-4 py-2 rounded-full flex items-center gap-2 shadow-2xl transition-all duration-300 max-w-[90%]">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+          <span className="text-red-200 text-[10px] tracking-widest font-mono font-medium uppercase whitespace-nowrap">Offline — Local Cache Active</span>
         </div>
       )}
 
       {/* 2. TOP DISPATCH: Over-The-Air Update Banner */}
       {showUpdateBanner && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[99999] bg-[#0a0a0a]/95 border border-zinc-800/80 backdrop-blur-md p-3.5 rounded-xl flex items-center justify-between gap-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-sm w-[92%] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex flex-col gap-0.5">
-            <h5 className="text-white text-xs font-semibold tracking-wider uppercase font-mono">System Update</h5>
-            <p className="text-zinc-400 text-[11px] font-light">A new marketplace build is available.</p>
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[99999] bg-[#0a0a0a]/95 border border-zinc-800/80 backdrop-blur-md p-3 rounded-xl flex items-center justify-between gap-4 shadow-2xl max-w-sm w-[92%] animate-in fade-in slide-in-from-top-3">
+          <div className="flex flex-col">
+            <h5 className="text-white text-xs font-bold tracking-wide uppercase font-mono">Build Update</h5>
+            <p className="text-zinc-400 text-[10px] font-light mt-0.5">A new workspace version has been deployed.</p>
           </div>
           <button 
             onClick={() => window.location.reload()}
-            className="bg-white text-black font-bold text-[11px] px-3.5 py-1.5 rounded-lg tracking-wider hover:bg-zinc-200 transition-all uppercase shrink-0 cursor-pointer"
+            className="bg-white text-black font-bold text-[10px] px-3 py-1.5 rounded-lg tracking-wider hover:bg-zinc-200 transition-all uppercase shrink-0 cursor-pointer"
           >
             Update
           </button>
         </div>
       )}
 
-      {/* 3. BOTTOM HUD STACK: Unifies Custom Install Prompts & Notifications */}
-      {(showInstallBtn || pushStatus === 'default') && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100%-32px)] max-w-[420px] flex flex-col gap-3 pb-[env(safe-area-inset-bottom,0px)]">
+      {/* 3. PREMIUM FLOATING UTILITY TRIGGER ACTION BUTTON */}
+      {showFloatingBtn && (
+        <div className="fixed bottom-6 right-6 z-[9998] flex flex-col pb-[env(safe-area-inset-bottom,0px)] pr-[env(safe-area-inset-right,0px)]">
+          <button
+            onClick={handleInstallTrigger}
+            className="flex items-center gap-2 bg-[#0a0a0a] hover:bg-[#141414] text-white border border-zinc-800 p-3 px-4 rounded-full font-mono text-[11px] font-bold tracking-widest uppercase shadow-[0_10px_30px_rgba(0,0,0,0.5)] active:scale-95 transition-all duration-150 group cursor-pointer"
+            aria-label="Install Aviorè Ecosystem Platform App"
+          >
+            <span className="text-sm group-hover:translate-y-[-1px] transition-transform duration-200">
+              {isIosDevice ? '📱' : '⬇'}
+            </span>
+            <span>Install Aviorè</span>
+          </button>
+        </div>
+      )}
+
+      {/* 4. PREMIUM IOS ACQUISITION SHEETS OVERLAY SHEET */}
+      {showIosGuide && (
+        <div className="fixed inset-0 z-[100000] flex items-end justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          {/* Dismiss Back-layer */}
+          <div className="absolute inset-0" onClick={() => setShowIosGuide(false)} />
           
-          {/* CRITICAL UPGRADE: Render Native App Installer Panel first */}
-          {showInstallBtn && (
-            <div className="bg-[#0a0a0a]/95 border border-zinc-800/50 backdrop-blur-md p-4 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] flex flex-col gap-3.5 animate-in slide-in-from-bottom-6 duration-300 border-l-4 border-l-white">
-              <div className="flex items-start gap-3.5">
-                <img
-                  src="/icons/icon-192.png"
-                  alt="Aviorè"
-                  className="w-11 h-11 rounded-xl object-cover bg-zinc-900 border border-zinc-800 shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-white text-xs font-bold tracking-widest uppercase font-mono">
-                    Aviorè App Installation
-                  </h4>
-                  <p className="text-zinc-400 text-[11px] font-light leading-relaxed mt-0.5">
-                    Add Aviorè to your home screen for an immersive, badgeless full-screen workspace workflow experience.
-                  </p>
-                </div>
+          {/* Luxury Card Box layout */}
+          <div className="relative w-full max-w-sm bg-[#0a0a0a] border border-zinc-900 rounded-2xl p-5 shadow-[0_-20px_50px_rgba(0,0,0,0.6)] flex flex-col gap-4 text-center animate-in slide-in-from-bottom-8 duration-300 mb-2">
+            <div className="flex flex-col items-center gap-1.5">
+              <img 
+                src="/icons/icon-192.png" 
+                alt="Aviorè Logo" 
+                className="w-12 h-12 rounded-xl object-cover border border-zinc-800 bg-zinc-900 shadow-inner mb-1"
+              />
+              <h3 className="text-white text-xs font-bold font-mono tracking-widest uppercase">Install Aviorè Mobile</h3>
+              <p className="text-zinc-400 text-[11px] font-light leading-relaxed max-w-[240px]">
+                Enjoy native interactions and full-screen luxury display capabilities on iOS.
+              </p>
+            </div>
+
+            <div className="bg-zinc-900/40 border border-zinc-900/80 rounded-xl p-3.5 text-left flex flex-col gap-3 font-mono text-[10px] tracking-wide text-zinc-300">
+              <div className="flex items-start gap-3">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-white text-[9px] font-bold">1</span>
+                <p className="leading-normal">Tap the native Safari <strong className="text-white">Share icon</strong> (square box with an upward arrow) in the browser toolbar panel.</p>
               </div>
-              <div className="flex justify-end gap-2 text-xs font-medium">
-                <button
-                  onClick={() => setShowInstallBtn(false)}
-                  className="text-zinc-500 hover:text-white px-3 py-1.5 transition-colors cursor-pointer"
-                >
-                  Dismiss
-                </button>
-                <button
-                  onClick={triggerNativeInstall}
-                  className="bg-white hover:bg-zinc-200 text-black font-bold px-4 py-1.5 rounded-lg transition-all tracking-wider uppercase text-[11px] cursor-pointer shadow-sm"
-                >
-                  Install Now
-                </button>
+              <div className="flex items-start gap-3">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-white text-[9px] font-bold">2</span>
+                <p className="leading-normal">Scroll through the option list and tap <strong className="text-white">"Add to Home Screen"</strong>.</p>
               </div>
             </div>
-          )}
 
-          {/* Realtime Alert Permissions Prompt Panel */}
-          {pushStatus === 'default' && (
-            <div className="bg-[#0a0a0a]/95 border border-zinc-800/50 backdrop-blur-md p-4 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] flex flex-col gap-3.5 animate-in slide-in-from-bottom-6 duration-300 border-l-4 border-l-blue-600">
-              <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-blue-950/50 border border-blue-900/50 flex items-center justify-center text-blue-400 text-lg shrink-0">
-                  🔔
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-white text-xs font-bold tracking-widest uppercase font-mono">
-                    Realtime System Alerts
-                  </h4>
-                  <p className="text-zinc-400 text-[11px] font-light leading-relaxed mt-0.5">
-                    Authorize lockscreen alerts for incoming chat messages, vendor orders, and secure account updates.
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 text-xs font-medium">
-                <button
-                  onClick={() => setPushStatus('denied')}
-                  className="text-zinc-500 hover:text-white px-3 py-1.5 transition-colors cursor-pointer"
-                >
-                  Not Now
-                </button>
-                <button
-                  onClick={requestNotificationAccess}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-1.5 rounded-lg transition-all tracking-wider uppercase text-[11px] cursor-pointer shadow-sm"
-                >
-                  Enable Alerts
-                </button>
-              </div>
-            </div>
-          )}
-
+            <button
+              onClick={() => setShowIosGuide(false)}
+              className="w-full bg-white hover:bg-zinc-200 text-black font-mono font-bold text-xs tracking-widest uppercase py-3 rounded-xl transition-all shadow-sm cursor-pointer"
+            >
+              Got It
+            </button>
+          </div>
         </div>
       )}
     </>
