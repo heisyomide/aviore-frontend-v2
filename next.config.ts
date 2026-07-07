@@ -2,13 +2,14 @@ import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 
 // 1. Initialize the PWA wrapper with your production settings
+// 1. Initialize the PWA wrapper with your production settings
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development", // Disable in dev mode to avoid caching frustrations
+  disable: process.env.NODE_ENV === "development", 
   register: true,
+  customWorkerSrc: "workers", // 👈 CHANGED from customWorkerDir to customWorkerSrc, matching your 'workers' folder name
   workboxOptions: {
-    skipWaiting: true, // 🌟 FIXED: Moved inside workboxOptions to satisfy TypeScript definitions
-    // Exclude API layers, admin dashboards, and dynamic transactional screens from offline caching
+    skipWaiting: true, 
     exclude: [
       /.*\/api\/.*/,
       /.*\/checkout\/.*/,
