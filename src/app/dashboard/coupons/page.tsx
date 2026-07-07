@@ -59,91 +59,78 @@ function CouponTicket({
   copiedCode: string | null;
   onCopy: (code: string) => void;
 }) {
-  const stubLines = discountLabel(coupon).split('\n');
+  const lines = discountLabel(coupon).split('\n');
   const validUntil = coupon.endDate
-    ? new Date(coupon.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? new Date(coupon.endDate).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric',
+      })
     : 'No expiry';
 
   return (
     <div
-      className={`relative flex rounded-2xl overflow-hidden border transition-all duration-200 ${
+      className={`flex rounded-2xl overflow-visible border transition-all duration-200 ${
         expired
           ? 'opacity-50 grayscale border-zinc-100 bg-zinc-50'
-          : 'border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-100/60'
+          : 'border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-md'
       }`}
     >
-      {/* ── Stub (left) ── */}
+      {/* ── Stub ── */}
       <div
-        className={`relative flex flex-col items-center justify-between py-5 px-3 shrink-0 select-none ${
+        className={`relative flex flex-col items-center justify-center gap-0.5 shrink-0 select-none rounded-l-2xl ${
           expired ? 'bg-zinc-400' : 'bg-[#A4143D]'
         }`}
-        style={{ width: 72 }}
+        style={{ width: 68 }}
       >
-        {/* Type badge rotated */}
-        <span
-          className="text-white/60 font-mono text-[8px] tracking-widest uppercase whitespace-nowrap"
-          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', letterSpacing: '0.18em' }}
-        >
-          {typeLabel(coupon)}
-        </span>
+        {lines.map((line, i) => (
+          <span
+            key={i}
+            className="text-white font-black leading-none text-center"
+            style={{ fontSize: i === 0 && line.length <= 3 ? 28 : 18 }}
+          >
+            {line}
+          </span>
+        ))}
 
-        {/* Big discount value */}
-        <div className="flex flex-col items-center gap-0 text-center">
-          {stubLines.map((line, i) => (
-            <span
-              key={i}
-              className="text-white font-black leading-none"
-              style={{ fontSize: line.length > 4 ? 18 : 24 }}
-            >
-              {line}
-            </span>
-          ))}
-        </div>
-
-        {/* Ticket icon at bottom */}
-        <Ticket size={14} className="text-white/40" strokeWidth={1.5} />
-
-        {/* Notch cutouts — matched to white card bg */}
-        <div className="absolute -right-2 top-[calc(50%-10px)] w-5 h-5 rounded-full bg-zinc-50 border border-zinc-200 z-10" />
+        {/* Notch — colour must match the page background behind the card */}
+        <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-zinc-200 z-10" />
       </div>
 
-      {/* ── Body (right) ── */}
-      <div
-        className="flex flex-col justify-between flex-1 py-4 pl-4 pr-4 gap-3 border-l border-dashed border-zinc-200"
-      >
-        {/* Top: title + meta */}
-        <div>
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="text-base font-black text-zinc-900 uppercase tracking-tight leading-tight">
-              {discountTitle(coupon)}
-            </h3>
-            <div className="flex items-center gap-1 shrink-0">
-              <span className={`w-1.5 h-1.5 rounded-full ${typeDot(coupon.type)}`} />
-              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
-                {typeLabel(coupon)}
-              </span>
-            </div>
-          </div>
+      {/* ── Body ── */}
+      <div className="flex-1 flex flex-col gap-2.5 py-3.5 pl-4 pr-3.5 border-l border-dashed border-zinc-200">
 
-          <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">
-            {coupon.description || 'Applies at checkout on qualifying orders.'}
-          </p>
-
-          <div className="flex items-center gap-3 mt-2.5 flex-wrap">
-            <span className="text-[10px] font-semibold text-zinc-400 bg-zinc-50 border border-zinc-100 px-2 py-0.5 rounded-md">
-              Min ₦{Number(coupon.minOrderValue || 0).toLocaleString()}
-            </span>
-            <span className="text-[10px] text-zinc-400">
-              {expired ? `Expired` : `Valid till`} {validUntil}
+        {/* Title row */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-[15px] font-black text-zinc-900 uppercase tracking-tight leading-tight">
+            {discountTitle(coupon)}
+          </h3>
+          <div className="flex items-center gap-1 shrink-0 mt-0.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${typeDot(coupon.type)}`} />
+            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">
+              {typeLabel(coupon)}
             </span>
           </div>
         </div>
 
-        {/* Bottom: code + actions */}
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-zinc-100">
+        {/* Description */}
+        <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-1">
+          {coupon.description || 'Applies at checkout on qualifying orders.'}
+        </p>
+
+        {/* Meta pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] font-semibold text-zinc-500 bg-zinc-50 border border-zinc-100 px-2 py-0.5 rounded-md">
+            Min ₦{Number(coupon.minOrderValue || 0).toLocaleString()}
+          </span>
+          <span className="text-[10px] text-zinc-400">
+            {expired ? 'Expired' : 'Valid till'} {validUntil}
+          </span>
+        </div>
+
+        {/* Code + actions */}
+        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-zinc-100">
           <div>
             <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-300 mb-0.5">Code</p>
-            <p className="text-sm font-black tracking-wider font-mono text-zinc-900 select-all uppercase">
+            <p className="text-sm font-black font-mono tracking-widest text-zinc-900 select-all uppercase">
               {coupon.code}
             </p>
           </div>
@@ -157,12 +144,11 @@ function CouponTicket({
               >
                 {copiedCode === coupon.code
                   ? <Check size={14} className="text-emerald-600" />
-                  : <Copy size={14} className="text-zinc-500" />
-                }
+                  : <Copy size={14} className="text-zinc-500" />}
               </button>
               <Link
                 href="/shop"
-                className="h-9 flex items-center gap-1.5 px-4 rounded-xl bg-zinc-900 hover:bg-[#A4143D] text-white text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95"
+                className="h-9 flex items-center px-4 rounded-xl bg-zinc-900 hover:bg-[#A4143D] text-white text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95"
               >
                 Redeem
               </Link>

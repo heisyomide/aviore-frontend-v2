@@ -7,37 +7,47 @@ import OrderCard from '../../../components/dashboard/OrderCard';
 import OrderDetailsModal from '../../../components/dashboard/OrderDetailsModal';
 import ReviewModal from '../../../components/dashboard/ReviewModal';
 import ReturnRequestModal from '../../../components/dashboard/ReturnRequestModal';
-import { Loader2, Package, Search, Inbox, ArrowLeft } from 'lucide-react';
+import { Loader2, Package, Search, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 type OrderStatus = 'all' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
 
+const TABS: { value: OrderStatus; label: string }[] = [
+  { value: 'all',       label: 'All'       },
+  { value: 'processing', label: 'Processing' },
+  { value: 'shipped',   label: 'Shipped'   },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
 export default function OrdersPage() {
   return (
-    <Suspense fallback={<LoadingRegistry />}>
+    <Suspense fallback={<PageLoader />}>
       <OrdersContent />
     </Suspense>
   );
 }
 
 function OrdersContent() {
-  const router = useRouter();
+  const router      = useRouter();
   const searchParams = useSearchParams();
-  const intent = searchParams.get('intent') as 'chat' | 'return' | null;
+  const intent      = searchParams.get('intent') as 'chat' | 'return' | null;
 
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders,    setOrders]    = useState<any[]>([]);
+  const [loading,   setLoading]   = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [selectedProductToRate, setSelectedProductToRate] = useState<{id: string, title: string} | null>(null);
-  const [selectedReturnOrder, setSelectedReturnOrder] = useState<any | null>(null);
-  const [isSettling, setIsSettling] = useState<string | null>(null);
+  const [query,     setQuery]     = useState('');
 
-  const selectedOrder = useMemo(() => 
-    orders.find(o => o.id === selectedOrderId), 
-  [orders, selectedOrderId]);
+  const [selectedOrderId,       setSelectedOrderId]       = useState<string | null>(null);
+  const [selectedProductToRate, setSelectedProductToRate] = useState<{ id: string; title: string } | null>(null);
+  const [selectedReturnOrder,   setSelectedReturnOrder]   = useState<any | null>(null);
+  const [isSettling,            setIsSettling]            = useState<string | null>(null);
+
+  const selectedOrder = useMemo(
+    () => orders.find(o => o.id === selectedOrderId),
+    [orders, selectedOrderId],
+  );
 
   useEffect(() => {
     if (intent === 'return') setActiveTab('delivered');
@@ -47,10 +57,10 @@ function OrdersContent() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/orders/my-history');
-      setOrders(response.data);
-    } catch (error) {
-      toast.error("Failed to sync your order history.");
+      const res = await api.get('/orders/my-history');
+      setOrders(res.data);
+    } catch {
+      toast.error('Could not load orders', { description: 'Check your connection and try again.' });
     } finally {
       setLoading(false);
     }
@@ -59,168 +69,203 @@ function OrdersContent() {
   const handleConfirmReceipt = async (orderItemId: string) => {
     try {
       setIsSettling(orderItemId);
-      const response = await api.post(`/orders/${orderItemId}/confirm-receipt`);
-      if (response.data.success) {
-        toast.success("Receipt Confirmed", { description: "Funds released to vendor." });
+      const res = await api.post(`/orders/${orderItemId}/confirm-receipt`);
+      if (res.data.success) {
+        toast.success('Receipt confirmed', { description: 'Payment released to vendor.' });
         await fetchOrders();
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Confirmation failed.");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Confirmation failed.');
     } finally {
       setIsSettling(null);
     }
   };
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order: any) => {
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return orders.filter(order => {
       const status = order.status.toLowerCase();
-      const matchesTab = activeTab === 'all' || 
+      const matchTab =
+        activeTab === 'all' ||
         (activeTab === 'processing' && (status === 'processing' || status === 'paid')) ||
         status === activeTab;
-
-      const searchLower = searchQuery.toLowerCase();
-      return matchesTab && (
-        order.id.toLowerCase().includes(searchLower) ||
-        (order.orderNumber && order.orderNumber.toLowerCase().includes(searchLower))
-      );
+      const matchSearch =
+        !q ||
+        order.id.toLowerCase().includes(q) ||
+        (order.orderNumber && order.orderNumber.toLowerCase().includes(q));
+      return matchTab && matchSearch;
     });
-  }, [activeTab, orders, searchQuery]);
+  }, [activeTab, orders, query]);
 
-  const handleBackNavigation = () => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push('/');
-    }
-  };
-
-  if (loading) return <LoadingRegistry />;
+  if (loading) return <PageLoader />;
 
   return (
-    <div className="w-full min-h-screen bg-white px-4 md:px-8 py-10 text-zinc-950">
-      <div className="w-full max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-top-1 duration-500">
-        
-        {/* ─── GLOBAL STANDALONE NAVIGATION HEADER ─── */}
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-6">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={handleBackNavigation}
-                className="p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-900 active:scale-95 transition-all shrink-0"
-                aria-label="Navigate backward"
-              >
-                <ArrowLeft size={16} strokeWidth={2.5} />
-              </button>
-              <div className="space-y-1">
-                <h1 className="text-2xl md:text-3xl font-black text-zinc-900 uppercase tracking-tight leading-none">
-                  Your Orders
-                </h1>
-                <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-[0.2em]">
-                  Registry Account // {filteredOrders.length} Positions Verified
-                </p>
-              </div>
-            </div>
-            
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-600">
-              <Package size={14} />
-              <span className="text-[9px] font-black uppercase tracking-widest">Secure View</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-white pb-28 font-sans antialiased">
 
-          {/* ─── FLAT UTILITIES PANEL ─── */}
-          <div className="relative group w-full">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-[#A4143D] transition-colors" size={16} />
-            <input 
-              type="text"
-              placeholder="Filter transactions by index number or reference code..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-6 py-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-zinc-400 transition-all uppercase placeholder:text-zinc-400"
-            />
+      {/* ── Header ── */}
+      <div className="mb-8">
+        <button
+          onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))}
+          className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-400 hover:text-zinc-700 mb-5 transition-colors"
+        >
+          <ArrowLeft size={13} /> Back
+        </button>
+
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Package size={11} className="text-[#A4143D]" />
+              <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#A4143D]">
+                Order History
+              </span>
+            </div>
+            <h1 className="text-3xl font-black uppercase tracking-tighter text-zinc-900 leading-none">
+              Your Orders
+            </h1>
           </div>
+          <span className="text-[10px] font-mono text-zinc-400 pb-1">
+            {filtered.length} order{filtered.length !== 1 ? 's' : ''}
+          </span>
         </div>
+      </div>
 
-        {/* ─── SCROLLABLE FLAT STATUS SELECTOR ─── */}
-        <div className="flex gap-8 border-b border-zinc-100 overflow-x-auto no-scrollbar scroll-smooth">
-          {(['all', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'] as OrderStatus[]).map((tab) => (
+      {/* ── Search ── */}
+      <div className="relative mb-6">
+        <Search
+          size={15}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
+        />
+        <input
+          type="text"
+          placeholder="Search by order number or ID…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 text-sm bg-zinc-50 border border-zinc-200 rounded-xl outline-none focus:bg-white focus:border-zinc-400 transition-all placeholder:text-zinc-400"
+        />
+      </div>
+
+      {/* ── Tabs ── */}
+      <div className="flex gap-0 border-b border-zinc-100 mb-6 overflow-x-auto no-scrollbar">
+        {TABS.map(({ value, label }) => {
+          const count = value === 'all'
+            ? orders.length
+            : orders.filter(o => {
+                const s = o.status.toLowerCase();
+                return value === 'processing'
+                  ? s === 'processing' || s === 'paid'
+                  : s === value;
+              }).length;
+
+          return (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-4 text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
-                activeTab === tab ? 'text-zinc-950 font-black' : 'text-zinc-400 hover:text-zinc-600'
+              key={value}
+              onClick={() => setActiveTab(value)}
+              className={`relative pb-3 mr-5 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${
+                activeTab === value ? 'text-zinc-900' : 'text-zinc-300 hover:text-zinc-500'
               }`}
             >
-              {tab}
-              {activeTab === tab && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-zinc-950 rounded-full" />
+              {label}
+              {count > 0 && (
+                <span className={`ml-1.5 text-[9px] font-mono px-1.5 py-0.5 rounded-md ${
+                  activeTab === value ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-400'
+                }`}>
+                  {count}
+                </span>
+              )}
+              {activeTab === value && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-zinc-900 rounded-t-full" />
               )}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* ─── CLEAN ORDER REGISTRY (NO DENSE CARDS) ─── */}
+      {/* ── Order List ── */}
+      {filtered.length > 0 ? (
         <div className="divide-y divide-zinc-100">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map((order: any) => {
-              const firstItem = order.items?.[0];
-              
-              return (
-                <div key={order.id} className="py-6 first:pt-0 last:pb-0">
-                  <OrderCard
-                    fullId={order.id}
-                    id={order.orderNumber || order.id.slice(-8).toUpperCase()}
-                    date={new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    amount={Number(order.totalAmount)}
-                    status={order.status.toLowerCase() as any}
-                    vendorId={order.vendorId}
-                    onOpenDetails={(id) => setSelectedOrderId(id)}
-                    onConfirmReceipt={() => firstItem && handleConfirmReceipt(firstItem.id)}
-                    isSettling={isSettling === firstItem?.id}
-                    onRateProduct={() => firstItem && setSelectedProductToRate({
-                      id: firstItem.productId,
-                      name: firstItem.product.title
-                    } as any)}
-                    onReturnRequest={() => firstItem && setSelectedReturnOrder({
+          {filtered.map(order => {
+            const firstItem = order.items?.[0];
+            return (
+              <div key={order.id} className="py-5 first:pt-0">
+                <OrderCard
+                  fullId={order.id}
+                  id={order.orderNumber || order.id.slice(-8).toUpperCase()}
+                  date={new Date(order.createdAt).toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })}
+                  amount={Number(order.totalAmount)}
+                  status={order.status.toLowerCase() as any}
+                  vendorId={order.vendorId}
+                  onOpenDetails={id => setSelectedOrderId(id)}
+                  onConfirmReceipt={() => firstItem && handleConfirmReceipt(firstItem.id)}
+                  isSettling={isSettling === firstItem?.id}
+                  onRateProduct={() =>
+                    firstItem &&
+                    setSelectedProductToRate({ id: firstItem.productId, name: firstItem.product.title } as any)
+                  }
+                  onReturnRequest={() =>
+                    firstItem &&
+                    setSelectedReturnOrder({
                       id: order.id,
                       vendorId: order.vendorId,
-                      productTitle: firstItem.product.title
-                    })}
-                  />
-                </div>
-              );
-            })
-          ) : (
-            <EmptyRegistry />
-          )}
+                      productTitle: firstItem.product.title,
+                    })
+                  }
+                />
+              </div>
+            );
+          })}
         </div>
+      ) : (
+        <EmptyOrders hasQuery={!!query} />
+      )}
 
-        {/* ─── TRANSACTION LAYER MODALS ─── */}
-        {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrderId(null)} />}
-        {selectedProductToRate && <ReviewModal product={selectedProductToRate as any} onClose={() => setSelectedProductToRate(null)} onSuccess={fetchOrders} />}
-        {selectedReturnOrder && <ReturnRequestModal order={selectedReturnOrder} onClose={() => setSelectedReturnOrder(null)} onSuccess={fetchOrders} />}
-      </div>
+      {/* ── Modals ── */}
+      {selectedOrder && (
+        <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrderId(null)} />
+      )}
+      {selectedProductToRate && (
+        <ReviewModal
+          product={selectedProductToRate as any}
+          onClose={() => setSelectedProductToRate(null)}
+          onSuccess={fetchOrders}
+        />
+      )}
+      {selectedReturnOrder && (
+        <ReturnRequestModal
+          order={selectedReturnOrder}
+          onClose={() => setSelectedReturnOrder(null)}
+          onSuccess={fetchOrders}
+        />
+      )}
     </div>
   );
 }
 
-function LoadingRegistry() {
+function PageLoader() {
   return (
-    <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-4 bg-white">
-      <Loader2 className="animate-spin text-zinc-950" size={32} />
-      <p className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400 animate-pulse">Retrieving Archives</p>
+    <div className="flex h-[60vh] flex-col items-center justify-center gap-3">
+      <Loader2 className="animate-spin text-zinc-400" size={20} strokeWidth={1.5} />
+      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Loading orders</span>
     </div>
   );
 }
 
-function EmptyRegistry() {
+function EmptyOrders({ hasQuery }: { hasQuery: boolean }) {
   return (
-    <div className="py-32 flex flex-col items-center justify-center gap-4 text-center">
-      <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400">
-        <Inbox size={20} />
+    <div className="flex flex-col items-center justify-center py-20 gap-4 border border-dashed border-zinc-200 rounded-2xl text-center bg-zinc-50/30">
+      <div className="w-14 h-14 rounded-2xl bg-white border border-zinc-100 flex items-center justify-center">
+        <ShoppingBag size={22} className="text-zinc-300" strokeWidth={1.5} />
       </div>
-      <div className="space-y-1">
-        <p className="text-zinc-900 text-xs font-black uppercase tracking-wider">No Statements Available</p>
-        <p className="text-zinc-400 text-[10px] font-medium tracking-normal">This operational search sequence returned empty results.</p>
+      <div>
+        <p className="text-sm font-black uppercase tracking-tight text-zinc-800">
+          {hasQuery ? 'No matches' : 'No orders yet'}
+        </p>
+        <p className="text-xs text-zinc-400 mt-1 max-w-[200px]">
+          {hasQuery
+            ? 'Try a different order number or ID.'
+            : 'Your orders will appear here once you shop.'}
+        </p>
       </div>
     </div>
   );
