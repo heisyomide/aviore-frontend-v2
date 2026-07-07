@@ -108,7 +108,7 @@ export default function PwaManager() {
 
       // Submit device payload target straight to NestJS Endpoint securely
       await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/notifications/subscribe`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/notifications/subscribe`,
         subscription,
         { headers: { Authorization: `Bearer ${token}` } }
       );
