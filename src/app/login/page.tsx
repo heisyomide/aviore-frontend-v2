@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link'; // 🟢 Added standard routing layout connector
 import { api } from '../../lib/axios';
 import { LoginInput } from '../../types/auth';
 import { Eye, EyeOff, Loader2, User, CheckCircle2 } from 'lucide-react';
@@ -133,7 +134,7 @@ function LoginFormContent() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <input
             {...register('email')}
             type="email"
@@ -141,20 +142,32 @@ function LoginFormContent() {
             className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] outline-none text-sm text-slate-700 placeholder:text-slate-400"
           />
 
-          <div className="relative">
-            <input
-              {...register('password')}
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] outline-none pr-12 text-slate-700 placeholder:text-slate-400"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-4 text-slate-400"
-            >
-              {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-            </button>
+          <div>
+            <div className="relative">
+              <input
+                {...register('password')}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
+                className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] outline-none pr-12 text-slate-700 placeholder:text-slate-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-4 text-slate-400"
+              >
+                {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+              </button>
+            </div>
+            
+            {/* 🟢 THE FORGOT PASSWORD GATE LINK CONTAINER */}
+            <div className="flex justify-end mt-2.5 pr-1">
+              <Link 
+                href="/forgot-password" 
+                className="text-[10px] font-bold text-slate-400 hover:text-[#A4143D] uppercase tracking-widest transition-colors duration-200"
+              >
+                Forgot Password?
+              </Link>
+            </div>
           </div>
 
           {error && (
@@ -166,19 +179,19 @@ function LoginFormContent() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full p-4 rounded-xl bg-slate-800 text-white font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            className="w-full p-4 rounded-xl bg-slate-800 text-white font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer text-xs uppercase tracking-widest"
           >
             {loading ? <Loader2 className="animate-spin" size={20}/> : 'SIGN IN'}
           </button>
 
           <div className="text-center text-[10px] text-slate-400 mt-4 uppercase font-bold tracking-widest">
             New here?{' '}
-            <span
-              onClick={() => router.push('/register')}
-              className="text-orange-600 cursor-pointer hover:underline"
+            <Link
+              href="/register"
+              className="text-[#A4143D] cursor-pointer hover:underline"
             >
               Join Aviorè
-            </span>
+            </Link>
           </div>
         </form>
       </div>
