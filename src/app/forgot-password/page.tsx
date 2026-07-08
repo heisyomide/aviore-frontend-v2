@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { api } from '../../lib/axios'; // 🟢 FIXED: Using your integrated API instance helper
 import { Loader2, KeyRound, ArrowLeft } from 'lucide-react';
 
 interface ForgotInput {
@@ -23,8 +23,8 @@ export default function ForgotPasswordPage() {
       setError(null);
       setMessage(null);
 
-      // 🟢 FIXED: The template literal string below now correctly ends with a backtick (`)
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/forgot-password`, {
+      // 🟢 FIXED: Routed directly through your custom api instance to map the backend prefix properly
+      const response = await api.post('/auth/forgot-password', {
         email: data.email.toLowerCase().trim(),
       });
 
