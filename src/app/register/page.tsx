@@ -7,14 +7,13 @@ import { api } from '../../lib/axios';
 import { Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
 import { SupportBot } from '@/src/components/support/SupportBot';
 
-// 🟢 FIXED: Updated interface matching NestJS validation parameters exactly
 interface RegisterInput {
   firstName: string;
-  middleName: string; // Added field
+  middleName: string;
   lastName: string;
   email: string;
-  phone: string; // Added field
-  dateOfBirth: string; // Added field
+  phone: string;
+  dateOfBirth: string; // Left intact here for native HTML form picker state binding
   password: string;
   confirmPassword: string;
 }
@@ -22,7 +21,6 @@ interface RegisterInput {
 export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#e0e5ec] px-4 py-12 relative">
-      {/* 🟢 Enlarged max-w frame slightly to support multi-column responsive layout splits */}
       <div className="w-full max-w-md bg-[#e0e5ec] p-8 rounded-[30px] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]">
         
         <div className="mb-8 text-center">
@@ -95,19 +93,19 @@ function RegisterFormFields() {
         console.warn('⚠️ Telemetry bypass: Registration fingerprint skipped.', telemetryErr);
       }
 
-      // Convert date string directly to full ISO format format matching back-end validations
+      // Convert date string directly to full ISO format string
       const isoBirthDate = data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : undefined;
 
-      // 🟢 FIXED: Extracted missing properties and securely mapped them into the final post payload
+      // 🟢 FIXED: Mapped 'dateOfBirth' form state to 'dob' field matching the NestJS DTO expectations
       const payload = {
         firstName: data.firstName,
-        middleName: data.middleName, // Passed target field
+        middleName: data.middleName,
         lastName: data.lastName,
         email: data.email,
-        phone: data.phone, // Passed target field
-        dateOfBirth: isoBirthDate, // Passed validated conversion
+        phone: data.phone,
+        dob: isoBirthDate, // ✨ KEY FIX HERE
         password: data.password,
-        confirmPassword: data.confirmPassword, // Added field to payload
+        confirmPassword: data.confirmPassword,
         signupIp: clientIp,
         ipAddress: clientIp, 
         deviceFingerprint: fingerprint,
@@ -139,7 +137,6 @@ function RegisterFormFields() {
         </div>
       )}
 
-      {/* 🟢 Row Split layout supporting First, Middle, and Last name options neatly */}
       <div className="grid grid-cols-3 gap-2">
         <input
           {...register('firstName')}
@@ -169,7 +166,6 @@ function RegisterFormFields() {
         className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 text-slate-700"
       />
 
-      {/* 🟢 E.164 Phone Entry (Requires valid international string format, e.g., +234...) */}
       <input
         {...register('phone')}
         type="tel"
@@ -178,7 +174,6 @@ function RegisterFormFields() {
         className="w-full bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] border-none outline-none text-sm placeholder:text-slate-400 text-slate-700"
       />
 
-      {/* 🟢 Date Of Birth Component block (Native calendar picker overlay layer validation) */}
       <div className="flex flex-col gap-1">
         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Date of Birth</label>
         <input
